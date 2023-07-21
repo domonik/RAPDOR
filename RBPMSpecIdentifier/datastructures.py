@@ -1,0 +1,200 @@
+import multiprocessing
+
+import pandas as pd
+import numpy as np
+from typing import Callable
+from scipy.spatial.distance import jensenshannon
+from scipy.special import rel_entr
+from RBPMSpecIdentifier.stats import fit_ecdf, get_permanova_results
+from multiprocessing import Pool
+from statsmodels.stats.multitest import multipletests
+
+
+
+
+class RBPMSpecData:
+    def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None):
+        self.df = df
+        self.logbase = logbase
+        self.design = design
+        self.array = None
+        self.internal_design_matrix = None
+        self.current_kernel_size = None
+        self.norm_array = None
+        self.distances = None
+        self.ecdf = None
+        self.pvalues = None
+        self._data_rows = None
+        self.permanova_sufficient_samples = False
+        self._check_design()
+        self._check_dataframe()
+
+
+        self._set_design_and_array()
+
+        self.calculated_score_names = ["RBPMSScore", "Permanova p-value", "Permanova adj-p-value"]
+        self.methods = {
+            "Jensen-Shannon-Distance": "jensenshannon",
+            "KL-Divergence": "symmetric-kl-divergence"
+        }
+
+
+    def __getitem__(self, item):
+        index = self.df.index.get_loc(item)
+        return self.norm_array[index], self.distances[index]
+
+    def _check_dataframe(self):
+
+        if not set(self.design["Name"]).issubset(set(self.df.columns)):
+            raise ValueError("Not all Names in the designs Name column are columns in the count df")
+
+    def _check_design(self):
+        for col in ["Fraction", "RNAse", "Replicate", "Name"]:
+            if not col in self.design.columns:
+                raise IndexError(f"{col} must be a column in the design dataframe\n")
+
+    def _set_design_and_array(self):
+        design_matrix = self.design.sort_values(by="Fraction")
+        tmp = design_matrix.groupby(["RNAse", "Replicate"])["Name"].apply(list).reset_index()
+        self.permanova_sufficient_samples = np.all(tmp.groupby("RNAse", group_keys=True)["Replicate"].count() >= 5)
+        l = []
+        rnames = []
+        for idx, row in tmp.iterrows():
+            sub_df = self.df[row["Name"]].to_numpy()
+            rnames.append(row["Name"])
+            l.append(sub_df)
+        self.df["id"] = self.df.index
+        self.df = self.df[["id"] + self.df.columns.tolist()[0:-1]]
+        self.df.set_index('id', inplace=True, drop=False)
+        self._data_rows = rnames
+        array = np.stack(l, axis=1)
+        if self.logbase is not None:
+            array = np.power(array, self.logbase)
+            mask = np.isnan(array)
+            array[mask] = 0
+        self.array = array
+        self.internal_design_matrix = tmp
+
+
+    @property
+    def extra_df(self):
+        if self._data_rows is None:
+            return None
+        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_rows)]
+
+    @staticmethod
+    def _normalize_rows(array, eps: float = 0):
+        if eps:
+            array += eps
+        array = array / np.sum(array, axis=-1, keepdims=True)
+        return array
+
+    def normalize_array_with_kernel(self, kernel_size: int = 0, eps: float = 0):
+        array = self.array
+        self.current_kernel_size = kernel_size
+
+        if kernel_size:
+            kernel = np.ones(kernel_size) / kernel_size
+            array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="valid"), axis=-1, arr=array)
+
+        self.norm_array = self._normalize_rows(array, eps=eps)
+
+    def calc_distances(self, method: str):
+        if method == "jensenshannon":
+            self.distances = self._jensenshannondistance(self.norm_array)
+        elif method == "symmetric-kl-divergence":
+            self.distances = self._symmetric_kl_divergence(self.norm_array)
+        else:
+            raise ValueError(f"mehthod: {method} is not supported")
+
+    def _unset_scores_and_pvalues(self):
+        for name in self.calculated_score_names:
+            if name in self.df:
+                self.df = self.df.drop(name, axis=1)
+
+
+    def normalize_and_get_distances(self, method: str, kernel: int = 0, eps: float = 0):
+        self.normalize_array_with_kernel(kernel, eps)
+        self.calc_distances(method)
+        self._unset_scores_and_pvalues()
+
+
+
+    @staticmethod
+    def _jensenshannondistance(array) -> np.ndarray:
+        return jensenshannon(array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1), axis=-2)
+
+    @staticmethod
+    def _symmetric_kl_divergence(array):
+        r1 = rel_entr(array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1)).sum(axis=-2)
+        r2 = rel_entr(array[:, :, :, None].transpose(0, 3, 2, 1), array[:, :, :, None]).sum(axis=-2)
+        return r1 + r2
+
+    def fit_innergroup_ecdf(self):
+        ecdf = fit_ecdf(self.distances, self.internal_design_matrix, "RNAse")
+        self.ecdf = ecdf
+
+    @staticmethod
+    def calc_observation_pvalue(ecdf, distances, internal_design):
+        indices = internal_design.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
+        mg1, mg2 = np.meshgrid(indices[True], indices[False])
+        mg = np.stack((mg1, mg2))
+        og_distances = distances.flat[np.ravel_multi_index(mg, distances.shape)]
+        og_distances = og_distances.flatten()
+        return 1 - ecdf(og_distances.mean())
+
+    def calc_all_scores(self):
+        self.fit_innergroup_ecdf()
+        n_genes = self.distances.shape[0]
+        indices = self.internal_design_matrix.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
+        mg1, mg2 = np.meshgrid(indices[True], indices[False])
+        e = np.ones((n_genes, 3, 3))
+        e = e * np.arange(0, n_genes)[:, None, None]
+        e = e[np.newaxis, :]
+        e = e.astype(int)
+        mg = np.stack((mg1, mg2))
+
+        mg = np.repeat(mg[:, np.newaxis, :, :], n_genes, axis=1)
+
+        idx = np.concatenate((e, mg))
+        mask = np.any(np.isnan(self.distances), axis=(-1, -2))
+        distances = self.distances
+        distances[mask] = np.nan
+        distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
+        distances = distances.reshape((n_genes, -1))
+        distances = np.mean(distances, axis=1)
+        ecdf = self.ecdf(distances)
+        ecdf[mask] = np.nan
+        self.pvalues = ecdf
+        self.df["RBPMSScore"] = self.pvalues
+
+    def calc_all_permanova(self, permutations, num_threads):
+        calls = []
+        for idx in range(self.distances.shape[0]):
+            d = self.distances[idx]
+            if ~np.any(np.isnan(d)):
+
+                calls.append((d, self.internal_design_matrix, permutations, self.df.index[idx]))
+        with Pool(num_threads) as pool:
+            data = pool.starmap(get_permanova_results, calls)
+        permanova_results = pd.concat(data, axis=1).T.set_index("gene_id")
+        _, permanova_results["adj-p-value"], _, _ = multipletests(permanova_results["p-value"], method="fdr_bh")
+        self.df["Permanova p-value"] = permanova_results["p-value"]
+        self.df["Permanova adj-p-value"] = permanova_results["adj-p-value"]
+
+
+
+
+
+
+
+if __name__ == '__main__':
+    df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
+    #sdf = df[[col for col in df.columns if "LFQ" in col]]
+    sdf = df
+    sdf = sdf.fillna(0)
+    design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
+    rbpmspec = RBPMSpecData(sdf, design, logbase=2)
+    rbpmspec.normalize_and_get_distances("jensenshannon", 3)
+    rbpmspec.calc_all_scores()
+    rbpmspec.calc_all_permanova(999, 5)
