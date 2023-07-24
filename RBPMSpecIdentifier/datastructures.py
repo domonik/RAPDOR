@@ -13,6 +13,10 @@ from statsmodels.stats.multitest import multipletests
 
 
 class RBPMSpecData:
+    methods = {
+        "Jensen-Shannon-Distance": "jensenshannon",
+        "KL-Divergence": "symmetric-kl-divergence"
+    }
     def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None):
         self.df = df
         self.logbase = logbase
@@ -25,6 +29,7 @@ class RBPMSpecData:
         self.ecdf = None
         self.pvalues = None
         self._data_rows = None
+        self.current_eps = None
         self.permanova_sufficient_samples = False
         self._check_design()
         self._check_dataframe()
@@ -33,10 +38,7 @@ class RBPMSpecData:
         self._set_design_and_array()
 
         self.calculated_score_names = ["RBPMSScore", "Permanova p-value", "Permanova adj-p-value"]
-        self.methods = {
-            "Jensen-Shannon-Distance": "jensenshannon",
-            "KL-Divergence": "symmetric-kl-divergence"
-        }
+
 
 
     def __getitem__(self, item):
@@ -61,7 +63,7 @@ class RBPMSpecData:
         rnames = []
         for idx, row in tmp.iterrows():
             sub_df = self.df[row["Name"]].to_numpy()
-            rnames.append(row["Name"])
+            rnames += row["Name"]
             l.append(sub_df)
         self.df["id"] = self.df.index
         self.df = self.df[["id"] + self.df.columns.tolist()[0:-1]]
@@ -80,7 +82,7 @@ class RBPMSpecData:
     def extra_df(self):
         if self._data_rows is None:
             return None
-        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_rows)]
+        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_rows + ["RBPMSpecID"])]
 
     @staticmethod
     def _normalize_rows(array, eps: float = 0):
@@ -92,8 +94,11 @@ class RBPMSpecData:
     def normalize_array_with_kernel(self, kernel_size: int = 0, eps: float = 0):
         array = self.array
         self.current_kernel_size = kernel_size
+        self.current_eps = eps
 
         if kernel_size:
+            if not kernel_size % 2:
+                raise ValueError(f"Kernel size must be odd")
             kernel = np.ones(kernel_size) / kernel_size
             array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="valid"), axis=-1, arr=array)
 
@@ -103,6 +108,11 @@ class RBPMSpecData:
         if method == "jensenshannon":
             self.distances = self._jensenshannondistance(self.norm_array)
         elif method == "symmetric-kl-divergence":
+            if self.current_eps is None or self.current_eps <= 0:
+                raise ValueError(
+                    "Cannot calculate KL-Divergence for Counts with 0 entries. "
+                    "Need to set epsilon which is added to the raw Protein counts"
+                )
             self.distances = self._symmetric_kl_divergence(self.norm_array)
         else:
             raise ValueError(f"mehthod: {method} is not supported")
@@ -168,6 +178,9 @@ class RBPMSpecData:
         self.pvalues = ecdf
         self.df["RBPMSScore"] = self.pvalues
 
+    def export_csv(self, file: str,  sep: str = ","):
+        self.df.to_csv(file, sep=sep)
+
     def calc_all_permanova(self, permutations, num_threads):
         calls = []
         for idx in range(self.distances.shape[0]):
@@ -183,6 +196,14 @@ class RBPMSpecData:
         self.df["Permanova adj-p-value"] = permanova_results["adj-p-value"]
 
 
+def _analysis_executable_wrapper(args):
+    design = pd.read_csv(args.design_matrix, sep=args.sep)
+    df = pd.read_csv(args.input, sep=args.sep)
+    rbpmspec = RBPMSpecData(df, design, args.logbase)
+    kernel_size = args.kernel_size if args.kernel_size > 0 else 0
+    rbpmspec.normalize_and_get_distances(args.distance_method, kernel_size, args.eps)
+    rbpmspec.calc_all_scores()
+    rbpmspec.calc_all_permanova(999, 5)
 
 
 

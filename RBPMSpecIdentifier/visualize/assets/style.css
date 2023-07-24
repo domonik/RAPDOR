@@ -10,6 +10,7 @@ html {
 
 h4 {
     text-align: center;
+    color: white;
 }
 
 .databox {
@@ -110,7 +111,7 @@ tr:nth-child(odd):hover{
 
 th {
     background-color: #1a141a !important;
-    padding: 15px !important;
+    padding: 10px !important;
 
 
 }
@@ -180,4 +181,12 @@ th {
     color: #fff;
     background-color:  #945080;
     border-color:  #945080; /*set the color you want here*/
+}
+
+.alert {
+    margin: 0;
+}
+
+td:has(~ .dash-cell.cell--selected.focused), .dash-cell.cell--selected.focused ~ td {
+    background-color: #A86561 !important;
 }

@@ -29,7 +29,7 @@ encoded_img = base64.b64encode(open(LOGO, 'rb').read())
 app = dash.Dash(
     "RBPMSpecIdentifier Dashboard",
     title="RBPMSpec Visualizer",
-    external_stylesheets=["https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"],
+    external_stylesheets=[dbc.themes.DARKLY],
     assets_url_path=ASSETS_DIR,
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
@@ -51,7 +51,7 @@ def _header_layout():
     svg = 'data:image/svg+xml;base64,{}'.format(encoded_img.decode())
     header = html.Div(
         html.Div(
-            html.Img(src=svg, style={"width": "30%", "min-width": "300px"}, className="p-3"),
+            html.Img(src=svg, style={"width": "20%", "min-width": "300px"}, className="p-1"),
             className="databox",
             style={"text-align": "center"},
         ),
@@ -187,10 +187,22 @@ def selector_box(data):
                             ),
                             html.Div(
                                 id="alert-div",
-                                className="col-10 p-2"
+                                className="col-10"
                             )
 
                         ],
+                        className="row justify-content-center p-2"
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                html.Button('Export TSV', id='export-btn', n_clicks=0, className="btn btn-primary",
+                                            style={"width": "100%"}),
+                                className="col-10 justify-content-center text-align-center"
+                            ),
+                            dcc.Download(id="download-dataframe-csv"),
+                        ],
+
                         className="row justify-content-center p-2"
                     ),
                 ],
@@ -208,6 +220,19 @@ def _get_table(rbmsdata: RBPMSpecData):
             html.Div(
                 html.Div(
                         [
+
+                            dls.RingChase(
+                                html.Div(
+                                    _create_table(rbmsdata),
+                                    className="col-12 justify-content-center",
+                                    id="data-table"
+
+                                ),
+                                color="#ff8add",
+                                width=200,
+                                thickness=20,
+
+                            ),
                             html.Div(
                                 dcc.Dropdown(
                                     rbpmsdata.extra_df.columns,
@@ -216,24 +241,13 @@ def _get_table(rbmsdata: RBPMSpecData):
                                     multi=True,
                                     id="table-selector"
                                 ),
-                                className="col-12 pb-4"
-                            ),
-                            dls.RingChase(
-                                html.Div(
-                                    _create_table(rbmsdata),
-                                    className="col-12",
-                                    id="data-table"
-
-                                ),
-                                color="#ff8add",
-                                width=200,
-                                thickness=20,
+                                className="col-12 pt-1"
                             ),
 
                         ],
 
 
-                    className="row"
+                    className="row justify-content-center"
                 ),
 
                 className="databox p-3",
@@ -245,15 +259,15 @@ def _get_table(rbmsdata: RBPMSpecData):
 
 
 def _create_table(rbmsdata, selected_columns = None):
+
     if selected_columns is None:
         data = rbmsdata.extra_df.iloc[:, 0:3]
     else:
-        data = rbmsdata.extra_df.loc[:, selected_columns + ["id"]]
+        data = rbmsdata.extra_df.loc[:, ["RBPMSpecID"] + selected_columns + ["id"]]
 
     for name in rbmsdata.calculated_score_names:
         if name in rbmsdata.extra_df:
             data = pd.concat((data, rbmsdata.extra_df[name]), axis=1)
-    data.insert(0, "RBPMSpecID", data.index.astype(str))
     columns = []
     for i in data.columns:
         if i != "id":
@@ -277,7 +291,7 @@ def _create_table(rbmsdata, selected_columns = None):
             page_size=50,
             page_current=0,
             page_action="custom",
-            style_table={'overflowX': 'auto', "padding": "1px", "height": "370px",
+            style_table={'overflowX': 'auto', "padding": "1px", "height": "300px",
                          "overflowY": "auto"},
             fixed_rows={'headers': True},
             style_header={
@@ -293,6 +307,7 @@ def _create_table(rbmsdata, selected_columns = None):
                 "font-family": "var(--bs-body-font-family)"
 
             },
+            style_data_conditional=SELECTED_STYLE,
             style_cell={
                 'overflow': 'hidden',
                 'textOverflow': 'ellipsis',
@@ -358,21 +373,21 @@ def _get_app_layout(dash_app):
             html.Div(id="recomputation"),
             html.Div(
                 _header_layout(),
-                className="row m-1 justify-content-center align-items-center"
+                className="row justify-content-center align-items-center"
             ),
             html.Div(
                 distribution_panel(rbpmsdata),
-                className="row m-1 justify-content-center align-items-center"
+                className="row justify-content-center align-items-center"
 
             ),
             html.Div(
                 _get_table(rbpmsdata),
-                className="row m-1 justify-content-center align-items-center",
+                className="row justify-content-center align-items-center",
                 id="protein-table"
             ),
             html.Div(
                 [correlation_heatmap_box(), selector_box(rbpmsdata)],
-                className="row row-eq-height m-1 justify-content-center"
+                className="row row-eq-height justify-content-center"
             ),
 
         ],
@@ -500,11 +515,63 @@ def update_heatmap(key, kernel_size, distance_method):
     return fig, f"Sample {distance_method}"
 
 
+
+SELECTED_STYLE = [
+        {
+            "if": {"state": "active"},
+            "backgroundColor": "rgba(150, 180, 225, 0.2)",
+            "border-top": "2px solid rgb(255, 138, 221)",
+            "border-bottom": "2px solid rgb(255, 138, 221)",
+            "border-left": "0px solid rgb(255, 138, 221)",
+            "border-right": "0px solid rgb(255, 138, 221)",
+        },
+        {
+            "if": {"state": "selected"},
+            "backgroundColor": "rgba(14, 102, 232, 1) !important",
+            "border-top": "2px solid rgb(255, 138, 221)",
+            "border-bottom": "2px solid rgb(255, 138, 221)",
+            "border-left": "0px solid rgb(255, 138, 221)",
+            "border-right": "0px solid rgb(255, 138, 221)",
+        },
+    ]
+
+@app.callback(
+    Output("tbl", "style_data_conditional"),
+    Input('tbl', 'active_cell'),
+    Input('tbl', 'data'),
+    State("protein-id", "children"),
+    State("tbl", "page_size")
+
+)
+def style_selected_col(active_cell, sort_by, key, page_size):
+    if "tbl.data" in ctx.triggered_prop_ids:
+        key = key.split("Protein ")[-1]
+        loc = data.index.get_loc(key)
+        row_idx = int(loc % page_size)
+    else:
+        if active_cell is None:
+            raise PreventUpdate
+        row_idx = active_cell["row"]
+
+    style = [
+        {
+            "if": {"row_index": row_idx},
+            "backgroundColor": "red !important",
+            "border-top": "2px solid rgb(255, 138, 221)",
+            "border-bottom": "2px solid rgb(255, 138, 221)",
+            "border-left": "0px solid rgb(255, 138, 221)",
+            "border-right": "0px solid rgb(255, 138, 221)",
+        },
+    ]
+    style_data_conditional = SELECTED_STYLE + style
+    return style_data_conditional
+
 @app.callback(
         Output("protein-id", "children"),
+
     [
         Input('tbl', 'active_cell'),
-    ]
+    ],
 
 )
 def update_selected_id(active_cell):
@@ -513,6 +580,8 @@ def update_selected_id(active_cell):
         raise PreventUpdate
     active_row_id = active_cell["row_id"]
     active_row_id = f"Protein {active_row_id}"
+
+
     return active_row_id
 
 
@@ -548,11 +617,14 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, recompute, nr_permutati
         else:
             rbpmsdata.calc_all_scores()
     if alert:
-        alert_msg = dbc.Alert(
-            "Insufficient Number of Samples per Group. PERMANOVA unreliable",
-            color="danger",
-            dismissable=True,
-            style={"text-align": "center"}),
+        alert_msg = html.Div(
+            dbc.Alert(
+                "Insufficient Number of Samples per Group. PERMANOVA unreliable",
+                color="danger",
+                dismissable=True,
+                style={"text-align": "center"}),
+                className="p-2 align-items-center"
+        )
     else:
         alert_msg = []
 
@@ -560,19 +632,32 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, recompute, nr_permutati
 
 
 @app.callback(
+    Output("download-dataframe-csv", "data"),
+    Input("export-btn", "n_clicks"),
+    prevent_initial_call=True,
+)
+def func(n_clicks):
+    return dcc.send_data_frame(df.to_csv, "RBPMSpecIdentifier.tsv", sep="\t")
+
+@app.callback(
     Output('tbl', 'data'),
+    Output('tbl', "page_current"),
+
     Input('tbl', "page_current"),
     Input('tbl', "page_size"),
     Input('tbl', 'sort_by'),
     Input('tbl', 'filter_query'),
     State('table-selector', 'value'),
+    State("protein-id", "children"),
 
 )
-def update_table(page_current, page_size, sort_by, filter, selected_columns):
+def update_table(page_current, page_size, sort_by, filter, selected_columns, key):
+    key = key.split("Protein ")[-1]
+    global data
     if selected_columns is None:
         data = rbpmsdata.extra_df.iloc[:, 0:3]
     else:
-        data = rbpmsdata.extra_df.loc[:, selected_columns + ["id"]]
+        data = rbpmsdata.extra_df.loc[:, ["RBPMSpecID"] + selected_columns + ["id"]]
     for name in rbpmsdata.calculated_score_names:
         if name in rbpmsdata.extra_df:
             data = pd.concat((data, rbpmsdata.extra_df[name]), axis=1)
@@ -585,7 +670,6 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns):
             # these operators match pandas series operator method names
             data = data.loc[getattr(data[col_name], operator)(filter_value)]
         elif operator == 'contains':
-            print(data[col_name].str.contains(filter_value))
             data = data.loc[data[col_name].str.contains(filter_value).fillna(False)]
         elif operator == 'datestartswith':
             # this is a simplification of the front-end filtering logic,
@@ -602,10 +686,15 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns):
                 ],
                 inplace=False
             )
-    data.insert(0, "RBPMSpecID", data.index.astype(str))
-    page = page_current
-    size = page_size
-    return data.iloc[page * size: (page + 1) * size].to_dict('records')
+    if "tbl.page_current" in ctx.triggered_prop_ids:
+        page = page_current
+        size = page_size
+    else:
+        loc = data.index.get_loc(key)
+        page = int(np.floor(loc / page_size))
+        size = page_size
+
+    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page
 
 
 operators = [['ge ', '>='],
@@ -647,6 +736,11 @@ if __name__ == '__main__':
     df.index = df.index.astype(str)
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
     rbpmsdata = RBPMSpecData(df, design, logbase=2)
+    rbpmsdata.df.insert(0, "RBPMSpecID", rbpmsdata.df.index.astype(str))
+    data = rbpmsdata.df
+
+
+
 
 
 
