@@ -18,9 +18,11 @@ import dash_loading_spinners as dls
 import numpy as np
 from time import sleep
 import base64
+import tempfile
 
 FILEDIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(FILEDIR, "assets")
+TMPDIR = tempfile.TemporaryDirectory(suffix="RBPMSpec")
 
 LOGO = os.path.join(ASSETS_DIR, "RBPMSpecIdentifier_dark_no_text.svg")
 assert os.path.exists(LOGO)
@@ -71,9 +73,18 @@ def distribution_panel(data):
                     html.Div(
                         [
                             html.Div(
-                                html.H4(f"Protein {sel_data[0]}", style={"text-align": "center"}, id="protein-id"),
-                                className="col-12 justify-content-center align-self-center",
+                                className="col-3"
                             ),
+                            html.Div(
+                                html.H4(f"Protein {sel_data[0]}", style={"text-align": "center"}, id="protein-id"),
+                                className="col-6 justify-content-center align-self-center",
+                            ),
+                            html.Div(
+                                html.Button("Download Image", style={"text-align": "center"}, id="open-modal", className="btn btn-primary"),
+                                className="col-3 justify-content-right align-self-center text-end",
+                            ),
+                            dcc.Download(id="download-image")
+
                         ],
                         className="row justify-content-center p-2"
                     ),
@@ -388,25 +399,35 @@ def _get_app_layout(dash_app):
                 [correlation_heatmap_box(), selector_box(rbpmsdata)],
                 className="row row-eq-height justify-content-center"
             ),
+            _modal_image_download(),
 
         ],
         className="container-fluid"
     )
 
-#
-# @app.callback(
-#     Output("protein-selector", "options"),
-#     Input("protein-selector", "search_value")
-# )
-# def _update_options(search_value):
-#     if not search_value:
-#         raise PreventUpdate
-#     if search_value is None:
-#         raise PreventUpdate
-#     d = rbpmsdata.df.index.str.contains(search_value)
-#     options = rbpmsdata.df[d].index[0:100]
-#     return options
-
+def _modal_image_download():
+    modal = dbc.Modal(
+        [
+            dbc.ModalHeader("Select file Name"),
+            dbc.ModalBody(
+                [
+                    html.Div(
+                        [
+                            html.Div(dbc.Input("named-download",),
+                                        className=" col-9"),
+                            dbc.Button("Download", id="download-image-button", className="btn btn-primary col-3"),
+                        ],
+                        className="row justify-content-around",
+                    )
+                ]
+            ),
+            dbc.ModalFooter(
+                dbc.Button("Close", id="close", className="ml-auto",
+                           n_clicks=0)),
+        ],
+        id="modal",
+    )
+    return modal
 
 @app.callback(
     Output("recomputation", "children"),
@@ -735,6 +756,71 @@ def split_filter_part(filter_part):
 
     return [None] * 3
 
+@app.callback(
+    [
+        Output("modal", "is_open"),
+        Output("named-download", "value")
+     ],
+    [
+        Input("open-modal", "n_clicks"),
+        Input("close", "n_clicks"),
+        Input("download-image-button", "n_clicks"),
+    ],
+    [State("modal", "is_open"),
+     State("protein-id", "children")
+     ],
+    prevent_initial_call=True
+
+)
+def _toggle_modal(n1, n2, n3, is_open, key):
+    key = key.split("Protein ")[-1]
+    filename = key + ".svg"
+    if n1 or n2 or n3:
+        return not is_open, filename
+    return is_open, filename
+
+
+@app.callback(
+    Output("download-image", "data"),
+    [
+        Input("download-image-button", "n_clicks"),
+
+    ],
+    [
+        State("named-download", "value"),
+        State("protein-id", "children")
+    ],
+    prevent_initial_call=True
+)
+def _download_image(n_clicks, filename, key):
+    key = key.split("Protein ")[-1]
+
+    filename = os.path.basename(filename)
+    array, _ = rbpmsdata[key]
+    i = 0
+    if rbpmsdata.current_kernel_size is not None:
+        i = int(np.floor(rbpmsdata.current_kernel_size / 2))
+
+    fig = plot_distribution(array, key, rbpmsdata.internal_design_matrix, groups="RNAse", offset=i)
+    fig.layout.template = "plotly_white"
+    fig.update_layout(legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="left",
+        x=0
+    ))
+    fig.update_layout(
+        margin={"t": 0, "b": 30, "r": 50},
+        font=dict(
+            size=16,
+        )
+    )
+    fig.update_xaxes(dtick=1)
+    tmpfile = os.path.join(TMPDIR.name, filename)
+    fig.write_image(tmpfile)
+    assert os.path.exists(tmpfile)
+    return dcc.send_file(tmpfile)
 
 def _gui_wrapper(args):
     design = pd.read_csv(args.design_matrix, sep=args.sep)
