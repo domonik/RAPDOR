@@ -560,15 +560,21 @@ SELECTED_STYLE = [
     Input('tbl', 'active_cell'),
     Input('tbl', 'data'),
     State("protein-id", "children"),
-    State("tbl", "page_size")
+    State("tbl", "page_size"),
+    State('tbl', "page_current"),
 
 )
-def style_selected_col(active_cell, sort_by, key, page_size):
+def style_selected_col(active_cell, sort_by, key, page_size, current_page):
+
     if "tbl.data" in ctx.triggered_prop_ids:
         key = key.split("Protein ")[-1]
         if key in data.index:
             loc = data.index.get_loc(key)
-            row_idx = int(loc % page_size)
+            page = int(np.floor(loc / page_size))
+            if page != current_page:
+                row_idx = -1
+            else:
+                row_idx = int(loc % page_size)
         else:
             row_idx = -1
     else:
@@ -710,7 +716,7 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
                 ],
                 inplace=False
             )
-    if "tbl.page_current" in ctx.triggered_prop_ids:
+    if "tbl.page_current" in ctx.triggered_prop_ids or "tbl.sort_by" in ctx.triggered_prop_ids:
         page = page_current
         size = page_size
     elif key in data.index:
@@ -720,6 +726,8 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     else:
         page = page_current
         size = page_size
+
+
 
     return data.iloc[page * size: (page + 1) * size].to_dict('records'), page
 
