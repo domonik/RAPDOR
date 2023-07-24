@@ -9,7 +9,6 @@ import numpy as np
 from multiprocessing import Pool
 from itertools import product
 from scipy.stats import mannwhitneyu
-from fitter import Fitter, get_common_distributions
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
@@ -106,73 +105,4 @@ def calc_innergroup_background(distances, design_matrix, groups):
 def fit_ecdf(distances, design_matrix, groups):
     inner_distances = calc_innergroup_background(distances, design_matrix, groups)
     return ECDF(inner_distances)
-
-
-def fit_distribution(data, threads):
-
-    f = Fitter(
-        data,
-        timeout=1000,
-        #distributions=get_common_distributions() + ["beta"]
-    )
-    f.fit(n_jobs=threads)
-    summary = f.summary().sort_values(by="sumsquare_error")
-    fig = go.Figure()
-    fig.add_trace(
-        go.Histogram(
-            x=data,
-            #cumulative_enabled=True,
-            histnorm="probability density",
-            name="data distribution",
-            xbins=dict(
-                start=0,
-                end=np.max(data)
-            )
-        )
-    )
-    for item in summary.index[0:3]:
-        x = f.x
-        y = f.fitted_pdf[item]
-        fig.add_trace(
-            go.Scatter(x=x, y=y, mode="lines", name=item)
-        )
-    return fig, summary
-
-
-if __name__ == '__main__':
-    from plots import plot_pca
-    import plotly.graph_objects as go
-    df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
-    sdf = df[[col for col in df.columns if "LFQ" in col]]
-    sdf = 2 ** sdf
-    sdf = sdf.fillna(0)
-    kernel_size = 3
-
-    design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-    array, design = generate_matrix(sdf, design)
-    if kernel_size:
-        kernel = np.ones(kernel_size) / kernel_size
-        array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="valid"), axis=-1, arr=array)
-
-    array = normalize_rows(array, alpha=10)
-    js = jensenshannondistance(array)
-
-
-
-
-    inner_distances = calc_innergroup_background(js, design, "RNAse")
-    exit()
-    subjs = js[sdf.index.get_loc(447)]
-
-    pval, og_distances = mann_whitney_vs_background(subjs, design, "RNAse", (True, False), inner_distances)
-    fig = go.Figure(data=[go.Histogram(x=inner_distances, histnorm='probability density'), go.Histogram(x=og_distances, histnorm='probability density')])
-    print(og_distances, pval)
-    fig.update_layout(barmode="overlay")
-    fig, summary = fit_distribution(inner_distances, 5)
-    print(summary)
-    print(inner_distances[inner_distances == 0])
-    fig.show()
-
-
-
 

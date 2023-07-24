@@ -43,24 +43,35 @@ def plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
 def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offset: int = 0):
     fig = go.Figure()
     indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
+    medians = []
     means = []
     errors = []
     x = list(range(offset+1, subdata.shape[1] + offset+1))
 
     for eidx, (name, idx) in enumerate(indices.items()):
         name = f"{groups}: {name}"
-        mean_values = np.median(subdata[idx,], axis=0)
+        median_values = np.median(subdata[idx,], axis=0)
+        mean_values = np.mean(subdata[idx,], axis=0)
         max_values = np.quantile(subdata[idx,], 0.75, axis=0)
+        max_values = np.max(subdata[idx,],axis=0)
         min_values = np.quantile(subdata[idx,], 0.25, axis=0)
+        min_values = np.min(subdata[idx,], axis=0)
         color = DEFAULT_COLORS[eidx]
         a_color = color_to_calpha(color, 0.4)
-        means.append(go.Scatter(
+        medians.append(go.Scatter(
                 x=x,
-                y=mean_values,
+                y=median_values,
                 marker=dict(color=DEFAULT_COLORS[eidx]),
-                name=name,
+                name=name + " Median",
                 line=dict(width=5)
             ))
+        means.append(go.Scatter(
+            x=x,
+            y=mean_values,
+            marker=dict(color=DEFAULT_COLORS[eidx]),
+            name=name + " Mean",
+            line=dict(width=3, dash="dash")
+        ))
         y = np.concatenate((max_values, np.flip(min_values)), axis=0)
         errors.append(
             go.Scatter(
@@ -77,7 +88,7 @@ def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offse
         errors
     )
     fig.add_traces(
-        means
+        medians + means
     )
     fig.update_layout(hovermode="x")
     fig.update_layout(xaxis_range=[x[0]- offset -0.5, x[-1]+offset+0.5])
@@ -150,7 +161,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0):
                 z=z,
                 colorscale=scale[idx],
                 name = names[idx],
-                hovertemplate='<b>Fraction: %{x}</b><br><b>Protein Counts: %{z:.3f}</b> ',
+                hovertemplate='<b>Fraction: %{x}</b><br><b>Protein Counts: %{z:.2e}</b> ',
 
             ),
             row=idx+1, col=1

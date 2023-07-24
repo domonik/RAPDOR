@@ -190,3 +190,21 @@ th {
 td:has(~ .dash-cell.cell--selected.focused), .dash-cell.cell--selected.focused ~ td {
     background-color: #A86561 !important;
 }
+
+.rc-slider-track {
+  background-color: rgb(255, 138, 221);
+}
+
+
+.rc-slider-handle {
+  background-color: rgb(255, 138, 221) !important;
+  border-color: rgb(255, 138, 221) !important;
+}
+
+.rc-slider-handle:hover {
+  border-color: rgb(255, 138, 221) !important;
+}
+
+.rc-slider-handle-active:active {
+  border-color: red;
+}

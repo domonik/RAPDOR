@@ -259,15 +259,14 @@ def _get_table(rbmsdata: RBPMSpecData):
 
 
 def _create_table(rbmsdata, selected_columns = None):
-
+    global data
     if selected_columns is None:
-        data = rbmsdata.extra_df.iloc[:, 0:3]
-    else:
-        data = rbmsdata.extra_df.loc[:, ["RBPMSpecID"] + selected_columns + ["id"]]
+        selected_columns = rbpmsdata.extra_columns[0: 2]
 
-    for name in rbmsdata.calculated_score_names:
-        if name in rbmsdata.extra_df:
-            data = pd.concat((data, rbmsdata.extra_df[name]), axis=1)
+    data = rbpmsdata.extra_df.loc[:, rbpmsdata.id_columns + selected_columns]
+    for name in rbpmsdata.calculated_score_names:
+        if name in rbpmsdata.extra_df:
+            data = pd.concat((data, rbpmsdata.extra_df[name]), axis=1)
     columns = []
     for i in data.columns:
         if i != "id":
@@ -342,11 +341,11 @@ def correlation_heatmap_box():
                                         "Distance",
                                         id="distance-header"
                                     ),
-                                    className="col-10 pb-2"
+                                    className="col-12 pb-2"
                                 ),
                                 html.Div(
                                     dcc.Graph(id="heatmap-graph", style={"height": "370px"}),
-                                    className="col-10"
+                                    className="col-12"
                                 ),
 
                             ],
@@ -546,8 +545,11 @@ SELECTED_STYLE = [
 def style_selected_col(active_cell, sort_by, key, page_size):
     if "tbl.data" in ctx.triggered_prop_ids:
         key = key.split("Protein ")[-1]
-        loc = data.index.get_loc(key)
-        row_idx = int(loc % page_size)
+        if key in data.index:
+            loc = data.index.get_loc(key)
+            row_idx = int(loc % page_size)
+        else:
+            row_idx = -1
     else:
         if active_cell is None:
             raise PreventUpdate
@@ -655,12 +657,13 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     key = key.split("Protein ")[-1]
     global data
     if selected_columns is None:
-        data = rbpmsdata.extra_df.iloc[:, 0:3]
-    else:
-        data = rbpmsdata.extra_df.loc[:, ["RBPMSpecID"] + selected_columns + ["id"]]
+        selected_columns = rbpmsdata.extra_columns[0: 2]
+
+    data = rbpmsdata.extra_df.loc[:, rbpmsdata.id_columns + selected_columns]
     for name in rbpmsdata.calculated_score_names:
         if name in rbpmsdata.extra_df:
             data = pd.concat((data, rbpmsdata.extra_df[name]), axis=1)
+
     filtering_expressions = filter.split(' && ')
 
     for filter_part in filtering_expressions:
@@ -689,9 +692,12 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     if "tbl.page_current" in ctx.triggered_prop_ids:
         page = page_current
         size = page_size
-    else:
+    elif key in data.index:
         loc = data.index.get_loc(key)
         page = int(np.floor(loc / page_size))
+        size = page_size
+    else:
+        page = page_current
         size = page_size
 
     return data.iloc[page * size: (page + 1) * size].to_dict('records'), page
@@ -729,14 +735,26 @@ def split_filter_part(filter_part):
 
     return [None] * 3
 
+
+def _gui_wrapper(args):
+    design = pd.read_csv(args.design_matrix, sep=args.sep)
+    df = pd.read_csv(args.input, sep=args.sep, index_col=0)
+    df.index = df.index.astype(str)
+    global rbpmsdata
+    global data
+    rbpmsdata = RBPMSpecData(df, design, logbase=args.logbase)
+    data = rbpmsdata.df
+
+    _get_app_layout(app)
+    app.run(debug=args.debug, port=args.port, host=args.host)
+
+
 if __name__ == '__main__':
     from RBPMSpecIdentifier.stats import generate_matrix, normalize_rows
-
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
     df.index = df.index.astype(str)
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
     rbpmsdata = RBPMSpecData(df, design, logbase=2)
-    rbpmsdata.df.insert(0, "RBPMSpecID", rbpmsdata.df.index.astype(str))
     data = rbpmsdata.df
 
 

@@ -30,14 +30,20 @@ class RBPMSpecData:
         self.pvalues = None
         self._data_rows = None
         self.current_eps = None
+        self.internal_index = pd.DataFrame()
         self.permanova_sufficient_samples = False
         self._check_design()
         self._check_dataframe()
 
 
-        self._set_design_and_array()
+
 
         self.calculated_score_names = ["RBPMSScore", "Permanova p-value", "Permanova adj-p-value"]
+        self.id_columns = ["RBPMSpecID", "id"]
+        self.extra_columns = None
+
+        self._set_design_and_array()
+
 
 
 
@@ -46,6 +52,8 @@ class RBPMSpecData:
         return self.norm_array[index], self.distances[index]
 
     def _check_dataframe(self):
+        if not pd.api.types.is_string_dtype(self.df.index.dtype):
+            raise ValueError("The dataframe must have a string type index")
 
         if not set(self.design["Name"]).issubset(set(self.df.columns)):
             raise ValueError("Not all Names in the designs Name column are columns in the count df")
@@ -66,9 +74,9 @@ class RBPMSpecData:
             rnames += row["Name"]
             l.append(sub_df)
         self.df["id"] = self.df.index
-        self.df = self.df[["id"] + self.df.columns.tolist()[0:-1]]
-        self.df.set_index('id', inplace=True, drop=False)
+        self.df["RBPMSpecID"] = self.df.index
         self._data_rows = rnames
+        self.extra_columns = [col for col in self.df.columns if col not in self._data_rows + self.id_columns]
         array = np.stack(l, axis=1)
         if self.logbase is not None:
             array = np.power(array, self.logbase)
@@ -82,7 +90,7 @@ class RBPMSpecData:
     def extra_df(self):
         if self._data_rows is None:
             return None
-        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_rows + ["RBPMSpecID"])]
+        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_rows)]
 
     @staticmethod
     def _normalize_rows(array, eps: float = 0):
