@@ -700,8 +700,11 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
             # these operators match pandas series operator method names
             data = data.loc[getattr(data[col_name], operator)(filter_value)]
         elif operator == 'contains':
+            filter_value = str(filter_value).split(".0")[0]
             data = data.loc[data[col_name].str.contains(filter_value).fillna(False)]
         elif operator == 'datestartswith':
+            filter_value = str(filter_value).split(".0")[0]
+
             # this is a simplification of the front-end filtering logic,
             # only works with complete fields in standard format
             data = data.loc[data[col_name].str.startswith(filter_value)]
