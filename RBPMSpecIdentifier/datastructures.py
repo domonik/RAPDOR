@@ -38,7 +38,7 @@ class RBPMSpecData:
 
 
 
-        self.calculated_score_names = ["RBPMSScore", "Permanova p-value", "Permanova adj-p-value"]
+        self.calculated_score_names = ["RBPMSScore", "ANOSIM R", "Permanova p-value", "Permanova adj-p-value"]
         self.id_columns = ["RBPMSpecID", "id"]
         self.extra_columns = None
 
@@ -79,7 +79,7 @@ class RBPMSpecData:
         self.extra_columns = [col for col in self.df.columns if col not in self._data_rows + self.id_columns]
         array = np.stack(l, axis=1)
         if self.logbase is not None:
-            array = np.power(array, self.logbase)
+            array = np.power(self.logbase, array)
             mask = np.isnan(array)
             array[mask] = 0
         self.array = array
@@ -161,7 +161,53 @@ class RBPMSpecData:
         og_distances = og_distances.flatten()
         return 1 - ecdf(og_distances.mean())
 
-    def calc_all_scores(self):
+
+    def _get_outer_group_distances(self):
+        n_genes = self.distances.shape[0]
+        indices = self.internal_design_matrix.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
+        mg1, mg2 = np.meshgrid(indices[True], indices[False])
+        e = np.ones((n_genes, 3, 3))
+        e = e * np.arange(0, n_genes)[:, None, None]
+        e = e[np.newaxis, :]
+        e = e.astype(int)
+        mg = np.stack((mg1, mg2))
+
+        mg = np.repeat(mg[:, np.newaxis, :, :], n_genes, axis=1)
+
+        idx = np.concatenate((e, mg))
+        mask = np.any(np.isnan(self.distances), axis=(-1, -2))
+        distances = self.distances
+        distances[mask] = np.nan
+        distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
+        distances = distances.reshape((n_genes, len(indices[True]), len(indices[False])))
+        indices1, indices2 = np.triu_indices(n=len(indices[True]), m=len(indices[False]))
+        distances = distances[:, indices1, indices2]
+        return distances
+
+    def _get_innergroup_distances(self):
+        distances = self.distances
+        design_matrix = self.internal_design_matrix
+        inner_distances = []
+        indices = design_matrix.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
+        for eidx, (name, idx) in enumerate(indices.items()):
+            n_genes = distances.shape[0]
+            mg1, mg2 = np.meshgrid(idx, idx)
+            e = np.ones((n_genes, 3, 3))
+            e = e * np.arange(0, n_genes)[:, None, None]
+            e = e[np.newaxis, :]
+            e = e.astype(int)
+            mg = np.stack((mg1, mg2))
+
+            mg = np.repeat(mg[:, np.newaxis, :, :], n_genes, axis=1)
+
+            idx = np.concatenate((e, mg))
+            ig_distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
+            iidx = np.triu_indices(n=ig_distances.shape[1], m=ig_distances.shape[2], k=1)
+            ig_distances = ig_distances[:, iidx[0], iidx[1]]
+            inner_distances.append(ig_distances)
+        return np.concatenate(inner_distances, axis=-1)
+
+    def calc_rbp_scores(self):
         self.fit_innergroup_ecdf()
         n_genes = self.distances.shape[0]
         indices = self.internal_design_matrix.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
@@ -185,6 +231,23 @@ class RBPMSpecData:
         ecdf[mask] = np.nan
         self.pvalues = ecdf
         self.df["RBPMSScore"] = self.pvalues
+        self.calc_all_anosim_value()
+
+    def calc_all_scores(self):
+        self.calc_all_anosim_value()
+        self.calc_rbp_scores()
+
+    def calc_all_anosim_value(self):
+        outer_group_distances = self._get_outer_group_distances()
+        inner_group_distances = self._get_innergroup_distances()
+        stat_distances = np.concatenate((outer_group_distances, inner_group_distances), axis=-1)
+        ranks = stat_distances.argsort(axis=-1).argsort(axis=-1)
+        rb = np.mean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
+        rw = np.mean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
+        r = (rb - rw) / (ranks.shape[-1] / 2)
+        self.df["ANOSIM R"] = r
+
+
 
     def export_csv(self, file: str,  sep: str = ","):
         self.df.to_csv(file, sep=sep)
@@ -222,8 +285,8 @@ if __name__ == '__main__':
     #sdf = df[[col for col in df.columns if "LFQ" in col]]
     sdf = df
     sdf = sdf.fillna(0)
+    sdf.index = sdf.index.astype(str)
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
     rbpmspec = RBPMSpecData(sdf, design, logbase=2)
     rbpmspec.normalize_and_get_distances("jensenshannon", 3)
-    rbpmspec.calc_all_scores()
-    rbpmspec.calc_all_permanova(999, 5)
+    rbpmspec.calc_all_anosim_value()
