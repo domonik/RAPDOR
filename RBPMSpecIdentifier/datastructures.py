@@ -38,7 +38,7 @@ class RBPMSpecData:
 
 
 
-        self.calculated_score_names = ["RBPMSScore", "ANOSIM R", "Permanova p-value", "Permanova adj-p-value"]
+        self.calculated_score_names = ["RBPMSScore", "ANOSIM R", "shift direction", "RNAse False peak pos", "RNAse True peak pos",  "Permanova p-value", "Permanova adj-p-value"]
         self.id_columns = ["RBPMSpecID", "id"]
         self.extra_columns = None
 
@@ -135,6 +135,25 @@ class RBPMSpecData:
         self.normalize_array_with_kernel(kernel, eps)
         self.calc_distances(method)
         self._unset_scores_and_pvalues()
+
+    def determine_peaks(self):
+        indices = self.internal_design_matrix.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
+        rnase_false = self.norm_array[:, indices[False]].mean(axis=-2)
+        rnase_true = self.norm_array[:, indices[True]].mean(axis=-2)
+        mid = 0.5 * (rnase_true + rnase_false)
+
+        r1 = np.argmax(rel_entr(rnase_false, mid), axis=-1) + int(np.ceil(self.current_kernel_size / 2))
+        self.df["RNAse False peak pos"] = r1
+        r2 = np.argmax(rel_entr(rnase_true, mid), axis=-1) + int(np.ceil(self.current_kernel_size / 2))
+        self.df["RNAse True peak pos"] = r2
+        side = r1 - r2
+        side[side < 0] = -1
+        side[side > 0] = 1
+        shift_strings = np.empty(side.shape, dtype='U10')
+        shift_strings = np.where(side == 0, "no shift", shift_strings)
+        shift_strings = np.where(side == -1, "right", shift_strings)
+        shift_strings = np.where(side == 1, "left", shift_strings)
+        self.df["shift direction"] = shift_strings
 
 
 
@@ -236,6 +255,7 @@ class RBPMSpecData:
     def calc_all_scores(self):
         self.calc_all_anosim_value()
         self.calc_rbp_scores()
+        self.determine_peaks()
 
     def calc_all_anosim_value(self):
         outer_group_distances = self._get_outer_group_distances()
@@ -284,9 +304,9 @@ if __name__ == '__main__':
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
     #sdf = df[[col for col in df.columns if "LFQ" in col]]
     sdf = df
-    sdf = sdf.fillna(0)
     sdf.index = sdf.index.astype(str)
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
     rbpmspec = RBPMSpecData(sdf, design, logbase=2)
     rbpmspec.normalize_and_get_distances("jensenshannon", 3)
-    rbpmspec.calc_all_anosim_value()
+    rbpmspec.determine_peaks()
+    rbpmspec.export_csv(file="foofile.tsv", sep="\t")
