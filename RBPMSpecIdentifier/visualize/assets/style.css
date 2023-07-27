@@ -187,9 +187,6 @@ th {
     margin: 0;
 }
 
-td:has(~ .dash-cell.cell--selected.focused), .dash-cell.cell--selected.focused ~ td {
-    background-color: #A86561 !important;
-}
 
 .rc-slider-track {
   background-color: rgb(255, 138, 221);
@@ -212,4 +209,14 @@ td:has(~ .dash-cell.cell--selected.focused), .dash-cell.cell--selected.focused ~
 
 #distribution-graph .hovertext rect {
   fill: #3a363d !important;
+}
+
+.alert-msg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    z-index: 999999 !important;
+    font-size: 1.5em;
 }

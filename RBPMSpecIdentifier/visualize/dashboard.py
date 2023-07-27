@@ -638,8 +638,12 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, recompute, nr_permutati
         else:
             if nr_permutations is None:
                 nr_permutations = 9999
-            rbpmsdata.calc_all_permanova(permutations=nr_permutations, num_threads=os.cpu_count())
-            alert = True if not rbpmsdata.permanova_sufficient_samples else False
+            if rbpmsdata.permutation_sufficient_samples:
+                rbpmsdata.calc_all_permanova(permutations=nr_permutations, threads=os.cpu_count())
+            else:
+                rbpmsdata.calc_global_permanova_p_value(permutations=nr_permutations, threads=os.cpu_count())
+
+                alert = True if not rbpmsdata.permutation_sufficient_samples else False
 
     if ctx.triggered_id == "score-btn":
         if n_clicks == 0:
@@ -649,11 +653,13 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, recompute, nr_permutati
     if alert:
         alert_msg = html.Div(
             dbc.Alert(
-                "Insufficient Number of Samples per Group. PERMANOVA unreliable",
+                "Insufficient Number of Samples per Group. PERMANOVA uses all Proteins as background. "
+                "This might be unreliable",
                 color="danger",
                 dismissable=True,
                 style={"text-align": "center"}),
-                className="p-2 align-items-center"
+                className="p-2 align-items-center, alert-msg",
+
         )
     else:
         alert_msg = []
