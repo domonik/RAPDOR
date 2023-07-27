@@ -38,7 +38,7 @@ class RBPMSpecData:
 
 
 
-        self.calculated_score_names = ["RBPMSScore", "ANOSIM R", "shift direction", "RNAse False peak pos", "RNAse True peak pos",  "Permanova p-value", "Permanova adj-p-value"]
+        self.calculated_score_names = ["RBPMSScore", "ANOSIM R", "shift direction", "RNAse False peak pos", "RNAse True peak pos", "Mean Distances",  "Permanova p-value", "Permanova adj-p-value"]
         self.id_columns = ["RBPMSpecID", "id"]
         self.extra_columns = None
 
@@ -141,11 +141,23 @@ class RBPMSpecData:
         rnase_false = self.norm_array[:, indices[False]].mean(axis=-2)
         rnase_true = self.norm_array[:, indices[True]].mean(axis=-2)
         mid = 0.5 * (rnase_true + rnase_false)
-
-        r1 = np.argmax(rel_entr(rnase_false, mid), axis=-1) + int(np.ceil(self.current_kernel_size / 2))
+        rel1 = rel_entr(rnase_false, mid)
+        idx = np.arange(0, rel1.shape[0])
+        r1 = np.argmax(rel1, axis=-1)
+        #rel1 = rel1[idx, r1]
+        r1 = r1 + int(np.ceil(self.current_kernel_size / 2))
         self.df["RNAse False peak pos"] = r1
-        r2 = np.argmax(rel_entr(rnase_true, mid), axis=-1) + int(np.ceil(self.current_kernel_size / 2))
+
+        rel2 = rel_entr(rnase_true, mid)
+        r2 = np.argmax(rel2, axis=-1)
+        kernel = np.ones(self.current_kernel_size)
+        rel2 = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="same"), axis=-1, arr=rel2)
+        #rel2 = rel2[idx, r2]
+        rel2 = jensenshannon(rnase_true, rnase_false, axis=-1, base=2)
+
+        r2 = r2 + int(np.ceil(self.current_kernel_size / 2))
         self.df["RNAse True peak pos"] = r2
+        self.df["Mean Distances"] = rel2
         side = r1 - r2
         side[side < 0] = -1
         side[side > 0] = 1
@@ -159,7 +171,7 @@ class RBPMSpecData:
 
     @staticmethod
     def _jensenshannondistance(array) -> np.ndarray:
-        return jensenshannon(array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1), axis=-2)
+        return jensenshannon(array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1), base=2, axis=-2)
 
     @staticmethod
     def _symmetric_kl_divergence(array):
@@ -194,9 +206,7 @@ class RBPMSpecData:
         mg = np.repeat(mg[:, np.newaxis, :, :], n_genes, axis=1)
 
         idx = np.concatenate((e, mg))
-        mask = np.any(np.isnan(self.distances), axis=(-1, -2))
         distances = self.distances
-        distances[mask] = np.nan
         distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
         distances = distances.reshape((n_genes, len(indices[True]), len(indices[False])))
         indices1, indices2 = np.triu_indices(n=len(indices[True]), m=len(indices[False]))
@@ -254,7 +264,7 @@ class RBPMSpecData:
 
     def calc_all_scores(self):
         self.calc_all_anosim_value()
-        self.calc_rbp_scores()
+        #self.calc_rbp_scores()
         self.determine_peaks()
 
     def calc_all_anosim_value(self):
@@ -270,7 +280,7 @@ class RBPMSpecData:
 
 
     def export_csv(self, file: str,  sep: str = ","):
-        self.df.to_csv(file, sep=sep)
+        self.extra_df.to_csv(file, sep=sep)
 
     def calc_all_permanova(self, permutations, num_threads):
         calls = []

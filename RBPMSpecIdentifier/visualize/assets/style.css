@@ -208,3 +208,8 @@ td:has(~ .dash-cell.cell--selected.focused), .dash-cell.cell--selected.focused ~
 .rc-slider-handle-active:active {
   border-color: red;
 }
+
+
+#distribution-graph .hovertext rect {
+  fill: #3a363d !important;
+}

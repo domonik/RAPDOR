@@ -41,35 +41,41 @@ def plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
 
 
 def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offset: int = 0):
+    hovertemplate = '<b>Fraction: %{x}</b><br><b>Protein Counts: %{z:.2e}</b> ',
+
     fig = go.Figure()
     indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
     medians = []
     means = []
     errors = []
     x = list(range(offset+1, subdata.shape[1] + offset+1))
-
+    names = []
     for eidx, (name, idx) in enumerate(indices.items()):
-        name = f"{groups}: {name}"
-        median_values = np.median(subdata[idx,], axis=0)
-        mean_values = np.mean(subdata[idx,], axis=0)
-        max_values = np.quantile(subdata[idx,], 0.75, axis=0)
-        max_values = np.max(subdata[idx,],axis=0)
-        min_values = np.quantile(subdata[idx,], 0.25, axis=0)
-        min_values = np.min(subdata[idx,], axis=0)
+        name = f"{groups}: {name}".ljust(15, " ")
+        legend=f"legend{eidx+1}"
+        names.append(name)
+        median_values = np.nanmedian(subdata[idx,], axis=0)
+        mean_values = np.nanmean(subdata[idx,], axis=0)
+        max_values = np.nanquantile(subdata[idx,], 0.75, axis=0)
+        max_values = np.nanmax(subdata[idx,], axis=0)
+        min_values = np.nanquantile(subdata[idx,], 0.25, axis=0)
+        min_values = np.nanmin(subdata[idx,], axis=0)
         color = DEFAULT_COLORS[eidx]
         a_color = color_to_calpha(color, 0.4)
         medians.append(go.Scatter(
-                x=x,
-                y=median_values,
-                marker=dict(color=DEFAULT_COLORS[eidx]),
-                name=name + " Median",
-                line=dict(width=5)
+            x=x,
+            y=median_values,
+            marker=dict(color=DEFAULT_COLORS[eidx]),
+            name="Median",
+            legend=legend,
+            line=dict(width=5)
             ))
         means.append(go.Scatter(
             x=x,
             y=mean_values,
             marker=dict(color=DEFAULT_COLORS[eidx]),
-            name=name + " Mean",
+            name="Mean",
+            legend=legend,
             line=dict(width=3, dash="dash")
         ))
         y = np.concatenate((max_values, np.flip(min_values)), axis=0)
@@ -78,7 +84,8 @@ def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offse
                 x=x + x[::-1],
                 y=y,
                 marker=dict(color=DEFAULT_COLORS[eidx]),
-                name=name + " min-max",
+                name="Min-Max",
+                legend=legend,
                 fill="toself",
                 fillcolor=a_color,
                 line=dict(color='rgba(255,255,255,0)')
@@ -96,6 +103,24 @@ def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offse
         yaxis_title="Protein Amount in Fraction [%]",
     )
     fig.update_xaxes(fixedrange=True)
+    fig.update_layout(
+        legend=dict(
+            title=names[0],
+            orientation="h",
+            yanchor="bottom",
+            y=1.05,
+            xanchor="left",
+            x=0,
+        ),
+        legend2=dict(
+            title=names[1],
+            orientation="h",
+            yanchor="bottom",
+            y=1.2,
+            xanchor="left",
+            x=0,
+        )
+    )
     return fig
 
 

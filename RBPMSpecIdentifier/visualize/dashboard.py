@@ -272,7 +272,7 @@ def _get_table(rbmsdata: RBPMSpecData):
 def _create_table(rbmsdata, selected_columns = None):
     global data
     if selected_columns is None:
-        selected_columns = rbpmsdata.extra_columns[0: 2]
+        selected_columns = []
 
     data = rbpmsdata.extra_df.loc[:, rbpmsdata.id_columns + selected_columns]
     for name in rbpmsdata.calculated_score_names:
@@ -461,13 +461,11 @@ def update_plot(key, kernel_size):
         i = int(np.floor(rbpmsdata.current_kernel_size / 2))
     fig = plot_distribution(array, key, rbpmsdata.internal_design_matrix, groups="RNAse", offset=i)
     fig.layout.template = "plotly_white"
-    fig.update_layout(legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="left",
-        x=0
-    ))
+    # fig.update_layout(legend=dict(
+    #     bgcolor="#3a3a3a",
+    #     bordercolor="black",
+    #     borderwidth=2,
+    # ))
     fig.update_layout(
         margin={"t": 0, "b": 30, "r": 50},
         font=dict(
@@ -527,11 +525,14 @@ def update_heatmap(key, kernel_size, distance_method):
         raise PreventUpdate
     _, distances = rbpmsdata[key]
     fig = plot_heatmap(distances, key, rbpmsdata.internal_design_matrix, groups="RNAse")
+    if distance_method == "Jensen-Shannon-Distance":
+        fig.data[0].update(zmin=0, zmax=1)
     fig.layout.template = "plotly_white"
     fig.update_layout(
         margin={"t": 0, "b": 0, "l": 0, "r": 0}
     )
-
+    fig.update_yaxes(showgrid=False)
+    fig.update_xaxes(showgrid=False)
     return fig, f"Sample {distance_method}"
 
 
@@ -684,7 +685,7 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     key = key.split("Protein ")[-1]
     global data
     if selected_columns is None:
-        selected_columns = rbpmsdata.extra_columns[0: 2]
+        selected_columns = []
 
     data = rbpmsdata.extra_df.loc[:, rbpmsdata.id_columns + selected_columns]
     for name in rbpmsdata.calculated_score_names:
