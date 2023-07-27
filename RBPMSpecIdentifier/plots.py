@@ -41,8 +41,6 @@ def plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
 
 
 def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offset: int = 0):
-    hovertemplate = '<b>Fraction: %{x}</b><br><b>Protein Counts: %{z:.2e}</b> ',
-
     fig = go.Figure()
     indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
     medians = []
@@ -141,13 +139,13 @@ def plot_correlation_heatmap(array, gene_id, design: pd.DataFrame, df: pd.DataFr
     return fig
 
 
-def plot_heatmap(distances, gene_id, design: pd.DataFrame, groups: str,):
+def plot_heatmap(distances, design: pd.DataFrame, groups: str,):
     names = groups + design[groups].astype(str) + " " + design["Replicate"].astype(str)
     fig = go.Figure(
         data=go.Heatmap(
-            z=distances,
+            z=distances[:, ::-1],
             x=names,
-            y=names,
+            y=names[::-1],
             colorscale=DEFAULT_COLORS[:2]
         )
     )

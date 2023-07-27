@@ -17,7 +17,8 @@ from statsmodels.distributions.empirical_distribution import ECDF
 class RBPMSpecData:
     methods = {
         "Jensen-Shannon-Distance": "jensenshannon",
-        "KL-Divergence": "symmetric-kl-divergence"
+        "KL-Divergence": "symmetric-kl-divergence",
+        "Euclidean-Distance": "euclidean"
     }
     def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None):
         self.df = df
@@ -43,7 +44,7 @@ class RBPMSpecData:
 
 
 
-        self.calculated_score_names = ["RBPMSScore", "ANOSIM R", "global ANOSIM adj p-Value", "global PERMANOVA adj p-Value", "Mean Distance", "shift direction", "RNAse False peak pos", "RNAse True peak pos",  "Permanova p-value", "Permanova adj-p-value"]
+        self.calculated_score_names = ["RBPMSScore", "ANOSIM R", "global ANOSIM adj p-Value", "PERMANOVA F", "global PERMANOVA adj p-Value", "Mean Distance", "shift direction", "RNAse False peak pos", "RNAse True peak pos",  "Permanova p-value", "Permanova adj-p-value"]
         self.id_columns = ["RBPMSpecID", "id"]
         self.extra_columns = None
 
@@ -131,8 +132,10 @@ class RBPMSpecData:
                     "Need to set epsilon which is added to the raw Protein counts"
                 )
             self.distances = self._symmetric_kl_divergence(self.norm_array)
+        elif method == "euclidean":
+            self.distances = self._jensenshannondistance(self.norm_array)
         else:
-            raise ValueError(f"mehthod: {method} is not supported")
+            raise ValueError(f"methhod: {method} is not supported")
 
     def _unset_scores_and_pvalues(self):
         for name in self.calculated_score_names:
@@ -189,6 +192,10 @@ class RBPMSpecData:
         return r1 + r2
 
     @staticmethod
+    def euclidean_distance(array):
+        return np.linalg.norm(array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1), axis=-2)
+
+    @staticmethod
     def calc_observation_pvalue(ecdf, distances, internal_design):
         indices = internal_design.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
         mg1, mg2 = np.meshgrid(indices[True], indices[False])
@@ -212,9 +219,7 @@ class RBPMSpecData:
         idx = np.concatenate((e, mg))
         distances = self.distances
         distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
-        distances = distances.reshape((n_genes, len(indices_true), len(indices_false)))
-        indices1, indices2 = np.triu_indices(n=len(indices_true), m=len(indices_false))
-        distances = distances[:, indices1, indices2]
+        distances = distances.reshape((n_genes, len(indices_true) * len(indices_false)))
         return distances
 
     def _get_innergroup_distances(self,  indices_false, indices_true):
@@ -270,7 +275,7 @@ class RBPMSpecData:
         ) / bn
         ssw = np.sum(np.square(inner_group_distances), axis=-1) / n
         ssa = sst - ssw
-        f = (ssa) / (ssw / (n-2))
+        f = (ssa) / (ssw / (bn-2))
         return f
 
     def calc_all_permanova_f(self):
@@ -378,5 +383,11 @@ if __name__ == '__main__':
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
     rbpmspec = RBPMSpecData(sdf, design, logbase=2)
     rbpmspec.normalize_and_get_distances("jensenshannon", 3)
-    rbpmspec.calc_global_anosim_p_value(100, threads=5)
+    rbpmspec.calc_global_permanova_p_value(1000, threads=5)
+    rbpmspec.calc_all_permanova(1000, threads=5)
     rbpmspec.export_csv(file="foofile.tsv", sep="\t")
+    import plotly.graph_objs as go
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=rbpmspec.permanova_ecdf.x, y=rbpmspec.permanova_ecdf.y))
+    fig.show()
+

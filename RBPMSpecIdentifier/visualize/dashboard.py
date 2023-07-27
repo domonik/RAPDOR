@@ -524,7 +524,7 @@ def update_heatmap(key, kernel_size, distance_method):
     if key is None:
         raise PreventUpdate
     _, distances = rbpmsdata[key]
-    fig = plot_heatmap(distances, key, rbpmsdata.internal_design_matrix, groups="RNAse")
+    fig = plot_heatmap(distances, rbpmsdata.internal_design_matrix, groups="RNAse")
     if distance_method == "Jensen-Shannon-Distance":
         fig.data[0].update(zmin=0, zmax=1)
     fig.layout.template = "plotly_white"
