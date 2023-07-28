@@ -884,7 +884,7 @@ def _download_image(n_clicks, filename, key):
 def _gui_wrapper(args):
     global rbpmsdata
     global data
-    rbpmspec = RBPMSpecData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
+    rbpmsdata = RBPMSpecData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
     data = rbpmsdata.df
 
     _get_app_layout(app)
