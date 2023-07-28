@@ -372,7 +372,7 @@ def _analysis_executable_wrapper(args):
     kernel_size = args.kernel_size if args.kernel_size > 0 else 0
     rbpmspec.normalize_and_get_distances(args.distance_method, kernel_size, args.eps)
     rbpmspec.calc_all_scores()
-    if not args.method is None:
+    if args.method is not None:
         if not args.global_permutation:
             if args.method.upper() == "PERMANOVA":
                 rbpmspec.calc_all_permanova(args.permutations, args.num_threads)
