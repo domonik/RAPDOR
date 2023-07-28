@@ -143,6 +143,12 @@ tr:last-of-type td:last-of-type {
     margin-left: 10px;
 }
 
+.column-header-name {
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .dash-filter input:hover{
     color: white !important;
 

@@ -13,7 +13,7 @@ import os
 import dash
 import plotly.io as pio
 import plotly.graph_objs as go
-from pandas.api.types import is_numeric_dtype
+from pandas.api.types import is_numeric_dtype, is_any_real_numeric_dtype
 import dash_loading_spinners as dls
 import numpy as np
 from time import sleep
@@ -183,7 +183,7 @@ def selector_box(data):
                             html.Div(
                                 dcc.Input(
                                     style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white", "text-align": "center"},
-                                    id="permutation-nr",
+                                    id="permanova-permutation-nr",
                                     placeholder="Number of Permutations",
                                     className="text-align-center",
                                     type="number"
@@ -200,6 +200,29 @@ def selector_box(data):
                                 id="alert-div",
                                 className="col-10"
                             )
+
+                        ],
+                        className="row justify-content-center p-2"
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                dcc.Input(
+                                    style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white",
+                                           "text-align": "center"},
+                                    id="anosim-permutation-nr",
+                                    placeholder="Number of Permutations",
+                                    className="text-align-center",
+                                    type="number"
+                                ),
+                                className="col-3 text-align-center align-items-center"
+                            ),
+                            html.Div(
+                                html.Button('Run ANOSIM', id='anosim-btn', n_clicks=0,
+                                            className="btn btn-primary",
+                                            style={"width": "100%"}),
+                                className="col-7 justify-content-center text-align-center"
+                            ),
 
                         ],
                         className="row justify-content-center p-2"
@@ -279,6 +302,7 @@ def _create_table(rbmsdata, selected_columns = None):
         if name in rbpmsdata.extra_df:
             data = pd.concat((data, rbpmsdata.extra_df[name]), axis=1)
     columns = []
+    num_cols = ["shift direction"]
     for i in data.columns:
         if i != "id":
             d = dict()
@@ -287,54 +311,55 @@ def _create_table(rbmsdata, selected_columns = None):
             if is_numeric_dtype(data[i]):
                 d["type"] = "numeric"
                 d["format"] = Format(precision=4)
+                num_cols.append(str(i))
             columns.append(d)
     t = dash_table.DataTable(
-            data.to_dict('records'),
-            columns,
-            id='tbl',
-            sort_action="custom",
-            sort_mode="multi",
-            sort_by=[],
+        data.to_dict('records'),
+        columns,
+        id='tbl',
+        sort_action="custom",
+        sort_mode="multi",
+        sort_by=[],
 
-            filter_action='custom',
-            filter_query='',
-            page_size=50,
-            page_current=0,
-            page_action="custom",
-            style_table={'overflowX': 'auto', "padding": "1px", "height": "300px",
-                         "overflowY": "auto"},
-            fixed_rows={'headers': True},
-            style_header={
-                'backgroundColor': 'rgb(30, 30, 30)',
-                'color': 'white',
-                "border": "1px",
-                "font-family": "var(--bs-body-font-family)"
+        filter_action='custom',
+        filter_query='',
+        page_size=50,
+        page_current=0,
+        page_action="custom",
+        style_table={'overflowX': 'auto', "padding": "1px", "height": "300px",
+                     "overflowY": "auto"},
+        fixed_rows={'headers': True},
+        style_header={
+            'backgroundColor': 'rgb(30, 30, 30)',
+            'color': 'white',
+            "border": "1px",
+            "font-family": "var(--bs-body-font-family)"
 
-            },
-            style_data={
-                'color': 'white',
-                "border": "1px",
-                "font-family": "var(--bs-body-font-family)"
+        },
+        style_data={
+            'color': 'white',
+            "border": "1px",
+            "font-family": "var(--bs-body-font-family)"
 
-            },
-            style_data_conditional=SELECTED_STYLE,
-            style_cell={
-                'overflow': 'hidden',
-                'textOverflow': 'ellipsis',
-                'maxWidth': 0
-            },
-            style_filter={
-                "color": "white",
-                "border-color": "red"
-            },
-            style_cell_conditional=[
-                {
-                    'if': {'column_id': 'RBPMSpecID'},
-                    'textAlign': 'left',
-                    "width": "10%"
-                }
-            ]
-        ),
+        },
+        style_data_conditional=SELECTED_STYLE,
+        style_cell={
+            'overflow': 'hidden',
+            'textOverflow': 'ellipsis',
+            'maxWidth': 0
+        },
+        style_filter={
+            "color": "white",
+            "border-color": "red"
+        },
+        style_cell_conditional=[
+                                   {
+                                       'if': {'column_id': 'RBPMSpecID'},
+                                       'textAlign': 'left',
+                                       "width": "10%"
+                                   }
+                               ]
+    ),
 
     return t
 
@@ -624,26 +649,42 @@ def update_selected_id(active_cell):
         Input('table-selector', 'value'),
         Input('score-btn', 'n_clicks'),
         Input('permanova-btn', 'n_clicks'),
+        Input('anosim-btn', 'n_clicks'),
         Input("recomputation", "children")
 
     ],
-    State("permutation-nr", "value")
+    [
+        State("permanova-permutation-nr", "value"),
+        State("anosim-permutation-nr", "value")
+    ]
+
 )
-def new_columns(sel_columns, n_clicks, permanova_clicks, recompute, nr_permutations):
+def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, recompute, permanova_permutations, anosim_permutations):
     alert = False
     if ctx.triggered_id == "permanova-btn":
 
         if permanova_clicks == 0:
             raise PreventUpdate
         else:
-            if nr_permutations is None:
-                nr_permutations = 9999
+            if permanova_permutations is None:
+                permanova_permutations = 9999
             if rbpmsdata.permutation_sufficient_samples:
-                rbpmsdata.calc_all_permanova(permutations=nr_permutations, threads=os.cpu_count())
+                rbpmsdata.calc_all_permanova(permutations=permanova_permutations, threads=os.cpu_count())
             else:
-                rbpmsdata.calc_global_permanova_p_value(permutations=nr_permutations, threads=os.cpu_count())
+                rbpmsdata.calc_global_permanova_p_value(permutations=permanova_permutations, threads=os.cpu_count())
 
-                alert = True if not rbpmsdata.permutation_sufficient_samples else False
+                alert = True
+    if ctx.triggered_id == "anosim-btn":
+        if anosim_clicks == 0:
+            raise PreventUpdate
+        else:
+            if anosim_permutations is None:
+                anosim_permutations = 9999
+            if rbpmsdata.permutation_sufficient_samples:
+                raise NotImplementedError("Anosim for sufficient samples not implemented yet") # Todo: Implement
+            else:
+                rbpmsdata.calc_global_anosim_p_value(permutations=anosim_permutations, threads=os.cpu_count())
+                alert = True
 
     if ctx.triggered_id == "score-btn":
         if n_clicks == 0:
@@ -653,12 +694,12 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, recompute, nr_permutati
     if alert:
         alert_msg = html.Div(
             dbc.Alert(
-                "Insufficient Number of Samples per Group. PERMANOVA uses all Proteins as background. "
-                "This might be unreliable",
+                "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
+                " This might be unreliable",
                 color="danger",
                 dismissable=True,
-                style={"text-align": "center"}),
-                className="p-2 align-items-center, alert-msg",
+            ),
+            className="p-2 align-items-center, alert-msg",
 
         )
     else:
