@@ -42,8 +42,6 @@ class RBPMSpecData:
         self._check_dataframe()
 
 
-
-
         self.calculated_score_names = ["RBPMSScore", "ANOSIM R", "global ANOSIM adj p-Value", "PERMANOVA F", "global PERMANOVA adj p-Value", "Mean Distance", "shift direction", "RNAse False peak pos", "RNAse True peak pos",  "Permanova p-value", "Permanova adj-p-value"]
         self.id_columns = ["RBPMSpecID", "id"]
         self.extra_columns = None
@@ -94,7 +92,13 @@ class RBPMSpecData:
         self.indices_false = indices[False]
         self.indices_true = indices[True]
 
-
+    @classmethod
+    def from_files(cls, counts: str, design: str, logbase: int = None, sep: str = ","):
+        design = pd.read_csv(design, sep=sep)
+        df = pd.read_csv(counts, sep=sep, index_col=0)
+        df.index = df.index.astype(str)
+        rbpmspec = RBPMSpecData(df, design, logbase)
+        return rbpmspec
 
     @property
     def extra_df(self):
@@ -345,7 +349,8 @@ class RBPMSpecData:
         self.df["global PERMANOVA adj p-Value"] = p_values
 
     def export_csv(self, file: str,  sep: str = ","):
-        self.extra_df.to_csv(file, sep=sep)
+        df = self.extra_df.drop(["id"], axis=1)
+        df.to_csv(file, sep=sep, index=False)
 
     def calc_all_permanova(self, permutations, threads):
         calls = []
@@ -363,13 +368,22 @@ class RBPMSpecData:
 
 
 def _analysis_executable_wrapper(args):
-    design = pd.read_csv(args.design_matrix, sep=args.sep)
-    df = pd.read_csv(args.input, sep=args.sep)
-    rbpmspec = RBPMSpecData(df, design, args.logbase)
+    rbpmspec = RBPMSpecData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
     kernel_size = args.kernel_size if args.kernel_size > 0 else 0
     rbpmspec.normalize_and_get_distances(args.distance_method, kernel_size, args.eps)
     rbpmspec.calc_all_scores()
-    rbpmspec.calc_all_permanova(999, 5)
+    if not args.method is None:
+        if not args.global_permutation:
+            if args.method.upper() == "PERMANOVA":
+                rbpmspec.calc_all_permanova(args.permutations, args.num_threads)
+            elif args.method.upper() == "ANOSIM":
+                raise NotImplementedError("ANOSIM not implemented for local mode")
+        else:
+            if args.method.upper() == "PERMANOVA":
+                rbpmspec.calc_global_permanova_p_value(args.permutations, args.num_threads)
+            elif args.method.upper() == "ANOSIM":
+                rbpmspec.calc_global_anosim_p_value(args.permutations, args.num_threads)
+    rbpmspec.export_csv(args.output, args.sep)
 
 
 

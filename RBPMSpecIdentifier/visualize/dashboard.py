@@ -882,12 +882,9 @@ def _download_image(n_clicks, filename, key):
     return dcc.send_file(tmpfile)
 
 def _gui_wrapper(args):
-    design = pd.read_csv(args.design_matrix, sep=args.sep)
-    df = pd.read_csv(args.input, sep=args.sep, index_col=0)
-    df.index = df.index.astype(str)
     global rbpmsdata
     global data
-    rbpmsdata = RBPMSpecData(df, design, logbase=args.logbase)
+    rbpmspec = RBPMSpecData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
     data = rbpmsdata.df
 
     _get_app_layout(app)

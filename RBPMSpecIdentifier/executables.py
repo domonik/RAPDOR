@@ -1,4 +1,6 @@
 import argparse
+import os
+
 from RBPMSpecIdentifier.datastructures import _analysis_executable_wrapper, RBPMSpecData
 from RBPMSpecIdentifier.visualize.dashboard import _gui_wrapper
 
@@ -52,6 +54,43 @@ def analyze_parser(subparsers, name):
         default=3,
         help=f"Uses an averaging kernel to run over fractions. This usually o stabilizes between sample variance."
              f" Set to 0 to disable this"
+    )
+    parser.add_argument(
+        "--method",
+        type=str,
+        default=None,
+        help="Method used for p-value calculation. One of ANOSIM or PERMANOVA. "
+             "Default is None and will skip p-Value calculation"
+    )
+    parser.add_argument(
+        "--eps",
+        type=float,
+        default=0,
+        help="Epsilon added to counts. This is useful if kl-divergence is used for distance calculations since it will"
+             "result in nan for zero counts"
+    )
+    parser.add_argument(
+        "--permutations",
+        type=int,
+        default=999,
+        help="Number of permutations used for ANOSIM or PERMANOVA."
+    )
+    parser.add_argument(
+        "--output",
+        type=str,
+        required=True,
+        help="Output table file to store results"
+    )
+    parser.add_argument(
+        "--global-permutation",
+        action="store_true",
+        help="Will use all proteins as background in ANOSIM or PERMANOVA p-value calculation. This might be unreliable"
+    )
+    parser.add_argument(
+        "--num-threads",
+        type=int,
+        default=os.cpu_count(),
+        help="Number of cores used for permutation analysis. Per default uses all cores"
     )
     return parser
 
