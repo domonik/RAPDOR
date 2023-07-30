@@ -1,0 +1,228 @@
+.container-fluid {background-color: #3a3a3a
+}
+html {
+    background-color: #3a3a3a;
+}
+
+.headerBox {
+	text-align: center;
+}
+
+h4 {
+    text-align: center;
+    color: white;
+}
+
+.databox {
+	background-color: #181818;
+	border-radius: 10px;
+	border-color: black;
+	border-width: 2px;
+	border-style: solid;
+	padding: 2px;
+
+}
+
+.fasta-panel {
+	background-color: #494949;
+    height: 100%;
+	border-radius: 5px;
+	border-color: black;
+	border-width: 1px;
+	border-style: solid;
+    font-family: monospace;
+    overflow-wrap: break-word;
+    overflow: scroll;
+}
+
+
+.Select-value {
+    background-color: #222023;
+    border-radius: 15px;
+    text-align: center;
+}
+#protein-selector .Select-value-label {
+    color: pink !important;
+    font-weight: bold;
+    font-size: 1.5em;
+}
+
+.Select-value-label {
+    color: white !important;
+
+}
+
+.Select-menu-outer {
+    background-color: #3a363d;
+    border: 0;
+    color: red;
+}
+.Select-control {
+    border-radius: 5px !important;
+    background-color: #222023 !important;
+    border-color: #222023 !important;
+
+}
+
+.Select {
+    color: black !important;
+    border-radius: 15px;
+}
+
+.VirtualizedSelectOption {
+    color: white;
+    background-color: #3a363d !important;
+ }
+
+input, select, textarea{
+    color: black;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color:  #945080 !important;
+}
+
+.equal-height-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+.equal-height-column {
+  display: flex;
+  flex-direction: column;
+}
+.equal-height-column > * {
+  flex-grow: 1;
+}
+
+tr:nth-child(even) {
+    background-color: #3a363d !important;
+}
+
+tr:nth-child(odd) {
+    background-color: #222023 !important;
+
+}
+tr:nth-child(even):hover{
+        background-color: #945080 !important;
+}
+tr:nth-child(odd):hover{
+        background-color: #945080 !important;
+}
+
+th {
+    background-color: #1a141a !important;
+    padding: 10px !important;
+
+
+}
+td {
+    background-color: rgba(0, 89, 255, 0) !important;
+    padding: 10px !important;
+
+}
+
+.dt-table-container__row-0 tr:first-of-type{
+    background-color: transparent !important;
+}
+
+th:first-of-type.dash-header  {
+  border-top-left-radius: 15px;
+}
+th:last-of-type.dash-header  {
+  border-top-right-radius: 10px;
+}
+tr:last-of-type td:first-of-type {
+  border-bottom-left-radius: 10px;
+}
+tr:last-of-type td:last-of-type {
+  border-bottom-right-radius: 10px;
+}
+
+.column-actions {
+    order: 9;
+    margin-left: 10px;
+}
+
+.column-header-name {
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash-filter input:hover{
+    color: white !important;
+
+}
+#tbl .dash-filter .input{
+    color: white !important;
+    background-color: red;
+
+}
+
+#permutation-nr input {
+    height: 100% !important;
+    border-radius: 5px !important;
+    border-color: red !important;
+}
+
+#tbl th.dash-filter {
+    border-color: transparent !important;
+    border-width: 0 !important;
+
+}
+
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner input:not([type=radio]):not([type=checkbox]){
+    color: white!important;
+}
+th {
+    color: white !important;
+}
+
+.btn-primary {
+    background-color: #3a363d;
+    border-color:  #3a363d;
+}
+
+.btn-primary:hover {
+    color: #fff;
+    background-color:  #945080;
+    border-color:  #945080; /*set the color you want here*/
+}
+
+.alert {
+    margin: 0;
+}
+
+
+.rc-slider-track {
+  background-color: rgb(255, 138, 221);
+}
+
+
+.rc-slider-handle {
+  background-color: rgb(255, 138, 221) !important;
+  border-color: rgb(255, 138, 221) !important;
+}
+
+.rc-slider-handle:hover {
+  border-color: rgb(255, 138, 221) !important;
+}
+
+.rc-slider-handle-active:active {
+  border-color: red;
+}
+
+
+#distribution-graph .hovertext rect {
+  fill: #3a363d !important;
+}
+
+.alert-msg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    z-index: 999999 !important;
+    font-size: 1.5em;
+}
