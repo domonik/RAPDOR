@@ -3,8 +3,9 @@ import time
 import pandas as pd
 from dash import dcc, dash_table
 from dash import html, ctx
+import logging
 from dash.dependencies import Input, Output, State
-from dash.dash_table.Format import Format
+from dash.dash_table.Format import Format, Scheme
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 from RDPMSpecIdentifier.plots import plot_distribution, plot_heatmap, plot_barcode_plot
@@ -27,6 +28,8 @@ TMPDIR = tempfile.TemporaryDirectory(suffix="RDPMSpec")
 LOGO = os.path.join(ASSETS_DIR, "RDPMSpecIdentifier_dark_no_text.svg")
 assert os.path.exists(LOGO)
 encoded_img = base64.b64encode(open(LOGO, 'rb').read())
+
+logger = logging.getLogger("RDPMSpecIdentifier")
 
 app = dash.Dash(
     "RDPMSpecIdentifier Dashboard",
@@ -177,6 +180,29 @@ def selector_box(data):
                         ),
                         className="row justify-content-center p-2"
                     ),
+                    html.Div(
+                        [
+                            html.Div(
+                                dcc.Input(
+                                    style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white",
+                                           "text-align": "center"},
+                                    id="distance-cutoff",
+                                    placeholder="Distance Cutoff",
+                                    className="text-align-center",
+                                    type="number",
+                                    min=0,
+                                ),
+                                className="col-3 text-align-center align-items-center"
+                            ),
+                            html.Div(
+                                html.Button('Peak T-Tests', id='local-t-test-btn', n_clicks=0,
+                                            className="btn btn-primary",
+                                            style={"width": "100%"}),
+                                className="col-7 justify-content-center text-align-center"
+                            ),
+                        ],
+                        className="row justify-content-center p-2"
+                    ),
 
                     html.Div(
                         [
@@ -186,7 +212,8 @@ def selector_box(data):
                                     id="permanova-permutation-nr",
                                     placeholder="Number of Permutations",
                                     className="text-align-center",
-                                    type="number"
+                                    type="number",
+                                    min=1
                                 ),
                                 className="col-3 text-align-center align-items-center"
                             ),
@@ -213,7 +240,8 @@ def selector_box(data):
                                     id="anosim-permutation-nr",
                                     placeholder="Number of Permutations",
                                     className="text-align-center",
-                                    type="number"
+                                    type="number",
+                                    min=1
                                 ),
                                 className="col-3 text-align-center align-items-center"
                             ),
@@ -310,7 +338,11 @@ def _create_table(rbmsdata, selected_columns = None):
             d["id"] = str(i)
             if is_numeric_dtype(data[i]):
                 d["type"] = "numeric"
-                d["format"] = Format(precision=4)
+                if "p-Value" in i:
+                    d["format"] = Format(precision=2)
+                else:
+                    d["format"] = Format(precision=4)
+
                 num_cols.append(str(i))
             columns.append(d)
     t = dash_table.DataTable(
@@ -498,6 +530,8 @@ def update_plot(key, kernel_size):
         )
     )
     fig.update_xaxes(dtick=1)
+    fig.update_xaxes(fixedrange=True)
+
 
 
 
@@ -526,6 +560,7 @@ def update_westernblot(key, kernel_size):
             size=16,
         )
     )
+    fig.update_xaxes(fixedrange=True)
 
     fig.layout.template = "plotly_white"
     return fig
@@ -650,16 +685,19 @@ def update_selected_id(active_cell):
         Input('score-btn', 'n_clicks'),
         Input('permanova-btn', 'n_clicks'),
         Input('anosim-btn', 'n_clicks'),
+        Input('local-t-test-btn', 'n_clicks'),
         Input("recomputation", "children")
 
     ],
     [
         State("permanova-permutation-nr", "value"),
-        State("anosim-permutation-nr", "value")
+        State("anosim-permutation-nr", "value"),
+        State("distance-cutoff", "value"),
+
     ]
 
 )
-def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, recompute, permanova_permutations, anosim_permutations):
+def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_clicks, recompute, permanova_permutations, anosim_permutations, distance_cutoff):
     alert = False
     if ctx.triggered_id == "permanova-btn":
 
@@ -685,6 +723,10 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, recomput
             else:
                 rdpmsdata.calc_global_anosim_p_value(permutations=anosim_permutations, threads=os.cpu_count())
                 alert = True
+    if ctx.triggered_id == "local-t-test-btn":
+        if "RNAse True peak pos" not in rdpmsdata.df:
+            rdpmsdata.determine_peaks()
+        rdpmsdata.calc_welchs_t_test(distance_cutoff=distance_cutoff)
 
     if ctx.triggered_id == "score-btn":
         if n_clicks == 0:
@@ -740,7 +782,7 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
             data = pd.concat((data, rdpmsdata.extra_df[name]), axis=1)
 
     filtering_expressions = filter.split(' && ')
-
+    logger.debug(f"filter expressions: {filtering_expressions}")
     for filter_part in filtering_expressions:
         col_name, operator, filter_value = split_filter_part(filter_part)
 

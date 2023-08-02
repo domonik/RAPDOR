@@ -1,6 +1,6 @@
 import multiprocessing
 import os
-
+from scipy.stats import ttest_ind
 import pandas as pd
 import numpy as np
 from typing import Callable
@@ -42,7 +42,7 @@ class RDPMSpecData:
         self._check_dataframe()
 
 
-        self.calculated_score_names = ["RDPMSScore", "ANOSIM R", "global ANOSIM adj p-Value", "PERMANOVA F", "global PERMANOVA adj p-Value", "Mean Distance", "shift direction", "RNAse False peak pos", "RNAse True peak pos",  "Permanova p-value", "Permanova adj-p-value"]
+        self.calculated_score_names = ["RDPMSScore", "ANOSIM R", "global ANOSIM adj p-Value", "PERMANOVA F", "global PERMANOVA adj p-Value", "Mean Distance", "shift direction", "RNAse False peak pos", "RNAse True peak pos",  "Permanova p-value", "Permanova adj-p-value", "RNAse Peak adj p-Value", "CTRL Peak adj p-Value"]
         self.id_columns = ["RDPMSpecID", "id"]
         self.extra_columns = None
 
@@ -246,6 +246,30 @@ class RDPMSpecData:
             inner_distances.append(ig_distances)
         return np.concatenate(inner_distances, axis=-1)
 
+    def calc_welchs_t_test(self, distance_cutoff: float = None):
+        if "RNAse True peak pos" not in self.df:
+            raise ValueError("Need to compute peak positions first")
+        for peak, name in (("RNAse True peak pos", "RNAse Peak adj p-Value"), ("RNAse False peak pos", "CTRL Peak adj p-Value")):
+            idx = np.asarray(self.df[peak] - int(np.ceil(self.current_kernel_size / 2)))
+            t = np.take_along_axis(self.norm_array, idx[:, np.newaxis, np.newaxis], axis=2).squeeze()
+            t_idx = np.tile(np.asarray(self.indices_true), t.shape[0]).reshape(t.shape[0], -1)
+            f_idx = np.tile(np.asarray(self.indices_false), t.shape[0]).reshape(t.shape[0], -1)
+            true = np.take_along_axis(t, t_idx, axis=-1)
+            false = np.take_along_axis(t, f_idx, axis=-1)
+            t_test = ttest_ind(true, false, axis=1, equal_var=False)
+            adj_pval = np.zeros(t_test.pvalue.shape)
+            mask = np.isnan(t_test.pvalue)
+            if distance_cutoff is not None:
+                if "Mean Distance" not in self.df.columns:
+                    raise ValueError("Need to run peak position estimation before please call self.determine_peaks()")
+                mask[self.df["Mean Distance"] < distance_cutoff] = True
+            adj_pval[mask] = np.nan
+            _, adj_pval[~mask], _, _ = multipletests(t_test.pvalue[~mask], method="fdr_bh")
+            self.df[name] = adj_pval
+
+
+
+
 
     def calc_all_scores(self):
         self.calc_all_anosim_value()
@@ -397,11 +421,6 @@ if __name__ == '__main__':
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
     rdpmspec = RDPMSpecData(sdf, design, logbase=2)
     rdpmspec.normalize_and_get_distances("jensenshannon", 3)
-    rdpmspec.calc_global_permanova_p_value(1000, threads=5)
-    rdpmspec.calc_all_permanova(1000, threads=5)
-    rdpmspec.export_csv(file="foofile.tsv", sep="\t")
-    import plotly.graph_objs as go
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=rdpmspec.permanova_ecdf.x, y=rdpmspec.permanova_ecdf.y))
-    fig.show()
+    rdpmspec.calc_all_scores()
+    rdpmspec.calc_welchs_t_test()
 

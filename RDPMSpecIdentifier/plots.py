@@ -100,7 +100,6 @@ def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offse
     fig.update_layout(
         yaxis_title="Protein Amount in Fraction [%]",
     )
-    fig.update_xaxes(fixedrange=True)
     fig.update_layout(
         legend=dict(
             title=names[0],
