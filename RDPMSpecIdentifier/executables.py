@@ -3,6 +3,7 @@ import os
 
 from RDPMSpecIdentifier.datastructures import _analysis_executable_wrapper, RDPMSpecData
 from RDPMSpecIdentifier.visualize.dashboard import _gui_wrapper
+from RDPMSpecIdentifier.qtInterface.QtRDPMSpecIdentifier import qt_wrapper
 
 
 
@@ -33,6 +34,12 @@ def _add_common_args(parser):
     )
     return parser
 
+def qtparser(subparsers, name):
+    parser = subparsers.add_parser(
+        name,
+        description="Runs the GUI RDPMSpecIdentifier Tool"
+    )
+    return parser
 
 
 def analyze_parser(subparsers, name):
@@ -95,7 +102,7 @@ def analyze_parser(subparsers, name):
     return parser
 
 
-def gui_parser(subparsers, name):
+def dash_parser(subparsers, name):
     parser = subparsers.add_parser(
         name,
         description="Runs the RDPMSpecIdentifier GUI"
@@ -131,8 +138,9 @@ class RDPMSpecIdentifier:
         )
         self.methods = {
             #"visualize": (visualization_parser, run_visualization),
-            "analyze": (analyze_parser, _analysis_executable_wrapper),
-            "gui": (gui_parser, _gui_wrapper),
+            "Analyze": (analyze_parser, _analysis_executable_wrapper),
+            "Dash": (dash_parser, _gui_wrapper),
+            "GUI": (qtparser, qt_wrapper)
         }
         self.subparsers = self.parser.add_subparsers()
         self.__addparsers()
@@ -153,6 +161,7 @@ class RDPMSpecIdentifier:
 
 def main():
     RDPMSpecIdentifier().run()
+
 
 def documentation_wrapper():
     parser = RDPMSpecIdentifier().parser

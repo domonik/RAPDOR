@@ -14,7 +14,7 @@ import os
 import dash
 import plotly.io as pio
 import plotly.graph_objs as go
-from pandas.api.types import is_numeric_dtype, is_any_real_numeric_dtype
+from pandas.api.types import is_numeric_dtype
 import dash_loading_spinners as dls
 import numpy as np
 from time import sleep
@@ -26,7 +26,7 @@ ASSETS_DIR = os.path.join(FILEDIR, "assets")
 TMPDIR = tempfile.TemporaryDirectory(suffix="RDPMSpec")
 
 LOGO = os.path.join(ASSETS_DIR, "RDPMSpecIdentifier_dark_no_text.svg")
-assert os.path.exists(LOGO)
+assert os.path.exists(LOGO), f"{LOGO} does not exist"
 encoded_img = base64.b64encode(open(LOGO, 'rb').read())
 
 logger = logging.getLogger("RDPMSpecIdentifier")
@@ -924,13 +924,16 @@ def _download_image(n_clicks, filename, key):
     return dcc.send_file(tmpfile)
 
 def _gui_wrapper(args):
+    gui_wrapper(args.input, args.design_matrix, args.sep, args.logbase, args.debug, args.port, args.host)
+
+
+def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
     global rdpmsdata
     global data
-    rdpmsdata = RDPMSpecData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
+    rdpmsdata = RDPMSpecData.from_files(input, design_matrix, sep=sep, logbase=logbase)
     data = rdpmsdata.df
-
     _get_app_layout(app)
-    app.run(debug=args.debug, port=args.port, host=args.host)
+    app.run(debug=debug, port=port, host=host)
 
 
 if __name__ == '__main__':

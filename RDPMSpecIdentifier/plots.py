@@ -1,8 +1,5 @@
 import pandas as pd
 import plotly.graph_objects as go
-import plotly.express as px
-from scipy.spatial.distance import jensenshannon
-from RDPMSpecIdentifier.stats import normalize_rows, get_permanova_results
 import numpy as np
 from plotly.subplots import make_subplots
 

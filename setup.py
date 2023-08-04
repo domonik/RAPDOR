@@ -28,6 +28,7 @@ setup(
     package_data={
         "RDPMSpecIdentifier.visualize": ["assets/*"],
         "RDPMSpecIdentifier": ["tests/*.py", "tests/test_data/*"],
+        "RDPMSpecIdentifier.qtInterface": ["Icon.svg", "RDPMSpecIdentifier_dark_no_text.svg", "style.css"],
     },
     install_requires=[
         "statsmodels",
@@ -40,7 +41,8 @@ setup(
         "scikit-bio",
         "scikit-learn",
         "dash_loading_spinners",
-        "kaleido"
+        "kaleido",
+        "PyQt5"
     ],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],

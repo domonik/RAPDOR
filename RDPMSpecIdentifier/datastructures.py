@@ -6,7 +6,7 @@ import numpy as np
 from typing import Callable
 from scipy.spatial.distance import jensenshannon
 from scipy.special import rel_entr
-from RDPMSpecIdentifier.stats import fit_ecdf, get_permanova_results
+#from RDPMSpecIdentifier.stats import fit_ecdf, get_permanova_results
 from multiprocessing import Pool
 from statsmodels.stats.multitest import multipletests
 from statsmodels.distributions.empirical_distribution import ECDF

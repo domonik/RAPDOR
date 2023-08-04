@@ -7,7 +7,7 @@ __pycache__/
 *$py.class
 .snakemake/
 *.plot
-*foo*
+RDPMSpecIdentifier.spec
 eclip/
 papers/
 *best_models/
@@ -163,3 +163,4 @@ com_crashlytics_export_strings.xml
 crashlytics.properties
 crashlytics-build.properties
 fabric.properties
+/testData/
