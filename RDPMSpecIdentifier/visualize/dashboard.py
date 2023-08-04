@@ -756,7 +756,7 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_c
     prevent_initial_call=True,
 )
 def func(n_clicks):
-    return dcc.send_data_frame(df.to_csv, "RDPMSpecIdentifier.tsv", sep="\t")
+    return dcc.send_data_frame(rdpmsdata.extra_df.to_csv, "RDPMSpecIdentifier.tsv", sep="\t")
 
 @app.callback(
     Output('tbl', 'data'),
