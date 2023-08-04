@@ -132,7 +132,7 @@ class RDPMSpecIdentifierGUI(QWidget):
 
         layout.addWidget(QLabel('Host:'), 3, 0)
         self.host = QLineEdit()
-        self.host.setText("0.0.0.0")
+        self.host.setText("127.0.0.1")
         self.host.setEnabled(False)
         layout.addWidget(self.host, 3, 1)
 

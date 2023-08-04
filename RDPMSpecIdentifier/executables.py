@@ -117,8 +117,8 @@ def dash_parser(subparsers, name):
     parser.add_argument(
         '--host',
         type=str,
-        help="Host IP used by the dash server to serve the application (Default: 0.0.0.0)",
-        default="0.0.0.0"
+        help="Host IP used by the dash server to serve the application (Default:127.0.0.1)",
+        default="127.0.0.1"
     )
     parser.add_argument(
         '--debug',

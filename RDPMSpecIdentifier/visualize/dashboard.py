@@ -35,7 +35,7 @@ app = dash.Dash(
     "RDPMSpecIdentifier Dashboard",
     title="RDPMSpec Visualizer",
     external_stylesheets=[dbc.themes.DARKLY],
-    assets_url_path=ASSETS_DIR,
+    #assets_url_path=ASSETS_DIR,
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
 )
@@ -937,10 +937,11 @@ def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
 
 
 if __name__ == '__main__':
-    from RDPMSpecIdentifier.stats import generate_matrix, normalize_rows
-    df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
+    file = os.path.abspath("../../testData/testFile.tsv")
+    assert os.path.exists(file)
+    df = pd.read_csv(file, sep="\t", index_col=0)
     df.index = df.index.astype(str)
-    design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
+    design = pd.read_csv(os.path.abspath("../../testData/testDesign.tsv"), sep="\t")
     rdpmsdata = RDPMSpecData(df, design, logbase=2)
     data = rdpmsdata.df
 
@@ -951,4 +952,4 @@ if __name__ == '__main__':
 
 
     _get_app_layout(app)
-    app.run(debug=True, port=8080, host="0.0.0.0")
+    app.run(debug=True, port=8080, host="127.0.0.1")
