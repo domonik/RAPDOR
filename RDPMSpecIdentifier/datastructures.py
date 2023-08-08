@@ -40,15 +40,25 @@ class RDPMSpecData:
         self.permutation_sufficient_samples = False
         self._check_design()
         self._check_dataframe()
-
-
-        self.calculated_score_names = ["RDPMSScore", "ANOSIM R", "global ANOSIM adj p-Value", "PERMANOVA F", "global PERMANOVA adj p-Value", "Mean Distance", "shift direction", "RNAse False peak pos", "RNAse True peak pos",  "Permanova p-value", "Permanova adj-p-value", "RNAse Peak adj p-Value", "CTRL Peak adj p-Value"]
+        self.calculated_score_names = [
+            "RDPMSScore",
+            "ANOSIM R",
+            "global ANOSIM adj p-Value",
+            "PERMANOVA F",
+            "global PERMANOVA adj p-Value",
+            "Mean Distance",
+            "shift direction",
+            "RNAse False peak pos",
+            "RNAse True peak pos",
+            "Permanova p-value",
+            "Permanova adj-p-value",
+            "CTRL Peak adj p-Value",
+            "RNAse Peak adj p-Value"
+        ]
         self.id_columns = ["RDPMSpecID", "id"]
         self.extra_columns = None
 
         self._set_design_and_array()
-
-
 
 
     def __getitem__(self, item):
@@ -325,9 +335,8 @@ class RDPMSpecData:
 
         with multiprocessing.Pool(threads) as pool:
             result = pool.starmap(self.calc_anosim, calls)
-        result = np.concatenate(result)
-        result = result[~np.isnan(result)] + 1e-15
-        self.anosim_ecdf = ECDF(result)
+        result = np.stack(result)
+        self.anosim_distribution = result
 
     def _calc_global_permanova_distribution(self, nr_permutations: int, threads: int, seed: int = 0):
         np.random.seed(seed)
@@ -340,15 +349,20 @@ class RDPMSpecData:
 
         with multiprocessing.Pool(threads) as pool:
             result = pool.starmap(self.calc_permanova_f, calls)
-        result = np.concatenate(result)
-        result = result[~np.isnan(result)] + 1e-15
-        self.permanova_ecdf = ECDF(result)
+        result = np.stack(result)
+        self.permanova_distribution = result
 
     def calc_global_anosim_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None):
         if "ANOSIM R" not in self.df.columns:
             self.calc_all_anosim_value()
         self._calc_global_anosim_distribution(permutations, threads, seed)
-        p_values = 1 - self.anosim_ecdf(self.df["ANOSIM R"])
+        distribution = self.anosim_distribution.flatten()
+        distribution = distribution[~np.isnan(distribution)]
+
+        r_scores = self.df["ANOSIM R"].to_numpy()
+        p_values = np.asarray(
+            [np.count_nonzero(distribution >= r_score) / distribution.shape[0] for r_score in r_scores]
+        )
         mask = self.df["ANOSIM R"].isna()
         if distance_cutoff is not None:
             if "Mean Distance" not in self.df.columns:
@@ -362,7 +376,10 @@ class RDPMSpecData:
         if "PERMANOVA F" not in self.df.columns:
             self.calc_all_permanova_f()
         self._calc_global_permanova_distribution(permutations, threads, seed)
-        p_values = 1 - self.permanova_ecdf(self.df["PERMANOVA F"])
+        distribution = self.permanova_distribution.flatten()
+        distribution = distribution[~np.isnan(distribution)]
+        f_scores = self.df["PERMANOVA F"].to_numpy()
+        p_values = np.asarray([np.count_nonzero(distribution >= f_score) / distribution.shape[0] for f_score in f_scores])
         mask = self.df["PERMANOVA F"].isna()
         if distance_cutoff is not None:
             if "Mean Distance" not in self.df.columns:
@@ -377,19 +394,7 @@ class RDPMSpecData:
         df.to_csv(file, sep=sep, index=False)
 
     def calc_all_permanova(self, permutations, threads):
-        calls = []
-        for idx in range(self.distances.shape[0]):
-            d = self.distances[idx]
-            if ~np.any(np.isnan(d)):
-
-                calls.append((d, self.internal_design_matrix, permutations, self.df.index[idx]))
-        with Pool(threads) as pool:
-            data = pool.starmap(get_permanova_results, calls)
-        permanova_results = pd.concat(data, axis=1).T.set_index("gene_id")
-        _, permanova_results["adj-p-value"], _, _ = multipletests(permanova_results["p-value"], method="fdr_bh")
-        self.df["Permanova p-value"] = permanova_results["p-value"]
-        self.df["Permanova adj-p-value"] = permanova_results["adj-p-value"]
-
+        raise NotImplementedError("Forgot to implement PERMANOVA and ANOSIMs")
 
 def _analysis_executable_wrapper(args):
     rdpmspec = RDPMSpecData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
