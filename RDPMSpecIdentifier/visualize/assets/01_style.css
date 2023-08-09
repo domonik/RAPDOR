@@ -226,3 +226,12 @@ th {
     z-index: 999999 !important;
     font-size: 1.5em;
 }
+
+.daq-colorpicker--light__container {
+    border: 0 solid !important;
+}
+
+.chrome-picker {
+    background-color: transparent !important;
+    border: 0 solid !important;
+}

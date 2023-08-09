@@ -20,6 +20,7 @@ import numpy as np
 from time import sleep
 import base64
 import tempfile
+import dash_daq as daq
 
 FILEDIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(FILEDIR, "assets")
@@ -50,6 +51,8 @@ pio.templates["plotly_white"].update(
         }
     }
 )
+
+DEFAULT_COLORS = {"primary": "rgb(138, 255, 172)", "secondary": "rgb(255, 138, 221)"}
 
 
 def _header_layout():
@@ -267,6 +270,32 @@ def selector_box(data):
 
                         className="row justify-content-center p-2"
                     ),
+                    html.Div(
+                        [
+                            html.Div(
+                                html.Span("Select Color Schema", style={"text-align": "center"}, id="color-schema"),
+                                className="col-4 col-md-4 justify-content-center align-self-center"
+                            ),
+                            html.Div(
+                                html.Button(
+                                    '', id='primary-open-color-modal', n_clicks=0, className="btn btn-primary",
+                                    style={"width": "100%", "height": "40px", "background-color": DEFAULT_COLORS["primary"]}
+                                ),
+                                className="col-3 justify-content-center text-align-center primary-color-div"
+                            ),
+                            html.Div(
+                                html.Button(
+                                    '', id='secondary-open-color-modal', n_clicks=0,
+                                    className="btn btn-primary",
+                                    style={"width": "100%", "height": "40px", "background-color": DEFAULT_COLORS["secondary"]}
+                                ),
+                                className="col-3 justify-content-center text-align-center primary-color-div"
+                            ),
+
+                        ],
+
+                        className="row justify-content-center p-2"
+                    ),
                 ],
                 className="databox justify-content-center"
             )
@@ -457,6 +486,8 @@ def _get_app_layout(dash_app):
                 className="row row-eq-height justify-content-center"
             ),
             _modal_image_download(),
+            _modal_color_selection("primary"),
+            _modal_color_selection("secondary")
 
         ],
         className="container-fluid"
@@ -486,6 +517,38 @@ def _modal_image_download():
     )
     return modal
 
+
+def _modal_color_selection(number):
+    color = DEFAULT_COLORS[number]
+    color = color.split("(")[-1].split(")")[0]
+    r, g, b = (int(v) for v in color.split(","))
+    modal = dbc.Modal(
+        [
+            dbc.ModalHeader("Select color"),
+            dbc.ModalBody(
+                [
+                    html.Div(
+                        [
+                            daq.ColorPicker(
+                                id=f'{number}-color-picker',
+                                label='Color Picker',
+                                size=400,
+                                theme={"dark": True},
+                                value={"rgb": dict(r=r, g=g, b=b, a=1)}
+                            ),
+                        ],
+                        className="row justify-content-around",
+                    )
+                ]
+            ),
+            dbc.ModalFooter(
+                dbc.Button("Apply", id=f"{number}-apply-color-modal", className="ml-auto",
+                           n_clicks=0)),
+        ],
+        id=f"{number}-color-modal",
+    )
+    return modal
+
 @app.callback(
     Output("recomputation", "children"),
     Input("kernel-slider", "value"),
@@ -505,10 +568,13 @@ def recompute_data(kernel_size, distance_method):
     [
         Input("protein-id", "children"),
         Input('recomputation', 'children'),
+        Input("primary-open-color-modal", "style"),
+        Input("secondary-open-color-modal", "style"),
     ],
 
 )
-def update_plot(key, kernel_size):
+def update_plot(key, kernel_size, primary_color, secondary_color):
+    colors = primary_color['background-color'], secondary_color['background-color']
     key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
@@ -516,13 +582,8 @@ def update_plot(key, kernel_size):
     i = 0
     if rdpmsdata.current_kernel_size is not None:
         i = int(np.floor(rdpmsdata.current_kernel_size / 2))
-    fig = plot_distribution(array, key, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i)
+    fig = plot_distribution(array, key, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
     fig.layout.template = "plotly_white"
-    # fig.update_layout(legend=dict(
-    #     bgcolor="#3a3a3a",
-    #     bordercolor="black",
-    #     borderwidth=2,
-    # ))
     fig.update_layout(
         margin={"t": 0, "b": 30, "r": 50},
         font=dict(
@@ -542,16 +603,19 @@ def update_plot(key, kernel_size):
     [
         Input("protein-id", "children"),
         Input('recomputation', 'children'),
+        Input("primary-open-color-modal", "style"),
+        Input("secondary-open-color-modal", "style"),
     ],
 
 )
-def update_westernblot(key, kernel_size):
+def update_westernblot(key, kernel_size, primary_color, secondary_color):
+    colors = primary_color['background-color'], secondary_color['background-color']
     key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
     array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
 
-    fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNAse")
+    fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
     fig.update_yaxes(showticklabels=False, showgrid=False)
     fig.update_xaxes(showgrid=False, showticklabels=False)
     fig.update_layout(
@@ -574,19 +638,20 @@ def update_westernblot(key, kernel_size):
     [
         Input("protein-id", "children"),
         Input('recomputation', 'children'),
+        Input("primary-open-color-modal", "style"),
+        Input("secondary-open-color-modal", "style"),
 
     ],
     State("distance-method", "value")
 
 )
-def update_heatmap(key, kernel_size, distance_method):
+def update_heatmap(key, kernel_size, primary_color, secondary_color, distance_method):
+    colors = primary_color['background-color'], secondary_color['background-color']
     key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
     _, distances = rdpmsdata[key]
-    fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNAse")
-    if distance_method == "Jensen-Shannon-Distance":
-        fig.data[0].update(zmin=0, zmax=1)
+    fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
     fig.layout.template = "plotly_white"
     fig.update_layout(
         margin={"t": 0, "b": 0, "l": 0, "r": 0}
@@ -879,6 +944,67 @@ def _toggle_modal(n1, n2, n3, is_open, key):
     if n1 or n2 or n3:
         return not is_open, filename
     return is_open, filename
+
+
+@app.callback(
+    [
+        Output("primary-color-modal", "is_open"),
+        Output("primary-open-color-modal", "style")
+     ],
+    [
+        Input("primary-open-color-modal", "n_clicks"),
+        Input("primary-apply-color-modal", "n_clicks"),
+        #Input("select-color", "n_clicks"),
+    ],
+    [
+        State("primary-color-modal", "is_open"),
+        State("primary-color-picker", "value")
+
+    ],
+    prevent_initial_call=True
+)
+def _toggle_primary_color_modal(n1, n2, is_open, color_value):
+    tid = ctx.triggered_id
+    if tid == "primary-open-color-modal":
+        return not is_open, dash.no_update
+    elif tid == "primary-apply-color-modal":
+        rgb = color_value["rgb"]
+        r, g, b = rgb["r"], rgb["g"], rgb["b"]
+        color = f"rgb({r}, {g}, {b})"
+        style = {"width": "100%", "height": "40px", "background-color": color}
+    else:
+        raise ValueError("")
+    return not is_open, style
+
+@app.callback(
+    [
+        Output("secondary-color-modal", "is_open"),
+        Output("secondary-open-color-modal", "style")
+     ],
+    [
+        Input("secondary-open-color-modal", "n_clicks"),
+        Input("secondary-apply-color-modal", "n_clicks"),
+        #Input("select-color", "n_clicks"),
+    ],
+    [
+        State("secondary-color-modal", "is_open"),
+        State("secondary-color-picker", "value")
+
+    ],
+    prevent_initial_call=True
+)
+def _toggle_secondary_color_modal(n1, n2, is_open, color_value):
+    tid = ctx.triggered_id
+    if tid == "secondary-open-color-modal":
+        return not is_open, dash.no_update
+    elif tid == "secondary-apply-color-modal":
+        rgb = color_value["rgb"]
+        r, g, b = rgb["r"], rgb["g"], rgb["b"]
+        color = f"rgb({r}, {g}, {b})"
+        style = {"width": "100%", "height": "40px", "background-color": color}
+    else:
+        raise ValueError("")
+    return not is_open, style
 
 
 @app.callback(

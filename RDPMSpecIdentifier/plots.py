@@ -35,9 +35,14 @@ def plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
     return fig
 
 
+def plot_replicate_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):
+    pass
 
 
-def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offset: int = 0):
+
+def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):
+    if colors is None:
+        colors = DEFAULT_COLORS
     fig = go.Figure()
     indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
     medians = []
@@ -55,12 +60,12 @@ def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offse
         max_values = np.nanmax(subdata[idx,], axis=0)
         min_values = np.nanquantile(subdata[idx,], 0.25, axis=0)
         min_values = np.nanmin(subdata[idx,], axis=0)
-        color = DEFAULT_COLORS[eidx]
+        color = colors[eidx]
         a_color = color_to_calpha(color, 0.4)
         medians.append(go.Scatter(
             x=x,
             y=median_values,
-            marker=dict(color=DEFAULT_COLORS[eidx]),
+            marker=dict(color=colors[eidx]),
             name="Median",
             legend=legend,
             line=dict(width=5)
@@ -68,7 +73,7 @@ def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offse
         means.append(go.Scatter(
             x=x,
             y=mean_values,
-            marker=dict(color=DEFAULT_COLORS[eidx]),
+            marker=dict(color=colors[eidx]),
             name="Mean",
             legend=legend,
             line=dict(width=3, dash="dash")
@@ -78,7 +83,7 @@ def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offse
             go.Scatter(
                 x=x + x[::-1],
                 y=y,
-                marker=dict(color=DEFAULT_COLORS[eidx]),
+                marker=dict(color=colors[eidx]),
                 name="Min-Max",
                 legend=legend,
                 fill="toself",
@@ -135,20 +140,24 @@ def plot_correlation_heatmap(array, gene_id, design: pd.DataFrame, df: pd.DataFr
     return fig
 
 
-def plot_heatmap(distances, design: pd.DataFrame, groups: str,):
+def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
+    if colors is None:
+        colors = DEFAULT_COLORS
     names = groups + design[groups].astype(str) + " " + design["Replicate"].astype(str)
     fig = go.Figure(
         data=go.Heatmap(
             z=distances[:, ::-1],
             x=names,
             y=names[::-1],
-            colorscale=DEFAULT_COLORS[:2]
+            colorscale=colors[:2]
         )
     )
 
     return fig
 
-def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0):
+def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, colors=None):
+    if colors is None:
+        colors = DEFAULT_COLORS
     fig = go.Figure()
     indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
     fig = make_subplots(cols=1, rows=2, vertical_spacing=0)
@@ -160,7 +169,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0):
     xs = []
     names = []
     for eidx, (name, idx) in enumerate(indices.items()):
-        color = DEFAULT_COLORS[eidx]
+        color = colors[eidx]
         a_color = color_to_calpha(color, 0.)
         color = color_to_calpha(color, 1)
         scale.append([[0, a_color], [1, color]])
