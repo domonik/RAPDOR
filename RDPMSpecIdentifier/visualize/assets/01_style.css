@@ -1,3 +1,9 @@
+:root {
+  --primary-color: rgb(255, 138, 221);
+    --primary-hover-color: #945080;
+}
+
+
 .container-fluid {background-color: #3a3a3a
 }
 html {
@@ -79,7 +85,7 @@ input, select, textarea{
 }
 
 .VirtualizedSelectFocusedOption {
-    background-color:  #945080 !important;
+    background-color:  var(--primary-hover-color) !important;
 }
 
 .equal-height-row {
@@ -103,10 +109,10 @@ tr:nth-child(odd) {
 
 }
 tr:nth-child(even):hover{
-        background-color: #945080 !important;
+        background-color: var(--primary-hover-color) !important;
 }
 tr:nth-child(odd):hover{
-        background-color: #945080 !important;
+        background-color: var(--primary-hover-color) !important;
 }
 
 th {
@@ -185,8 +191,8 @@ th {
 
 .btn-primary:hover {
     color: #fff;
-    background-color:  #945080;
-    border-color:  #945080; /*set the color you want here*/
+    background-color:  var(--primary-hover-color);
+    border-color:  var(--primary-hover-color); /*set the color you want here*/
 }
 
 .alert {
@@ -195,17 +201,17 @@ th {
 
 
 .rc-slider-track {
-  background-color: rgb(255, 138, 221);
+  background-color: var(--primary-color);
 }
 
 
 .rc-slider-handle {
-  background-color: rgb(255, 138, 221) !important;
-  border-color: rgb(255, 138, 221) !important;
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
 }
 
 .rc-slider-handle:hover {
-  border-color: rgb(255, 138, 221) !important;
+  border-color: var(--primary-color) !important;
 }
 
 .rc-slider-handle-active:active {

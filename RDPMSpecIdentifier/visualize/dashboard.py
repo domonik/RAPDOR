@@ -8,8 +8,9 @@ from dash.dependencies import Input, Output, State
 from dash.dash_table.Format import Format, Scheme
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
-from RDPMSpecIdentifier.plots import plot_distribution, plot_heatmap, plot_barcode_plot
+from RDPMSpecIdentifier.plots import plot_distribution, plot_heatmap, plot_barcode_plot, plot_replicate_distribution
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
+from dash import clientside_callback, ClientsideFunction
 import os
 import dash
 import plotly.io as pio
@@ -78,18 +79,50 @@ def distribution_panel(data):
 
                     html.Div(
                         [
-                            html.Div(
-                                className="col-3"
-                            ),
+                            html.Div(className="col-0 col-md-4", id="placeholder"),
+
                             html.Div(
                                 html.H4(f"Protein {sel_data[0]}", style={"text-align": "center"}, id="protein-id"),
-                                className="col-6 justify-content-center align-self-center",
+                                className="col-12 col-md-4 justify-content-center align-self-center",
                             ),
                             html.Div(
-                                html.Button("Download Image", style={"text-align": "center"}, id="open-modal", className="btn btn-primary"),
-                                className="col-3 justify-content-right align-self-center text-end",
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(className="col-md-2 col-0"),
+                                            html.Div(
+                                                html.Span("Replicate Mode", className="align-self-center"),
+                                                className="col-4 col-md-3 d-flex align-items-bottom justify-content-center"
+                                            ),
+                                            html.Div(
+
+                                                daq.BooleanSwitch(
+                                                    label='',
+                                                    labelPosition='left',
+                                                    color=DEFAULT_COLORS["secondary"],
+                                                    on=False,
+                                                    id="replicate-mode",
+                                                    className="align-self-center"
+
+                                                ),
+                                                className="col-2 col-md-3 d-flex align-items-center justify-content-center"
+                                            ),
+                                            html.Div(
+                                                html.Button("Download Image", style={"text-align": "center"},
+                                                            id="open-modal", className="btn btn-primary"),
+                                                className="col-6 col-md-4 justify-content-right align-self-center text-end",
+                                            ),
+
+                                        ],
+                                        className="row justify-content-right"
+                                    ),
+
+                                ],
+                                className="col-12 col-md-4"
                             ),
-                            dcc.Download(id="download-image")
+
+                            dcc.Download(id="download-image"),
+
 
                         ],
                         className="row justify-content-center p-2"
@@ -570,10 +603,11 @@ def recompute_data(kernel_size, distance_method):
         Input('recomputation', 'children'),
         Input("primary-open-color-modal", "style"),
         Input("secondary-open-color-modal", "style"),
+        Input("replicate-mode", "on")
     ],
 
 )
-def update_plot(key, kernel_size, primary_color, secondary_color):
+def update_plot(key, kernel_size, primary_color, secondary_color, replicate_mode):
     colors = primary_color['background-color'], secondary_color['background-color']
     key = key.split("Protein ")[-1]
     if key is None:
@@ -582,7 +616,10 @@ def update_plot(key, kernel_size, primary_color, secondary_color):
     i = 0
     if rdpmsdata.current_kernel_size is not None:
         i = int(np.floor(rdpmsdata.current_kernel_size / 2))
-    fig = plot_distribution(array, key, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+    if replicate_mode:
+        fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+    else:
+        fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
     fig.layout.template = "plotly_white"
     fig.update_layout(
         margin={"t": 0, "b": 30, "r": 50},
@@ -666,18 +703,18 @@ SELECTED_STYLE = [
         {
             "if": {"state": "active"},
             "backgroundColor": "rgba(150, 180, 225, 0.2)",
-            "border-top": "2px solid rgb(255, 138, 221)",
-            "border-bottom": "2px solid rgb(255, 138, 221)",
-            "border-left": "0px solid rgb(255, 138, 221)",
-            "border-right": "0px solid rgb(255, 138, 221)",
+            "border-top": "2px solid var(--primary-color)",
+            "border-bottom": "2px solid var(--primary-color)",
+            "border-left": "0px solid var(--primary-color)",
+            "border-right": "0px solid var(--primary-color)",
         },
         {
             "if": {"state": "selected"},
             "backgroundColor": "rgba(14, 102, 232, 1) !important",
-            "border-top": "2px solid rgb(255, 138, 221)",
-            "border-bottom": "2px solid rgb(255, 138, 221)",
-            "border-left": "0px solid rgb(255, 138, 221)",
-            "border-right": "0px solid rgb(255, 138, 221)",
+            "border-top": "2px solid var(--primary-color)",
+            "border-bottom": "2px solid var(--primary-color)",
+            "border-left": "0px solid var(--primary-color)",
+            "border-right": "0px solid var(--primary-color)",
         },
     ]
 
@@ -712,10 +749,10 @@ def style_selected_col(active_cell, sort_by, key, page_size, current_page):
         {
             "if": {"row_index": row_idx},
             "backgroundColor": "red !important",
-            "border-top": "2px solid rgb(255, 138, 221)",
-            "border-bottom": "2px solid rgb(255, 138, 221)",
-            "border-left": "0px solid rgb(255, 138, 221)",
-            "border-right": "0px solid rgb(255, 138, 221)",
+            "border-top": "2px solid var(--primary-color))",
+            "border-bottom": "2px solid var(--primary-color)",
+            "border-left": "0px solid var(--primary-color)",
+            "border-right": "0px solid var(--primary-color)",
         },
     ]
     style_data_conditional = SELECTED_STYLE + style
@@ -1015,20 +1052,27 @@ def _toggle_secondary_color_modal(n1, n2, is_open, color_value):
     ],
     [
         State("named-download", "value"),
-        State("protein-id", "children")
+        State("protein-id", "children"),
+        State("replicate-mode", "on"),
+        State("primary-open-color-modal", "style"),
+        State("secondary-open-color-modal", "style"),
     ],
     prevent_initial_call=True
 )
-def _download_image(n_clicks, filename, key):
+def _download_image(n_clicks, filename, key, replicate_mode, primary_color, secondary_color):
     key = key.split("Protein ")[-1]
+    colors = primary_color['background-color'], secondary_color['background-color']
+
 
     filename = os.path.basename(filename)
     array, _ = rdpmsdata[key]
     i = 0
     if rdpmsdata.current_kernel_size is not None:
         i = int(np.floor(rdpmsdata.current_kernel_size / 2))
-
-    fig = plot_distribution(array, key, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i)
+    if replicate_mode:
+        fig = plot_replicate_distribution(array, key, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+    else:
+        fig = plot_distribution(array, key, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
     fig.layout.template = "plotly_white"
     fig.update_layout(legend=dict(
         orientation="h",
@@ -1048,6 +1092,20 @@ def _download_image(n_clicks, filename, key):
     fig.write_image(tmpfile)
     assert os.path.exists(tmpfile)
     return dcc.send_file(tmpfile)
+
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="function1"
+
+    ),
+    [Output("placeholder", "children")],
+    [
+        Input("secondary-open-color-modal", "style"),
+    ],
+)
+
 
 def _gui_wrapper(args):
     gui_wrapper(args.input, args.design_matrix, args.sep, args.logbase, args.debug, args.port, args.host)

@@ -36,11 +36,37 @@ def plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
 
 
 def plot_replicate_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):
-    pass
+    if colors is None:
+        colors = DEFAULT_COLORS
+    indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
+    x = list(range(offset+1, subdata.shape[1] + offset+1))
+    fig = go.Figure()
+    names = []
+    values = []
+    for eidx, (name, idx) in enumerate(indices.items()):
+        name = f"{groups}: {name}".ljust(15, " ")
+        legend = f"legend{eidx + 1}"
+        names.append(name)
+        for row_idx in idx:
+            rep = design.iloc[row_idx]["Replicate"]
+            values.append(
+                go.Scatter(
+                    x=x,
+                    y=subdata[row_idx],
+                    marker=dict(color=colors[eidx]),
+                    name=f"Replicate {rep}",
+                    legend=legend,
+                    line=dict(width=5)
+                )
+            )
+    fig.add_traces(values)
+    fig = update_distribution_layout(fig, names, x, offset)
+    return fig
 
 
 
-def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):
+
+def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure()
@@ -97,8 +123,13 @@ def plot_distribution(subdata, gene_id, design: pd.DataFrame, groups: str, offse
     fig.add_traces(
         medians + means
     )
+    fig = update_distribution_layout(fig, names, x, offset)
+    return fig
+
+
+def update_distribution_layout(fig, names, x, offset):
     fig.update_layout(hovermode="x")
-    fig.update_layout(xaxis_range=[x[0]- offset -0.5, x[-1]+offset+0.5])
+    fig.update_layout(xaxis_range=[x[0] - offset - 0.5, x[-1] + offset + 0.5])
     fig.update_layout(
         yaxis_title="Protein Amount in Fraction [%]",
     )
@@ -206,17 +237,16 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
 if __name__ == '__main__':
     from RDPMSpecIdentifier.datastructures import RDPMSpecData
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
-    # sdf = df[[col for col in df.columns if "LFQ" in col]]
-    sdf = df
-    sdf = sdf.fillna(0)
+
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-    rdpmspec = RDPMSpecData(sdf, design, logbase=2)
+    df.index = df.index.astype(str)
+    rdpmspec = RDPMSpecData(df, design, logbase=2)
     rdpmspec.normalize_array_with_kernel(kernel_size=3)
     array = rdpmspec.norm_array
     design = rdpmspec.internal_design_matrix
-    for i in range(10):
-        plot_barcode_plot(array[i], design, "RNAse")
-    plot_correlation_heatmap(array, 1112, design, sdf, "RNAse")
+
+    fig = plot_replicate_distribution(array[0], design, "RNAse")
+    fig.show()
 
 
 
