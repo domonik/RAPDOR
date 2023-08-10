@@ -1,5 +1,5 @@
 import time
-
+import re
 import pandas as pd
 from dash import dcc, dash_table
 from dash import html, ctx
@@ -32,11 +32,9 @@ LIGHT_LOGO = os.path.join(ASSETS_DIR, "RDPMSpecIdentifier_light_no_text.svg")
 assert os.path.exists(LOGO), f"{LOGO} does not exist"
 assert os.path.exists(LIGHT_LOGO), f"{LIGHT_LOGO} does not exist"
 encoded_img = base64.b64encode(open(LOGO, 'rb').read())
-light_img = base64.b64encode(open(LIGHT_LOGO, 'rb').read())
 
-light_svg = 'data:image/svg+xml;base64,{}'.format(light_img.decode())
-dark_svg = 'data:image/svg+xml;base64,{}'.format(encoded_img.decode())
 
+img_text = open(LOGO, 'r').read()
 
 logger = logging.getLogger("RDPMSpecIdentifier")
 
@@ -632,13 +630,18 @@ def recompute_data(kernel_size, distance_method):
 
 @app.callback(
     Output("logo-container", "children"),
-    Input("night-mode", "on")
+    Input("night-mode", "on"),
+    Input("secondary-open-color-modal", "style"),
 )
-def update_logo(night_mode):
-    if night_mode:
-        img = dark_svg
-    else:
-        img = light_svg
+def update_logo(night_mode, style):
+    color2 = style["background-color"]
+    color = "fill:#ff8add"
+    rep = f"fill:{color2}"
+    l_image_text = re.sub(color, rep, img_text)
+    if not night_mode:
+        l_image_text = re.sub("fill:#f2f2f2", "fill:black", l_image_text)
+    encoded_img = base64.b64encode(l_image_text.encode())
+    img = 'data:image/svg+xml;base64,{}'.format(encoded_img.decode())
     return html.Img(src=img, style={"width": "20%", "min-width": "300px"}, className="p-1"),
 
 

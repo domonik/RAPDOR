@@ -14,8 +14,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--table-head-color', table_head);
             } else {
                 var lighter = this.makebrighter(style["background-color"], 50);
-                var lighter2 = this.makebrighter(style["background-color"], 80);
-                var table_head = this.function2(style["background-color"], 0.05);
                 r.style.setProperty('--table-head-color', "#181818");
                 r.style.setProperty('--primary-hover-color', lighter);
 
@@ -90,4 +88,22 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
     }
 
 });
+
+document.addEventListener( 'keydown', ( event ) => {
+
+  const currentInput = document.getElementsByClassName("dash-cell focused")[0];
+
+  const currentTr = currentInput.parentNode;
+  switch (event.key) {
+    case "ArrowUp":
+        // Up pressed
+
+        currentTr.previousElementSibling.firstChild.click();
+        break;
+    case "ArrowDown":
+        // Down pressed
+        ( currentTr.nextElementSibling.firstChild ).click();
+        break;
+  }
+} )
 
