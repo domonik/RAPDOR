@@ -1,13 +1,27 @@
 :root {
   --primary-color: rgb(255, 138, 221);
     --primary-hover-color: #945080;
+    --table-head-color: #1a141a;
+    --databox-color: #181818;
+    --r-text-color: #ffffff;
+    --input-background-color: #1a1a1a;
+    --table-light: #3a363d;
+    --table-dark: #222023;
+    --button-color: #3a363d;
+    --background-color: #3a3a3a;
 }
 
-
-.container-fluid {background-color: #3a3a3a
+span {
+    color: var(--r-text-color);
+}
+.container-fluid {background-color: var(--background-color)
 }
 html {
-    background-color: #3a3a3a;
+    background-color: var(--background-color);
+}
+
+body {
+        color: var(--r-text-color);
 }
 
 .headerBox {
@@ -16,73 +30,53 @@ html {
 
 h4 {
     text-align: center;
-    color: white;
+    color: var(--r-text-color);
 }
 
 .databox {
-	background-color: #181818;
+	background-color: var(--databox-color);
 	border-radius: 10px;
 	border-color: black;
 	border-width: 2px;
 	border-style: solid;
 	padding: 2px;
+    box-shadow: 5px 5px 5px var(--table-dark);
 
-}
-
-.fasta-panel {
-	background-color: #494949;
-    height: 100%;
-	border-radius: 5px;
-	border-color: black;
-	border-width: 1px;
-	border-style: solid;
-    font-family: monospace;
-    overflow-wrap: break-word;
-    overflow: scroll;
 }
 
 
 .Select-value {
-    background-color: #222023;
+    background-color: var(--input-background-color);
     border-radius: 15px;
     text-align: center;
 }
-#protein-selector .Select-value-label {
-    color: pink !important;
-    font-weight: bold;
-    font-size: 1.5em;
-}
+
 
 .Select-value-label {
-    color: white !important;
+    color: var(--r-text-color) !important;
 
 }
 
 .Select-menu-outer {
-    background-color: #3a363d;
+    background-color: var(--input-background-color);
     border: 0;
-    color: red;
+    color: var(--r-text-color);
 }
 .Select-control {
     border-radius: 5px !important;
-    background-color: #222023 !important;
-    border-color: #222023 !important;
+    background-color: var(--input-background-color) !important;
+    border-color: var(--input-background-color) !important;
 
 }
 
-.Select {
-    color: black !important;
-    border-radius: 15px;
-}
+
 
 .VirtualizedSelectOption {
-    color: white;
-    background-color: #3a363d !important;
+    color: var(--r-text-color);
+    background-color: var(--table-dark) !important;
  }
 
-input, select, textarea{
-    color: black;
-}
+
 
 .VirtualizedSelectFocusedOption {
     background-color:  var(--primary-hover-color) !important;
@@ -101,11 +95,11 @@ input, select, textarea{
 }
 
 tr:nth-child(even) {
-    background-color: #3a363d !important;
+    background-color: var(--table-light) !important;
 }
 
 tr:nth-child(odd) {
-    background-color: #222023 !important;
+    background-color: var(--table-dark) !important;
 
 }
 tr:nth-child(even):hover{
@@ -116,7 +110,7 @@ tr:nth-child(odd):hover{
 }
 
 th {
-    background-color: #1a141a !important;
+    background-color: var(--table-head-color) !important;
     padding: 10px !important;
 
 
@@ -149,6 +143,15 @@ tr:last-of-type td:last-of-type {
     margin-left: 10px;
 }
 
+input {
+    color: var(--r-text-color) !important;
+    background-color: var(--input-background-color) !important;
+}
+
+th input{
+    background-color: transparent !important;
+}
+
 .column-header-name {
     max-width: 90%;
     overflow: hidden;
@@ -156,12 +159,12 @@ tr:last-of-type td:last-of-type {
 }
 
 .dash-filter input:hover{
-    color: white !important;
+    color: var(--r-text-color) !important;
 
 }
+
 #tbl .dash-filter .input{
-    color: white !important;
-    background-color: red;
+    color: var(--r-text-color) !important;
 
 }
 
@@ -174,25 +177,62 @@ tr:last-of-type td:last-of-type {
 #tbl th.dash-filter {
     border-color: transparent !important;
     border-width: 0 !important;
-
 }
 
-.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner input:not([type=radio]):not([type=checkbox]){
-    color: white!important;
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner input:not([type=radio]):not([type=checkbox]):hover{
+    color: var(--primary-color) !important;
 }
-th {
+th span{
     color: white !important;
 }
 
+th input{
+    color: white !important;
+}
+
+.dash-header {
+    color: var(--r-text-color) !important;
+
+}
+
+.first-page, .previous-page, .next-page, .last-page {
+    border-radius: 5px;
+}
+
+input.current-page, input.current-page::placeholder {
+    color: var(--r-text-color) !important;
+}
+
+.Select-control {
+    color: var(--r-text-color)
+}
+.Select-placeholder {
+    color: var(--r-text-color)
+}
+
 .btn-primary {
-    background-color: #3a363d;
-    border-color:  #3a363d;
+    background-color: var(--button-color);
+    border-color:  var(--button-color);
+    color: var(--r-text-color)
+}
+
+#replicate-mode .daq-booleanswitch--light__background {
+    background-color: var(--primary-color) !important;
+}
+
+.daq-booleanswitch--light__background {
+    background-color: var(--r-text-color) !important;
 }
 
 .btn-primary:hover {
-    color: #fff;
+    color: var(--r-text-color);
     background-color:  var(--primary-hover-color);
     border-color:  var(--primary-hover-color); /*set the color you want here*/
+}
+
+.btn-primary:active {
+    background-color:  var(--primary-color) !important;
+    border-color:  var(--primary-color) !important; /*set the color you want here*/
 }
 
 .alert {
@@ -201,9 +241,17 @@ th {
 
 
 .rc-slider-track {
-  background-color: var(--primary-color);
+  background-color: var(--primary-color) !important;
 }
 
+.rc-slider-mark-text {
+    color: var(--r-text-color);
+}
+
+.rc-slider-dot-active {
+  border-color: var(--primary-color);
+    background-color: var(--primary-color);
+}
 
 .rc-slider-handle {
   background-color: var(--primary-color) !important;
@@ -220,7 +268,7 @@ th {
 
 
 #distribution-graph .hovertext rect {
-  fill: #3a363d !important;
+  fill: var(--table-dark) !important;
 }
 
 .alert-msg {
@@ -240,4 +288,8 @@ th {
 .chrome-picker {
     background-color: transparent !important;
     border: 0 solid !important;
+}
+
+.dash-filter--case {
+    border-color: var(--primary-color) !important;
 }

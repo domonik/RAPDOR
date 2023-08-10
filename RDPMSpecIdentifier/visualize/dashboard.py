@@ -28,8 +28,15 @@ ASSETS_DIR = os.path.join(FILEDIR, "assets")
 TMPDIR = tempfile.TemporaryDirectory(suffix="RDPMSpec")
 
 LOGO = os.path.join(ASSETS_DIR, "RDPMSpecIdentifier_dark_no_text.svg")
+LIGHT_LOGO = os.path.join(ASSETS_DIR, "RDPMSpecIdentifier_light_no_text.svg")
 assert os.path.exists(LOGO), f"{LOGO} does not exist"
+assert os.path.exists(LIGHT_LOGO), f"{LIGHT_LOGO} does not exist"
 encoded_img = base64.b64encode(open(LOGO, 'rb').read())
+light_img = base64.b64encode(open(LIGHT_LOGO, 'rb').read())
+
+light_svg = 'data:image/svg+xml;base64,{}'.format(light_img.decode())
+dark_svg = 'data:image/svg+xml;base64,{}'.format(encoded_img.decode())
+
 
 logger = logging.getLogger("RDPMSpecIdentifier")
 
@@ -60,7 +67,31 @@ def _header_layout():
     svg = 'data:image/svg+xml;base64,{}'.format(encoded_img.decode())
     header = html.Div(
         html.Div(
-            html.Img(src=svg, style={"width": "20%", "min-width": "300px"}, className="p-1"),
+            html.Div(
+                [
+                    html.Div(className="col-md-3 col-0"),
+                    html.Div(
+                        html.Img(src=svg, style={"width": "20%", "min-width": "300px"}, className="p-1"),
+                        className="col-md-6 col-11 justify-content-center justify-conent-md-start", id="logo-container"
+                    ),
+                    html.Div(
+                        daq.BooleanSwitch(
+                            label='',
+                            labelPosition='left',
+                            color="var(--r-text-color)",
+                            on=True,
+                            id="night-mode",
+                            className="align-self-center px-2",
+                            persistence=True
+
+                        ),
+                        className="col-1 col-md-3 d-flex justify-content-end justify-self-end"
+                    )
+
+
+                ],
+                className="row"
+            ),
             className="databox",
             style={"text-align": "center"},
         ),
@@ -79,8 +110,11 @@ def distribution_panel(data):
 
                     html.Div(
                         [
-                            html.Div(className="col-0 col-md-4", id="placeholder"),
+                            html.Div(
+                                html.Div(id="placeholder2"),
 
+                                className="col-0 col-md-4", id="placeholder"
+                            ),
                             html.Div(
                                 html.H4(f"Protein {sel_data[0]}", style={"text-align": "center"}, id="protein-id"),
                                 className="col-12 col-md-4 justify-content-center align-self-center",
@@ -99,10 +133,10 @@ def distribution_panel(data):
                                                 daq.BooleanSwitch(
                                                     label='',
                                                     labelPosition='left',
-                                                    color=DEFAULT_COLORS["secondary"],
+                                                    color="var(--primary-color)",
                                                     on=False,
                                                     id="replicate-mode",
-                                                    className="align-self-center"
+                                                    className="align-self-center",
 
                                                 ),
                                                 className="col-2 col-md-3 d-flex align-items-center justify-content-center"
@@ -431,7 +465,7 @@ def _create_table(rbmsdata, selected_columns = None):
 
         },
         style_data={
-            'color': 'white',
+            'color': 'var(--r-text-color)',
             "border": "1px",
             "font-family": "var(--bs-body-font-family)"
 
@@ -502,21 +536,21 @@ def _get_app_layout(dash_app):
             html.Div(id="recomputation"),
             html.Div(
                 _header_layout(),
-                className="row justify-content-center align-items-center"
+                className="row px-2 justify-content-center align-items-center"
             ),
             html.Div(
                 distribution_panel(rdpmsdata),
-                className="row justify-content-center align-items-center"
+                className="row px-2 justify-content-center align-items-center"
 
             ),
             html.Div(
                 _get_table(rdpmsdata),
-                className="row justify-content-center align-items-center",
+                className="row px-2 justify-content-center align-items-center",
                 id="protein-table"
             ),
             html.Div(
                 [correlation_heatmap_box(), selector_box(rdpmsdata)],
-                className="row row-eq-height justify-content-center"
+                className="row px-2 row-eq-height justify-content-center"
             ),
             _modal_image_download(),
             _modal_color_selection("primary"),
@@ -597,17 +631,31 @@ def recompute_data(kernel_size, distance_method):
 
 
 @app.callback(
+    Output("logo-container", "children"),
+    Input("night-mode", "on")
+)
+def update_logo(night_mode):
+    if night_mode:
+        img = dark_svg
+    else:
+        img = light_svg
+    return html.Img(src=img, style={"width": "20%", "min-width": "300px"}, className="p-1"),
+
+
+
+@app.callback(
     Output("distribution-graph", "figure"),
     [
         Input("protein-id", "children"),
         Input('recomputation', 'children'),
         Input("primary-open-color-modal", "style"),
         Input("secondary-open-color-modal", "style"),
-        Input("replicate-mode", "on")
+        Input("replicate-mode", "on"),
+        Input("night-mode", "on")
     ],
 
 )
-def update_plot(key, kernel_size, primary_color, secondary_color, replicate_mode):
+def update_plot(key, kernel_size, primary_color, secondary_color, replicate_mode, night_mode):
     colors = primary_color['background-color'], secondary_color['background-color']
     key = key.split("Protein ")[-1]
     if key is None:
@@ -621,6 +669,13 @@ def update_plot(key, kernel_size, primary_color, secondary_color, replicate_mode
     else:
         fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
     fig.layout.template = "plotly_white"
+    if not night_mode:
+        fig.update_layout(
+            font=dict(color="black"),
+            yaxis=dict(gridcolor="black"),
+            xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+
+        )
     fig.update_layout(
         margin={"t": 0, "b": 30, "r": 50},
         font=dict(
@@ -642,10 +697,11 @@ def update_plot(key, kernel_size, primary_color, secondary_color, replicate_mode
         Input('recomputation', 'children'),
         Input("primary-open-color-modal", "style"),
         Input("secondary-open-color-modal", "style"),
+        Input("night-mode", "on"),
     ],
 
 )
-def update_westernblot(key, kernel_size, primary_color, secondary_color):
+def update_westernblot(key, kernel_size, primary_color, secondary_color, night_mode):
     colors = primary_color['background-color'], secondary_color['background-color']
     key = key.split("Protein ")[-1]
     if key is None:
@@ -655,6 +711,13 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color):
     fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
     fig.update_yaxes(showticklabels=False, showgrid=False)
     fig.update_xaxes(showgrid=False, showticklabels=False)
+    if not night_mode:
+        fig.update_layout(
+            font=dict(color="black"),
+            yaxis=dict(gridcolor="black"),
+            xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+
+        )
     fig.update_layout(
         margin={"t": 0, "b": 0, "r": 50},
         font=dict(
@@ -677,12 +740,13 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color):
         Input('recomputation', 'children'),
         Input("primary-open-color-modal", "style"),
         Input("secondary-open-color-modal", "style"),
+        Input("night-mode", "on"),
 
     ],
     State("distance-method", "value")
 
 )
-def update_heatmap(key, kernel_size, primary_color, secondary_color, distance_method):
+def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode, distance_method):
     colors = primary_color['background-color'], secondary_color['background-color']
     key = key.split("Protein ")[-1]
     if key is None:
@@ -690,6 +754,13 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, distance_me
     _, distances = rdpmsdata[key]
     fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
     fig.layout.template = "plotly_white"
+    if not night_mode:
+        fig.update_layout(
+            font=dict(color="black"),
+            yaxis=dict(gridcolor="black"),
+            xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+
+        )
     fig.update_layout(
         margin={"t": 0, "b": 0, "l": 0, "r": 0}
     )
@@ -1094,6 +1165,7 @@ def _download_image(n_clicks, filename, key, replicate_mode, primary_color, seco
     return dcc.send_file(tmpfile)
 
 
+
 clientside_callback(
     ClientsideFunction(
         namespace="clientside",
@@ -1102,7 +1174,20 @@ clientside_callback(
     ),
     [Output("placeholder", "children")],
     [
+        Input("night-mode", "on"),
         Input("secondary-open-color-modal", "style"),
+    ],
+)
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="nightMode"
+
+    ),
+    [Output("placeholder2", "children")],
+    [
+        Input("night-mode", "on"),
     ],
 )
 
