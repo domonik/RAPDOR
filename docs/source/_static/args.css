@@ -1,0 +1,30 @@
+.wy-table-responsive table td {
+    white-space: normal !important;
+}
+.wy-table-responsive {
+    overflow: visible !important;
+}
+
+.sd-card-img-top {
+    width: 50% !important;
+    justify-content: center;
+    margin: auto;
+    padding: 10px;
+
+}
+
+.fa-github-square {
+    font-size: 2em;
+}
+
+html[data-theme="dark"] .bd-content img:not(.only-dark) {
+    background: transparent !important;
+}
+
+.sd-card {
+    background: var(--pst-color-on-background) !important;
+}
+
+.sd-card-header {
+    font-size: var(--pst-font-size-h5) !important;
+}

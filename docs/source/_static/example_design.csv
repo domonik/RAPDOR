@@ -1,0 +1,5 @@
+"Name"	"RNAse"	"Fraction"	"Replicate"
+"Intensity RNAse F1R1"	TRUE	1	1
+"Intensity RNAse F2R1"	TRUE	2	1
+"…"	"…"	"…"	"…"
+"Intensity RNAseFree F1R2"	FALSE	1	2
