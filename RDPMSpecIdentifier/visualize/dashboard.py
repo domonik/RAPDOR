@@ -90,10 +90,10 @@ def _header_layout():
                 ],
                 className="row"
             ),
-            className="databox",
+            className="databox header-box",
             style={"text-align": "center"},
         ),
-        className="col-12 p-1 justify-content-center"
+        className="col-12 m-0 px-0 justify-content-center"
     )
     return header
 
@@ -534,7 +534,7 @@ def _get_app_layout(dash_app):
             html.Div(id="recomputation"),
             html.Div(
                 _header_layout(),
-                className="row px-2 justify-content-center align-items-center"
+                className="row px-0 justify-content-center align-items-center sticky-top"
             ),
             html.Div(
                 distribution_panel(rdpmsdata),

@@ -44,6 +44,11 @@ h4 {
 
 }
 
+.header-box {
+   border-radius: 0 !important;
+   border-color: var(--table-head-color) !important;
+}
+
 
 .Select-value {
     background-color: var(--input-background-color);
