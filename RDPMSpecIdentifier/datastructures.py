@@ -284,7 +284,8 @@ class RDPMSpecData:
             raise ValueError("Not all values that are specified in ranking schema are already calculated")
         rdf = self.df.sort_values(values, ascending=ascending)[["RDPMSpecID"]]
         rdf["Rank"] = np.arange(1, len(rdf) + 1)
-        self.df = pd.merge( self.df, rdf, left_on="RDPMSpecID", right_on="RDPMSpecID")
+        self.df = self.df.reset_index(drop=True).merge(rdf, how="left", on="RDPMSpecID").set_index("id")
+        self.df["id"] = self.df.index
 
 
 

@@ -430,6 +430,7 @@ def _create_table(rbmsdata, selected_columns = None):
     global data
     if selected_columns is None:
         selected_columns = []
+    print(list(rbmsdata.extra_df.columns))
 
     data = rdpmsdata.extra_df.loc[:, rdpmsdata.id_columns + selected_columns]
     for name in rdpmsdata.calculated_score_names:
