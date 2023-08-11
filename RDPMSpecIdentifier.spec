@@ -5,7 +5,10 @@ import importlib
 block_cipher = None
 
 
-package_imports = [['dash_loading_spinners', ['package-info.json', "dash_loading_spinners.min.js"]]]
+package_imports = [
+    ['dash_loading_spinners', ['package-info.json', "dash_loading_spinners.min.js"]],
+    ['dash_daq', ['package-info.json', 'metadata.json', 'dash_daq.min.js']]
+    ]
 
 datas = [
     ("RDPMSpecIdentifier/visualize/assets/", "RDPMSpecIdentifier/visualize/assets/"),
