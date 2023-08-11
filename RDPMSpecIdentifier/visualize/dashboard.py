@@ -35,6 +35,10 @@ encoded_img = base64.b64encode(open(LOGO, 'rb').read())
 
 
 img_text = open(LOGO, 'r').read()
+color = "fill:#ff8add"
+res = re.search(color, img_text)
+COLOR_IDX = res.start()
+COLOR_END =res.end()
 
 logger = logging.getLogger("RDPMSpecIdentifier")
 
@@ -121,10 +125,10 @@ def distribution_panel(data):
                                 [
                                     html.Div(
                                         [
-                                            html.Div(className="col-md-2 col-0"),
+                                            html.Div(className="col-md-1 col-0"),
                                             html.Div(
                                                 html.Span("Replicate Mode", className="align-self-center"),
-                                                className="col-4 col-md-3 d-flex align-items-bottom justify-content-center"
+                                                className="col-4 col-md-4 d-flex align-items-bottom justify-content-center"
                                             ),
                                             html.Div(
 
@@ -137,12 +141,12 @@ def distribution_panel(data):
                                                     className="align-self-center",
 
                                                 ),
-                                                className="col-2 col-md-3 d-flex align-items-center justify-content-center"
+                                                className="col-2 col-md-2 d-flex align-items-center justify-content-center"
                                             ),
                                             html.Div(
                                                 html.Button("Download Image", style={"text-align": "center"},
                                                             id="open-modal", className="btn btn-primary"),
-                                                className="col-6 col-md-4 justify-content-right align-self-center text-end",
+                                                className="col-6 col-md-5 justify-content-right align-self-center text-end",
                                             ),
 
                                         ],
@@ -635,9 +639,8 @@ def recompute_data(kernel_size, distance_method):
 )
 def update_logo(night_mode, style):
     color2 = style["background-color"]
-    color = "fill:#ff8add"
     rep = f"fill:{color2}"
-    l_image_text = re.sub(color, rep, img_text)
+    l_image_text = img_text[:COLOR_IDX] + rep + img_text[COLOR_END:]
     if not night_mode:
         l_image_text = re.sub("fill:#f2f2f2", "fill:black", l_image_text)
     encoded_img = base64.b64encode(l_image_text.encode())
