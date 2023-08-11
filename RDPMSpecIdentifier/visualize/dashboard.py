@@ -253,6 +253,14 @@ def selector_box(data):
                         className="row justify-content-center p-2"
                     ),
                     html.Div(
+                        html.Div(
+                            html.Button('Rank Table', id='rank-btn', n_clicks=0, className="btn btn-primary",
+                                        style={"width": "100%"}),
+                            className="col-10 justify-content-center text-align-center"
+                        ),
+                        className="row justify-content-center p-2"
+                    ),
+                    html.Div(
                         [
                             html.Div(
                                 dcc.Input(
@@ -690,10 +698,6 @@ def update_plot(key, kernel_size, primary_color, secondary_color, replicate_mode
     )
     fig.update_xaxes(dtick=1)
     fig.update_xaxes(fixedrange=True)
-
-
-
-
     return fig
 
 @app.callback(
@@ -773,6 +777,8 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
     fig.update_yaxes(showgrid=False)
     fig.update_xaxes(showgrid=False)
     return fig, f"Sample {distance_method}"
+
+
 
 
 
@@ -857,7 +863,8 @@ def update_selected_id(active_cell):
 @app.callback(
     [
         Output("data-table", "children"),
-        Output("alert-div", "children")
+        Output("alert-div", "children"),
+        Output('tbl', 'sort_by'),
     ],
     [
         Input('table-selector', 'value'),
@@ -865,19 +872,31 @@ def update_selected_id(active_cell):
         Input('permanova-btn', 'n_clicks'),
         Input('anosim-btn', 'n_clicks'),
         Input('local-t-test-btn', 'n_clicks'),
-        Input("recomputation", "children")
+        Input("recomputation", "children"),
+        Input("rank-btn",  "n_clicks")
 
     ],
     [
         State("permanova-permutation-nr", "value"),
         State("anosim-permutation-nr", "value"),
         State("distance-cutoff", "value"),
+        State('tbl', 'sort_by'),
 
     ]
 
 )
-def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_clicks, recompute, permanova_permutations, anosim_permutations, distance_cutoff):
+def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_clicks, recompute, ranking, permanova_permutations, anosim_permutations, distance_cutoff, current_sorting):
     alert = False
+    if ctx.triggered_id == "rank-btn":
+        try:
+            cols = [col['column_id'] for col in current_sorting if col != "Rank"]
+            asc = [col['direction'] == "asc" for col in current_sorting if col != "Rank"]
+
+            rdpmsdata.rank_table(cols, asc)
+        except Exception as e:
+            alert = True
+            alert_msg = f"Ranking Failed:\n{str(e)}"
+
     if ctx.triggered_id == "permanova-btn":
 
         if permanova_clicks == 0:
@@ -891,6 +910,8 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_c
                 rdpmsdata.calc_global_permanova_p_value(permutations=permanova_permutations, threads=os.cpu_count())
 
                 alert = True
+                alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
+                " This might be unreliable"
     if ctx.triggered_id == "anosim-btn":
         if anosim_clicks == 0:
             raise PreventUpdate
@@ -902,6 +923,8 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_c
             else:
                 rdpmsdata.calc_global_anosim_p_value(permutations=anosim_permutations, threads=os.cpu_count())
                 alert = True
+                alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
+                " This might be unreliable"
     if ctx.triggered_id == "local-t-test-btn":
         if "RNAse True peak pos" not in rdpmsdata.df:
             rdpmsdata.determine_peaks()
@@ -915,8 +938,7 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_c
     if alert:
         alert_msg = html.Div(
             dbc.Alert(
-                "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
-                " This might be unreliable",
+                alert_msg,
                 color="danger",
                 dismissable=True,
             ),
@@ -926,7 +948,7 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_c
     else:
         alert_msg = []
 
-    return _create_table(rdpmsdata, sel_columns), alert_msg
+    return _create_table(rdpmsdata, sel_columns), alert_msg, current_sorting
 
 
 @app.callback(

@@ -41,6 +41,7 @@ class RDPMSpecData:
         self._check_design()
         self._check_dataframe()
         self.calculated_score_names = [
+            "Rank",
             "RDPMSScore",
             "ANOSIM R",
             "global ANOSIM adj p-Value",
@@ -278,6 +279,12 @@ class RDPMSpecData:
             self.df[name] = adj_pval
 
 
+    def rank_table(self, values, ascending):
+        if not all([value in self.df.columns for value in values]):
+            raise ValueError("Not all values that are specified in ranking schema are already calculated")
+        rdf = self.df.sort_values(values, ascending=ascending)[["RDPMSpecID"]]
+        rdf["Rank"] = np.arange(1, len(rdf) + 1)
+        self.df = pd.merge( self.df, rdf, left_on="RDPMSpecID", right_on="RDPMSpecID")
 
 
 
@@ -427,5 +434,6 @@ if __name__ == '__main__':
     rdpmspec = RDPMSpecData(sdf, design, logbase=2)
     rdpmspec.normalize_and_get_distances("jensenshannon", 3)
     rdpmspec.calc_all_scores()
-    rdpmspec.calc_welchs_t_test()
+    rdpmspec.rank_table(["ANOSIM R"], ascending=(True,))
+    #rdpmspec.calc_welchs_t_test()
 
