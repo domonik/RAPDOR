@@ -41,7 +41,8 @@ setup(
         "scikit-learn",
         "dash_loading_spinners",
         "kaleido",
-        "PyQt5"
+        "PyQt5",
+        "dash_daq"
     ],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
