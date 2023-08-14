@@ -283,7 +283,7 @@ class RDPMSpecData:
 
     def rank_table(self, values, ascending):
         if not all([value in self.df.columns for value in values]):
-            raise ValueError("Not all values that are specified in ranking schema are already calculated")
+            raise ValueError("Not all values that are specified in ranking scheme are already calculated")
         rdf = self.df.sort_values(values, ascending=ascending)[["RDPMSpecID"]]
         rdf["Rank"] = np.arange(1, len(rdf) + 1)
         self.df = self.df.reset_index(drop=True).merge(rdf, how="left", on="RDPMSpecID").set_index("id")

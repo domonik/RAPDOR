@@ -91,5 +91,7 @@ autosummary_mock_imports = [
     "sklearn",
     "skbio",
     "statsmodels",
-    "dash_loading_spinners"
+    "dash_loading_spinners",
+    "dash_daq",
+    "PyQt5"
 ]

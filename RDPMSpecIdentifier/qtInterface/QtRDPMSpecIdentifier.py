@@ -1,7 +1,18 @@
 import sys
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtCore import Qt, QThread, QUrl
+from PyQt5.QtGui import QColor, QIcon, QDesktopServices
+from PyQt5.QtWidgets import (
+    QFrame,
+    QWidget,
+    QLabel,
+    QVBoxLayout,
+    QGridLayout,
+    QPushButton, QHBoxLayout,
+    QLineEdit,
+    QCheckBox,
+    QFileDialog,
+    QApplication
+)
 from PyQt5.QtSvg import QSvgWidget
 from RDPMSpecIdentifier.visualize.dashboard import gui_wrapper
 import multiprocessing

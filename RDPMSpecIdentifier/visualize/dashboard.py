@@ -353,7 +353,7 @@ def selector_box(data):
                     html.Div(
                         [
                             html.Div(
-                                html.Span("Select Color Schema", style={"text-align": "center"}, id="color-schema"),
+                                html.Span("Select Color Scheme", style={"text-align": "center"}, id="color-scheme"),
                                 className="col-4 col-md-4 justify-content-center align-self-center"
                             ),
                             html.Div(
@@ -1282,4 +1282,4 @@ if __name__ == '__main__':
 
 
     _get_app_layout(app)
-    app.run(debug=True, port=8080, host="127.0.0.1")
+    app.run(debug=False, port=8080, host="127.0.0.1")

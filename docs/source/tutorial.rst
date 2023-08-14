@@ -5,4 +5,5 @@ Tutorial
     :maxdepth: 1
 
     data_preparation
-    gui
+    running_dash
+    dashboard
