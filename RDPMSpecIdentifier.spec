@@ -12,7 +12,7 @@ package_imports = [
 
 datas = [
     ("RDPMSpecIdentifier/visualize/assets/", "RDPMSpecIdentifier/visualize/assets/"),
-    ("RDPMSpecIdentifier/qtInterface/", "RDPMSpecIdentifier/qtInterface/"),
+    ("RDPMSpecIdentifier/qtInterface/", "."),
     ]
 for package, files in package_imports:
     proot = os.path.dirname(importlib.import_module(package).__file__)
@@ -20,8 +20,8 @@ for package, files in package_imports:
     datas.extend((os.path.join(proot, f), package) for f in files)
 
 a = Analysis(
-    ['gui.py'],
-    pathex=[],
+    ['build/lib/RDPMSpecIdentifier/qtInterface/QtRDPMSpecIdentifier.py'],
+    pathex=['build/lib/'],
     binaries=[],
     datas= datas,
     hiddenimports=[],
@@ -43,7 +43,7 @@ exe = EXE(
     a.zipfiles,
     a.datas,
     [],
-    name='RDPMSpecIdentifier',
+    name='RDPMSpecIdentifierGUI',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

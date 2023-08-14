@@ -19,9 +19,15 @@ import multiprocessing
 import os
 import time
 
+import sys
 
-FPATH = os.path.abspath(__file__)
-BASE = os.path.dirname(FPATH)
+if getattr(sys, 'frozen', False):
+    # If the application is run as a bundle, the PyInstaller bootloader
+    # extends the sys module by a flag frozen=True and sets the app
+    # path into variable _MEIPASS'.
+    BASE = sys._MEIPASS
+else:
+    BASE = os.path.dirname(os.path.abspath(__file__))
 
 
 STYLESHEET = os.path.join(BASE, "style.css")
@@ -294,4 +300,5 @@ def qt_wrapper(args):
 
 
 if __name__ == '__main__':
+    multiprocessing.freeze_support()
     main()
