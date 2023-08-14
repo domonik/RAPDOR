@@ -22,6 +22,9 @@ from time import sleep
 import base64
 import tempfile
 import dash_daq as daq
+import RDPMSpecIdentifier
+
+VERSION = RDPMSpecIdentifier.__version__
 
 FILEDIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(FILEDIR, "assets")
@@ -430,7 +433,6 @@ def _create_table(rbmsdata, selected_columns = None):
     global data
     if selected_columns is None:
         selected_columns = []
-    print(list(rbmsdata.extra_df.columns))
 
     data = rdpmsdata.extra_df.loc[:, rdpmsdata.id_columns + selected_columns]
     for name in rdpmsdata.calculated_score_names:
@@ -563,6 +565,16 @@ def _get_app_layout(dash_app):
                 [correlation_heatmap_box(), selector_box(rdpmsdata)],
                 className="row px-2 row-eq-height justify-content-center"
             ),
+            html.Div(
+                _footer(),
+                className="row px-3 py-3 mt-2 justify-content-end align-items-center",
+                style={
+                    "background-color": "var(--databox-color)",
+                    "border-color": "black",
+                    "border-width": "2px",
+                    "border-style": "solid",
+                },
+            ),
             _modal_image_download(),
             _modal_color_selection("primary"),
             _modal_color_selection("secondary")
@@ -570,6 +582,26 @@ def _get_app_layout(dash_app):
         ],
         className="container-fluid"
     )
+
+
+def _footer():
+    footer = [
+        html.Div(
+            [
+                html.P(f"Version {VERSION}", className="text-end"),
+                html.P(
+                    html.A(
+                        f"GitHub",
+                        className="text-end",
+                        href="https://github.com/domonik/RDPMSpecIdentifier",
+                        target="_blank"
+                    ),
+                    className="text-end")
+            ],
+            className="col-12 col-md-4 flex-column justify-content-end align-items-end"
+        )
+    ]
+    return footer
 
 def _modal_image_download():
     modal = dbc.Modal(

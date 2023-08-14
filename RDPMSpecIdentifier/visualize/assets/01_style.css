@@ -33,6 +33,15 @@ h4 {
     color: var(--r-text-color);
 }
 
+a {
+    color: var(--r-text-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary-color);
+}
+
 .databox {
 	background-color: var(--databox-color);
 	border-radius: 10px;
