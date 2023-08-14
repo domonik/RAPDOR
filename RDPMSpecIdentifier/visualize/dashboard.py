@@ -719,7 +719,7 @@ def update_plot(key, kernel_size, primary_color, secondary_color, replicate_mode
     if not night_mode:
         fig.update_layout(
             font=dict(color="black"),
-            yaxis=dict(gridcolor="black"),
+            yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
             xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
 
         )
@@ -800,7 +800,7 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
     if not night_mode:
         fig.update_layout(
             font=dict(color="black"),
-            yaxis=dict(gridcolor="black"),
+            yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
             xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
 
         )
@@ -1206,6 +1206,12 @@ def _download_image(n_clicks, filename, key, replicate_mode, primary_color, seco
     else:
         fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
     fig.layout.template = "plotly_white"
+    fig.update_layout(
+        font=dict(color="black"),
+        yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+        xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+
+    )
     fig.update_layout(legend=dict(
         orientation="h",
         yanchor="bottom",
