@@ -865,7 +865,7 @@ def style_selected_col(active_cell, sort_by, key, page_size, current_page):
         {
             "if": {"row_index": row_idx},
             "backgroundColor": "red !important",
-            "border-top": "2px solid var(--primary-color))",
+            "border-top": "2px solid var(--primary-color)",
             "border-bottom": "2px solid var(--primary-color)",
             "border-left": "0px solid var(--primary-color)",
             "border-right": "0px solid var(--primary-color)",
