@@ -45,8 +45,10 @@ class RDPMSpecData:
             "RDPMSScore",
             "ANOSIM R",
             "global ANOSIM adj p-Value",
+            "local ANOSIM adj p-Value",
             "PERMANOVA F",
             "global PERMANOVA adj p-Value",
+            "local PERMANOVA adj p-Value",
             "Mean Distance",
             "shift direction",
             "RNAse False peak pos",
@@ -360,17 +362,21 @@ class RDPMSpecData:
         result = np.stack(result)
         self.permanova_distribution = result
 
-    def calc_global_anosim_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None):
+    def calc_anosim_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None, mode: str = "local"):
         if "ANOSIM R" not in self.df.columns:
             self.calc_all_anosim_value()
         self._calc_global_anosim_distribution(permutations, threads, seed)
-        distribution = self.anosim_distribution.flatten()
-        distribution = distribution[~np.isnan(distribution)]
+        distribution = self.anosim_distribution
 
         r_scores = self.df["ANOSIM R"].to_numpy()
-        p_values = np.asarray(
-            [np.count_nonzero(distribution >= r_score) / distribution.shape[0] for r_score in r_scores]
-        )
+        if mode == "global":
+            distribution = distribution.flatten()
+            distribution = distribution[~np.isnan(distribution)]
+            p_values = np.asarray(
+                [np.count_nonzero(distribution >= r_score) / distribution.shape[0] for r_score in r_scores]
+            )
+        elif mode == "local":
+            p_values = np.count_nonzero(distribution >= r_scores, axis=0) / distribution.shape[0]
         mask = self.df["ANOSIM R"].isna()
         if distance_cutoff is not None:
             if "Mean Distance" not in self.df.columns:
@@ -378,16 +384,22 @@ class RDPMSpecData:
             mask[self.df["Mean Distance"] < distance_cutoff] = True
         p_values[mask] = np.nan
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
-        self.df["global ANOSIM adj p-Value"] = p_values
+        self.df[f"{mode} ANOSIM adj p-Value"] = p_values
 
-    def calc_global_permanova_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None):
+    def calc_permanova_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None, mode: str = "local"):
         if "PERMANOVA F" not in self.df.columns:
             self.calc_all_permanova_f()
         self._calc_global_permanova_distribution(permutations, threads, seed)
-        distribution = self.permanova_distribution.flatten()
-        distribution = distribution[~np.isnan(distribution)]
+        distribution = self.permanova_distribution
         f_scores = self.df["PERMANOVA F"].to_numpy()
-        p_values = np.asarray([np.count_nonzero(distribution >= f_score) / distribution.shape[0] for f_score in f_scores])
+        if mode == "global":
+            distribution = distribution.flatten()
+            distribution = distribution[~np.isnan(distribution)]
+            p_values = np.asarray(
+                [np.count_nonzero(distribution >= f_score) / distribution.shape[0] for f_score in f_scores]
+            )
+        elif mode == "local":
+            p_values = np.count_nonzero(distribution >= f_scores, axis=0) / distribution.shape[0]
         mask = self.df["PERMANOVA F"].isna()
         if distance_cutoff is not None:
             if "Mean Distance" not in self.df.columns:
@@ -395,14 +407,12 @@ class RDPMSpecData:
             mask[self.df["Mean Distance"] < distance_cutoff] = True
         p_values[mask] = np.nan
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
-        self.df["global PERMANOVA adj p-Value"] = p_values
+        self.df[f"{mode} PERMANOVA adj p-Value"] = p_values
 
     def export_csv(self, file: str,  sep: str = ","):
         df = self.extra_df.drop(["id"], axis=1)
         df.to_csv(file, sep=sep, index=False)
 
-    def calc_all_permanova(self, permutations, threads):
-        raise NotImplementedError("Forgot to implement PERMANOVA and ANOSIMs")
 
 def _analysis_executable_wrapper(args):
     rdpmspec = RDPMSpecData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
@@ -412,14 +422,14 @@ def _analysis_executable_wrapper(args):
     if args.method is not None:
         if not args.global_permutation:
             if args.method.upper() == "PERMANOVA":
-                rdpmspec.calc_all_permanova(args.permutations, args.num_threads)
+                rdpmspec.calc_permanova_p_value(args.permutations, args.num_threads, mode="local")
             elif args.method.upper() == "ANOSIM":
-                raise NotImplementedError("ANOSIM not implemented for local mode")
+                rdpmspec.calc_anosim_p_value(args.permutations, args.num_threads, mode="local")
         else:
             if args.method.upper() == "PERMANOVA":
-                rdpmspec.calc_global_permanova_p_value(args.permutations, args.num_threads)
+                rdpmspec.calc_permanova_p_value(args.permutations, args.num_threads, mode="global")
             elif args.method.upper() == "ANOSIM":
-                rdpmspec.calc_global_anosim_p_value(args.permutations, args.num_threads)
+                rdpmspec.calc_anosim_p_value(args.permutations, args.num_threads, mode="global")
     rdpmspec.export_csv(args.output, args.sep)
 
 
@@ -435,6 +445,8 @@ if __name__ == '__main__':
     rdpmspec = RDPMSpecData(sdf, design, logbase=2)
     rdpmspec.normalize_and_get_distances("jensenshannon", 3)
     rdpmspec.calc_all_scores()
+    rdpmspec.calc_anosim_p_value(100, threads=2, mode="global")
+    rdpmspec.calc_permanova_p_value(100, threads=2, mode="global")
     rdpmspec.rank_table(["ANOSIM R"], ascending=(True,))
     #rdpmspec.calc_welchs_t_test()
 

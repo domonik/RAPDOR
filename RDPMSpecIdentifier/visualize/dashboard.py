@@ -938,9 +938,9 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_c
             if permanova_permutations is None:
                 permanova_permutations = 9999
             if rdpmsdata.permutation_sufficient_samples:
-                rdpmsdata.calc_all_permanova(permutations=permanova_permutations, threads=os.cpu_count())
+                rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=os.cpu_count(), mode="local")
             else:
-                rdpmsdata.calc_global_permanova_p_value(permutations=permanova_permutations, threads=os.cpu_count())
+                rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=os.cpu_count(), mode="global")
 
                 alert = True
                 alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
@@ -952,9 +952,9 @@ def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_c
             if anosim_permutations is None:
                 anosim_permutations = 9999
             if rdpmsdata.permutation_sufficient_samples:
-                raise NotImplementedError("Anosim for sufficient samples not implemented yet") # Todo: Implement
+                rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=os.cpu_count(), mode="local")
             else:
-                rdpmsdata.calc_global_anosim_p_value(permutations=anosim_permutations, threads=os.cpu_count())
+                rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=os.cpu_count(), mode="global")
                 alert = True
                 alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
                 " This might be unreliable"
