@@ -213,6 +213,14 @@ th input{
     border-radius: 5px;
 }
 
+.first-page:enabled path, .previous-page:enabled path, .next-page:enabled path, .last-page:enabled path {
+    fill: white;
+}
+
+.first-page:hover:enabled path, .previous-page:hover:enabled path, .next-page:hover:enabled path, .last-page:hover:enabled path {
+    fill: var(--primary-color);
+}
+
 input.current-page, input.current-page::placeholder {
     color: var(--r-text-color) !important;
 }

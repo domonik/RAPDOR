@@ -399,7 +399,7 @@ def _get_table(rbmsdata: RDPMSpecData):
                                     id="data-table"
 
                                 ),
-                                color="#ff8add",
+                                color="var(--primary-color)",
                                 width=200,
                                 thickness=20,
 
@@ -526,7 +526,7 @@ def correlation_heatmap_box():
                                 ),
 
                             ],
-                            color="#ff8add",
+                            color="var(--primary-color)",
                             width=200,
                             thickness=20,
                         ),
