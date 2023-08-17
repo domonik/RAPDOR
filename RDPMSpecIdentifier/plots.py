@@ -2,6 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
+from typing import Iterable
 
 DEFAULT_COLORS = [
     'rgb(138, 255, 172)', 'rgb(255, 138, 221)',
@@ -12,12 +13,12 @@ DEFAULT_COLORS = [
     'rgb(188, 189, 34)', 'rgb(23, 190, 207)'
 ]
 
-def color_to_calpha(color: str, alpha: float = 0.2):
+def _color_to_calpha(color: str, alpha: float = 0.2):
     color = color.split("(")[-1].split(")")[0]
     return f"rgba({color}, {alpha})"
 
 
-def plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
+def _plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
     fig = go.Figure()
     x, y, z = to_plot
 
@@ -35,7 +36,27 @@ def plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
     return fig
 
 
-def plot_replicate_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):
+def plot_replicate_distribution(
+        subdata: np.ndarray,
+        design: pd.DataFrame,
+        groups: str,
+        offset: int = 0,
+        colors: Iterable[str] = None
+):
+    """Plots the distribution of protein for each replicate
+
+    Args:
+        subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`. Rows need to add up to one
+        design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
+        groups (str): which design column to use for grouping.
+        offset (int): adds this offset to the fractions at the x-axis range
+        colors (Iterable[str]): An iterable of color strings to use for plotting
+
+    Returns: go.Figure
+
+        A plotly figure containing a scatter-line per replicate.
+
+    """
     if colors is None:
         colors = DEFAULT_COLORS
     indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
@@ -60,13 +81,26 @@ def plot_replicate_distribution(subdata, design: pd.DataFrame, groups: str, offs
                 )
             )
     fig.add_traces(values)
-    fig = update_distribution_layout(fig, names, x, offset)
+    fig = _update_distribution_layout(fig, names, x, offset)
     return fig
 
 
-
-
 def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):
+    """Plots the distribution of proteins using mean, median, min and max values of replicates
+
+        Args:
+            subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`. Rows need to add up to one
+            design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
+            groups (str): which design column to use for grouping.
+            offset (int): adds this offset to the fractions at the x-axis range
+            colors (Iterable[str]): An iterable of color strings to use for plotting
+
+        Returns: go.Figure
+
+            A plotly figure containing a scatter-line for the mean, median, min and max of
+            the replicates.
+
+        """
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure()
@@ -87,7 +121,7 @@ def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 
         min_values = np.nanquantile(subdata[idx,], 0.25, axis=0)
         min_values = np.nanmin(subdata[idx,], axis=0)
         color = colors[eidx]
-        a_color = color_to_calpha(color, 0.4)
+        a_color = _color_to_calpha(color, 0.4)
         medians.append(go.Scatter(
             x=x,
             y=median_values,
@@ -123,11 +157,11 @@ def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 
     fig.add_traces(
         medians + means
     )
-    fig = update_distribution_layout(fig, names, x, offset)
+    fig = _update_distribution_layout(fig, names, x, offset)
     return fig
 
 
-def update_distribution_layout(fig, names, x, offset):
+def _update_distribution_layout(fig, names, x, offset):
     fig.update_layout(hovermode="x")
     fig.update_layout(xaxis_range=[x[0] - offset - 0.5, x[-1] + offset + 0.5])
     fig.update_layout(
@@ -153,25 +187,18 @@ def update_distribution_layout(fig, names, x, offset):
     )
     return fig
 
-
-def plot_correlation_heatmap(array, gene_id, design: pd.DataFrame, df: pd.DataFrame, groups: str):
-    loc = df.index.get_loc(gene_id)
-    subdata = array[loc]
-    names = groups + design[groups].astype(str) + " " + design["replicate"].astype(str)
-    corr_coeff = np.corrcoef(subdata)
-    fig = go.Figure(
-        data=go.Heatmap(
-            z=corr_coeff,
-            x=names,
-            y=names,
-            colorscale="RdBu_r",
-
-        )
-    )
-    return fig
-
-
 def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
+    """Plots a heatmap of the sample distances
+
+    Args:
+        distances (np.ndarray): between sample distances of shape :code:`num samples x num samples`
+        design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
+        groups (str): which design column to use for naming.
+        colors (Iterable[str]): An iterable of color strings to use for plotting
+
+    Returns: go.Figure
+
+    """
     if colors is None:
         colors = DEFAULT_COLORS
     names = groups + design[groups].astype(str) + " " + design["Replicate"].astype(str)
@@ -187,13 +214,26 @@ def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
     return fig
 
 def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, colors=None):
+    """Creates a Westernblot like plot from the mean of protein intensities
+
+
+    Args:
+        subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`. Rows don´t need to add up to one
+        design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
+        groups (str): which design column to use for grouping.
+        offset (int): adds this offset to the fractions at the x-axis range
+        colors (Iterable[str]): An iterable of color strings to use for plotting
+
+    Returns: go.Figure
+
+        A figure containing two subplots of heatmaps of the non normalized intensities.
+
+    """
     if colors is None:
         colors = DEFAULT_COLORS
-    fig = go.Figure()
     indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
     fig = make_subplots(cols=1, rows=2, vertical_spacing=0)
 
-    scale = [[[0.0, "rgba(240, 40, 145, 0)"], [1, "rgba(240, 40, 145, 1)"]], [[0.0, "rgba(39, 241, 245, 0)"], [1, "rgba(39, 241, 245, 1)"]]]
     ys = []
     scale = []
     means = []
@@ -201,8 +241,8 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
     names = []
     for eidx, (name, idx) in enumerate(indices.items()):
         color = colors[eidx]
-        a_color = color_to_calpha(color, 0.)
-        color = color_to_calpha(color, 1)
+        a_color = _color_to_calpha(color, 0.)
+        color = _color_to_calpha(color, 1)
         scale.append([[0, a_color], [1, color]])
         name = f"{groups}: {name}"
         mean_values = np.mean(subdata[idx, ], axis=0)
@@ -221,7 +261,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
                 z=z,
                 colorscale=scale[idx],
                 name = names[idx],
-                hovertemplate='<b>Fraction: %{x}</b><br><b>Protein Counts: %{z:.2e}</b> ',
+                hovertemplate='<b>Fraction: %{x}</b><br><b>Protein Intensity: %{z:.2e}</b> ',
 
             ),
             row=idx+1, col=1

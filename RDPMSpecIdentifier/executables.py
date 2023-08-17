@@ -34,7 +34,7 @@ def _add_common_args(parser):
     )
     return parser
 
-def qtparser(subparsers, name):
+def _qtparser(subparsers, name):
     parser = subparsers.add_parser(
         name,
         description="Runs the GUI RDPMSpecIdentifier Tool"
@@ -42,7 +42,7 @@ def qtparser(subparsers, name):
     return parser
 
 
-def analyze_parser(subparsers, name):
+def _analyze_parser(subparsers, name):
     parser = subparsers.add_parser(
         name,
         description="Runs the main RDPMSpecIdentifier Tool"
@@ -102,7 +102,7 @@ def analyze_parser(subparsers, name):
     return parser
 
 
-def dash_parser(subparsers, name):
+def _dash_parser(subparsers, name):
     parser = subparsers.add_parser(
         name,
         description="Runs the RDPMSpecIdentifier GUI"
@@ -138,9 +138,9 @@ class RDPMSpecIdentifier:
         )
         self.methods = {
             #"visualize": (visualization_parser, run_visualization),
-            "Analyze": (analyze_parser, _analysis_executable_wrapper),
-            "Dash": (dash_parser, _gui_wrapper),
-            "GUI": (qtparser, qt_wrapper)
+            "Analyze": (_analyze_parser, _analysis_executable_wrapper),
+            "Dash": (_dash_parser, _gui_wrapper),
+            "GUI": (_qtparser, qt_wrapper)
         }
         self.subparsers = self.parser.add_subparsers()
         self.__addparsers()

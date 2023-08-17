@@ -27,6 +27,7 @@ wd_v = __version__.split("+")
 if len(wd_v) > 1:
     if wd_v[1][0] == "0":
         __version__ = wd_v[0]
+__version__ = __version__.replace(".dirty", "")
 release = __version__
 
 extensions = [
@@ -89,7 +90,9 @@ autosummary_mock_imports = [
     "plotly.colors.qualitative.Light24",
     "scipy",
     "sklearn",
-    "skbio",
+    "RDPMSpecIdentifier.visualize",
+    "RDPMSpecIdentifier.qtInterface",
+    "RDPMSpecIdentifier.executables",
     "statsmodels",
     "dash_loading_spinners",
     "dash_daq",
