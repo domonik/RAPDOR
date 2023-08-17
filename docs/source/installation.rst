@@ -10,8 +10,8 @@ Linux or Windows
 
     .. code-block::
 
-        conda create -n rnadist_env
-        conda activate rnadist_env
+        conda create -n rdpmspec_env
+        conda activate rdpmspec_env
 
 
 Pip

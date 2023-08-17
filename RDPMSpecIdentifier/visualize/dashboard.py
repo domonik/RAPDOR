@@ -434,8 +434,8 @@ def _create_table(rbmsdata, selected_columns = None):
     if selected_columns is None:
         selected_columns = []
 
-    data = rdpmsdata.extra_df.loc[:, rdpmsdata.id_columns + selected_columns]
-    for name in rdpmsdata.calculated_score_names:
+    data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
+    for name in rdpmsdata.score_columns:
         if name in rdpmsdata.extra_df:
             data = pd.concat((data, rdpmsdata.extra_df[name]), axis=1)
     columns = []
@@ -1010,8 +1010,8 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     if selected_columns is None:
         selected_columns = []
 
-    data = rdpmsdata.extra_df.loc[:, rdpmsdata.id_columns + selected_columns]
-    for name in rdpmsdata.calculated_score_names:
+    data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
+    for name in rdpmsdata.score_columns:
         if name in rdpmsdata.extra_df:
             data = pd.concat((data, rdpmsdata.extra_df[name]), axis=1)
 
