@@ -9,6 +9,9 @@ from scipy.special import rel_entr
 #from RDPMSpecIdentifier.stats import fit_ecdf, get_permanova_results
 from multiprocessing import Pool
 from statsmodels.stats.multitest import multipletests
+from sklearn.manifold import TSNE
+from sklearn.decomposition import PCA
+
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
@@ -63,6 +66,7 @@ class RDPMSpecData:
         self._current_eps = None
         self._indices_true = None
         self._indices_false = None
+        self._cluster_values = None
         self.permutation_sufficient_samples = False
         self._check_design()
         self._check_dataframe()
@@ -273,11 +277,11 @@ class RDPMSpecData:
 
         rel2 = rel_entr(rnase_true, mid)
         r2 = np.argmax(rel2, axis=-1)
-        rel2 = jensenshannon(rnase_true, rnase_false, axis=-1, base=2)
+        jsd = jensenshannon(rnase_true, rnase_false, axis=-1, base=2)
 
         r2 = r2 + int(np.ceil(self.current_kernel_size / 2))
         self.df["RNAse True peak pos"] = r2
-        self.df["Mean Distance"] = rel2
+        self.df["Mean Distance"] = jsd
         side = r1 - r2
         side[side < 0] = -1
         side[side > 0] = 1
@@ -286,6 +290,57 @@ class RDPMSpecData:
         shift_strings = np.where(side == -1, "right", shift_strings)
         shift_strings = np.where(side == 1, "left", shift_strings)
         self.df["shift direction"] = shift_strings
+
+    def _calc_cluster_features(self, kernel_range=(2, 6)):
+        if "shift direction" not in self.df:
+            raise ValueError("Peaks not determined. Determine Peaks first")
+        rnase_false = self.norm_array[:, self._indices_false].mean(axis=-2)
+        rnase_true = self.norm_array[:, self._indices_true].mean(axis=-2)
+        mixture = 0.5 * (rnase_true + rnase_false)
+        ctrl_peak = rel_entr(rnase_false, mixture)
+        rnase_peak = rel_entr(rnase_true, mixture)
+        ctrl_peak_pos = self.df["RNAse False peak pos"] - int(np.floor(self.current_kernel_size / 2)) - 1
+        rnase_peak_pos = self.df["RNAse True peak pos"] - int(np.floor(self.current_kernel_size / 2)) - 1
+        v1 = np.take_along_axis(ctrl_peak, ctrl_peak_pos.to_numpy()[:, np.newaxis], axis=-1)
+        v2 = np.take_along_axis(rnase_peak, rnase_peak_pos.to_numpy()[:, np.newaxis], axis=-1)
+        shift = ctrl_peak_pos - rnase_peak_pos
+        cluster_values = [shift.to_numpy()[:, np.newaxis], v1, v2]
+        #cluster_values = [ v1, v2]
+        for kernel_size in range(*kernel_range):
+            kernel = np.ones(kernel_size)
+            array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="same"), axis=-1, arr=ctrl_peak)
+            v = np.take_along_axis(array, ctrl_peak_pos.to_numpy()[:, np.newaxis], axis=-1)
+            cluster_values.append(v)
+            array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="same"), axis=-1, arr=rnase_peak)
+            v = np.take_along_axis(array, rnase_peak_pos.to_numpy()[:, np.newaxis], axis=-1)
+            cluster_values.append(v)
+        cluster_values = np.concatenate(cluster_values, axis=1)
+        self._cluster_values = cluster_values
+
+    def cluster_shifts(self, embedding_dim: int = 2):
+        t_sne = TSNE(
+            n_components=2,
+            perplexity=30,
+            init="random",
+            n_iter=250,
+            random_state=0,
+        )
+        pca = PCA(n_components=2)
+        tsne_embedding = np.zeros((self.array.shape[0], 2))
+        mask = ~np.isnan(self._cluster_values).any(axis=1)
+        #tsne_embedding[mask, :] = t_sne.fit_transform(self._cluster_values[mask])
+        tsne_embedding[mask, :] = pca.fit_transform(self._cluster_values[mask])
+        tsne_embedding[~mask] = np.nan
+        return tsne_embedding
+
+
+
+
+
+
+
+
+
 
     @staticmethod
     def _jensenshannondistance(array) -> np.ndarray:
@@ -582,6 +637,13 @@ if __name__ == '__main__':
     rdpmspec = RDPMSpecData(sdf, design, logbase=2)
     rdpmspec.normalize_and_get_distances("jensenshannon", 3)
     rdpmspec.calc_all_scores()
+    rdpmspec._calc_cluster_features(kernel_range=(2, 4))
+    embedding = rdpmspec.cluster_shifts()
+    import plotly.graph_objs as go
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=embedding[:, 0], y=rdpmspec.df["RNAse False peak pos"] - rdpmspec.df["RNAse True peak pos"], mode="markers"))
+    fig.show()
+    exit()
     rdpmspec.calc_anosim_p_value(100, threads=2, mode="global")
     rdpmspec.calc_permanova_p_value(100, threads=2, mode="global")
     rdpmspec.rank_table(["ANOSIM R"], ascending=(True,))
