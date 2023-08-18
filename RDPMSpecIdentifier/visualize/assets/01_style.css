@@ -76,6 +76,24 @@ a:hover {
     border: 0;
     color: var(--r-text-color);
 }
+
+.dropUp .Select-menu-outer {
+    top: 0;
+     -webkit-transform: translateY(-100%);
+    transform: translateY(-100%);
+}
+
+.Select {
+    position: relative;
+}
+
+.Select-Menu {
+    position: fixed !important;
+    top: 40px; /* Adjust position as needed */
+    left: 10px; /* Adjust position as needed */
+}
+
+
 .Select-control {
     border-radius: 5px !important;
     background-color: var(--input-background-color) !important;
@@ -229,7 +247,7 @@ input.current-page, input.current-page::placeholder {
     color: var(--r-text-color)
 }
 .Select-placeholder {
-    color: var(--r-text-color)
+    color: var(--r-text-color) !important;
 }
 
 .btn-primary {
@@ -314,4 +332,31 @@ input.current-page, input.current-page::placeholder {
 
 .dash-filter--case {
     border-color: var(--primary-color) !important;
+}
+
+.dash-spreadsheet-container {
+    height: 90%;
+    height: calc(100% - 50px) !important;
+    max-height: none !important;
+}
+
+.previous-next-container {
+    height: 10%;
+    height: 50px !important;
+    min-height: 50px !important;
+}
+
+#tbl {
+    height: 100% !important;
+}
+
+#ring-chase-tbl {
+    height: 90%;
+    height: calc(100% - 50px) !important;
+}
+
+#tbl-dropdown {
+    height: 10%;
+    height: 50px !important;
+    min-height: 50px !important;
 }

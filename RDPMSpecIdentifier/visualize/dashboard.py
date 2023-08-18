@@ -395,33 +395,35 @@ def _get_table(rbmsdata: RDPMSpecData):
                             dls.RingChase(
                                 html.Div(
                                     _create_table(rbmsdata),
-                                    className="col-12 justify-content-center",
+                                    className="col-12 justify-content-center h-100",
                                     id="data-table"
 
                                 ),
                                 color="var(--primary-color)",
                                 width=200,
                                 thickness=20,
+                                id="ring-chase-tbl"
 
                             ),
                             html.Div(
                                 dcc.Dropdown(
                                     rdpmsdata.extra_df.columns,
                                     placeholder="Select Table Columns",
-                                    className="justify-content-center",
+                                    className="justify-content-center dropUp",
                                     multi=True,
                                     id="table-selector"
                                 ),
-                                className="col-12 pt-1"
+                                className="col-12 pt-1",
+                                id="tbl-dropdown"
                             ),
 
                         ],
 
 
-                    className="row justify-content-center"
+                    className="row justify-content-center h-100"
                 ),
 
-                className="databox p-3",
+                className="databox p-3", style={"resize": "vertical", "overflow-y": "auto", "min-height": "470px"}
             )
         ],
         className="col-12 p-1 justify-content-center",
