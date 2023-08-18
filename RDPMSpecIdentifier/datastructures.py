@@ -291,7 +291,7 @@ class RDPMSpecData:
         shift_strings = np.where(side == 1, "left", shift_strings)
         self.df["shift direction"] = shift_strings
 
-    def _calc_cluster_features(self, kernel_range=(2, 6)):
+    def _calc_cluster_features(self, kernel_range: int = 2):
         if "shift direction" not in self.df:
             raise ValueError("Peaks not determined. Determine Peaks first")
         rnase_false = self.norm_array[:, self._indices_false].mean(axis=-2)
@@ -299,37 +299,37 @@ class RDPMSpecData:
         mixture = 0.5 * (rnase_true + rnase_false)
         ctrl_peak = rel_entr(rnase_false, mixture)
         rnase_peak = rel_entr(rnase_true, mixture)
-        ctrl_peak_pos = self.df["RNAse False peak pos"] - int(np.floor(self.current_kernel_size / 2)) - 1
-        rnase_peak_pos = self.df["RNAse True peak pos"] - int(np.floor(self.current_kernel_size / 2)) - 1
-        v1 = np.take_along_axis(ctrl_peak, ctrl_peak_pos.to_numpy()[:, np.newaxis], axis=-1)
-        v2 = np.take_along_axis(rnase_peak, rnase_peak_pos.to_numpy()[:, np.newaxis], axis=-1)
+        ctrl_peak_pos = (self.df["RNAse False peak pos"] - int(np.floor(self.current_kernel_size / 2)) - 1).to_numpy()
+        rnase_peak_pos = (self.df["RNAse True peak pos"] - int(np.floor(self.current_kernel_size / 2)) - 1).to_numpy()
+
+        ctrl_peak = np.pad(ctrl_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
+        ctrl_peak_range = np.stack((ctrl_peak_pos, ctrl_peak_pos + 2*kernel_range + 1), axis=1)
+        ctrl_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=ctrl_peak_range, axis=-1)
+        v1 = np.take_along_axis(ctrl_peak, ctrl_peak_range, axis=-1)
+
+        rnase_peak = np.pad(rnase_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
+        rnase_peak_range = np.stack((rnase_peak_pos, rnase_peak_pos + 2 * kernel_range + 1), axis=1)
+        rnase_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=rnase_peak_range, axis=-1)
+        v2 = np.take_along_axis(rnase_peak, rnase_peak_range, axis=-1)
         shift = ctrl_peak_pos - rnase_peak_pos
-        cluster_values = [shift.to_numpy()[:, np.newaxis], v1, v2]
-        #cluster_values = [ v1, v2]
-        for kernel_size in range(*kernel_range):
-            kernel = np.ones(kernel_size)
-            array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="same"), axis=-1, arr=ctrl_peak)
-            v = np.take_along_axis(array, ctrl_peak_pos.to_numpy()[:, np.newaxis], axis=-1)
-            cluster_values.append(v)
-            array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="same"), axis=-1, arr=rnase_peak)
-            v = np.take_along_axis(array, rnase_peak_pos.to_numpy()[:, np.newaxis], axis=-1)
-            cluster_values.append(v)
-        cluster_values = np.concatenate(cluster_values, axis=1)
+        cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
         self._cluster_values = cluster_values
 
     def cluster_shifts(self, embedding_dim: int = 2):
+        data = self._cluster_values
+        data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
         t_sne = TSNE(
-            n_components=2,
+            n_components=embedding_dim,
             perplexity=30,
             init="random",
             n_iter=250,
             random_state=0,
         )
         pca = PCA(n_components=2)
-        tsne_embedding = np.zeros((self.array.shape[0], 2))
+        tsne_embedding = np.zeros((self.array.shape[0], embedding_dim))
         mask = ~np.isnan(self._cluster_values).any(axis=1)
-        #tsne_embedding[mask, :] = t_sne.fit_transform(self._cluster_values[mask])
-        tsne_embedding[mask, :] = pca.fit_transform(self._cluster_values[mask])
+        tsne_embedding[mask, :] = t_sne.fit_transform(data[mask])
+        #tsne_embedding[mask, :] = pca.fit_transform(data[mask])
         tsne_embedding[~mask] = np.nan
         return tsne_embedding
 
@@ -629,19 +629,19 @@ def _analysis_executable_wrapper(args):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
+    df = pd.read_csv("../testData/rdeep_counts_normalized.tsv", sep="\t", index_col=0)
     #sdf = df[[col for col in df.columns if "LFQ" in col]]
     sdf = df
     sdf.index = sdf.index.astype(str)
-    design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-    rdpmspec = RDPMSpecData(sdf, design, logbase=2)
+    design = pd.read_csv("../testData/rdeep_design_normalized.tsv", sep="\t")
+    rdpmspec = RDPMSpecData(sdf, design)
     rdpmspec.normalize_and_get_distances("jensenshannon", 3)
     rdpmspec.calc_all_scores()
-    rdpmspec._calc_cluster_features(kernel_range=(2, 4))
+    rdpmspec._calc_cluster_features(kernel_range=4)
     embedding = rdpmspec.cluster_shifts()
     import plotly.graph_objs as go
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=embedding[:, 0], y=rdpmspec.df["RNAse False peak pos"] - rdpmspec.df["RNAse True peak pos"], mode="markers"))
+    fig.add_trace(go.Scatter(x=embedding[:, 0], y=embedding[:, 1], mode="markers", hovertext=rdpmspec.df["RDPMSpecID"]))
     fig.show()
     exit()
     rdpmspec.calc_anosim_p_value(100, threads=2, mode="global")

@@ -274,6 +274,17 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
     return fig
 
 
+def plot_dimension_reduction_result(embedding, rdpmspecdata, colors):
+    fig = go.Figure()
+    fig.add_trace(go.Scatter(x=embedding[:, 0], y=embedding[:, 1], mode="markers", hovertext=rdpmspecdata.df["RDPMSpecID"], marker=dict(color=colors)))
+    fig.update_layout(
+        yaxis_title="TSNE Dimension 2",
+        xaxis_title="TSNE Dimension 1",
+    )
+    return fig
+
+
+
 if __name__ == '__main__':
     from RDPMSpecIdentifier.datastructures import RDPMSpecData
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)

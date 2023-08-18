@@ -8,7 +8,7 @@ from dash.dependencies import Input, Output, State
 from dash.dash_table.Format import Format, Scheme
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
-from RDPMSpecIdentifier.plots import plot_distribution, plot_heatmap, plot_barcode_plot, plot_replicate_distribution
+from RDPMSpecIdentifier.plots import plot_distribution, plot_heatmap, plot_barcode_plot, plot_replicate_distribution, plot_dimension_reduction_result
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 from dash import clientside_callback, ClientsideFunction
 import os
@@ -23,6 +23,8 @@ import base64
 import tempfile
 import dash_daq as daq
 import RDPMSpecIdentifier
+
+from RDPMSpecIdentifier.visualize.cluster_panel import _get_cluster_panel
 
 VERSION = RDPMSpecIdentifier.__version__
 
@@ -52,6 +54,7 @@ app = dash.Dash(
     #assets_url_path=ASSETS_DIR,
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
+    prevent_initial_callbacks="initial_duplicate"
 )
 
 pio.templates["plotly_white"].update(
@@ -164,7 +167,7 @@ def distribution_panel(data):
 
 
                         ],
-                        className="row justify-content-center p-2"
+                        className="row justify-content-center p-2 pt-3"
                     ),
                     html.Div(
                         [
@@ -187,10 +190,10 @@ def distribution_panel(data):
                     ),
 
                 ],
-                className="databox",
+                className="databox databox-open",
             )
         ],
-        className="col-12 p-1 justify-content-center"
+        className="col-12 px-1 pb-1 justify-content-center"
     )
     return distribution_panel
 
@@ -553,11 +556,30 @@ def _get_app_layout(dash_app):
                 _header_layout(),
                 className="row px-0 justify-content-center align-items-center sticky-top"
             ),
-            html.Div(
-                distribution_panel(rdpmsdata),
-                className="row px-2 justify-content-center align-items-center"
+            dcc.Tabs(
+                [
+                    dcc.Tab(
+                        html.Div(
+                            distribution_panel(rdpmsdata),
+                            className="row px-2 justify-content-center align-items-center"
+
+                        ), label="Distribution", className="custom-tab", selected_className='custom-tab--selected'
+                    ),
+                    dcc.Tab(
+                        html.Div(
+                            _get_cluster_panel(),
+                            className="row px-2 justify-content-center align-items-center"
+
+                        ), label="Clustering", className="custom-tab", selected_className='custom-tab--selected'
+                    )
+                ],
+                parent_className='custom-tabs',
+                className='custom-tabs-container pt-2',
+
+
 
             ),
+
             html.Div(
                 _get_table(rdpmsdata),
                 className="row px-2 justify-content-center align-items-center",
@@ -667,8 +689,6 @@ def _modal_color_selection(number):
     Input("distance-method", "value")
 )
 def recompute_data(kernel_size, distance_method):
-    if kernel_size == 0:
-        kernel_size = None
     method = rdpmsdata.methods[distance_method]
     eps = 0 if distance_method == "Jensen-Shannon-Distance" else 10 # Todo: Make this optional
     rdpmsdata.normalize_and_get_distances(method=method, kernel=kernel_size, eps=eps)
@@ -898,7 +918,7 @@ def update_selected_id(active_cell):
 @app.callback(
     [
         Output("data-table", "children"),
-        Output("alert-div", "children"),
+        Output("alert-div", "children", allow_duplicate=True),
         Output('tbl', 'sort_by'),
     ],
     [
@@ -917,7 +937,8 @@ def update_selected_id(active_cell):
         State("distance-cutoff", "value"),
         State('tbl', 'sort_by'),
 
-    ]
+    ],
+    prevent_intital_call="initial_duplicate"
 
 )
 def new_columns(sel_columns, n_clicks, permanova_clicks, anosim_clicks, t_test_clicks, recompute, ranking, permanova_permutations, anosim_permutations, distance_cutoff, current_sorting):
@@ -1234,6 +1255,77 @@ def _download_image(n_clicks, filename, key, replicate_mode, primary_color, seco
     return dcc.send_file(tmpfile)
 
 
+@app.callback(
+    Output("cluster-graph", "figure"),
+    Output("alert-div", "children", allow_duplicate=True),
+    Input('dim-red-btn', 'n_clicks'),
+    Input('cluster-feature-slider', 'value'),
+    Input("night-mode", "on"),
+    Input("primary-open-color-modal", "style"),
+    Input("recomputation", "children"),
+    prevent_intital_call="initial_duplicate"
+
+)
+def update_cluster_graph(clicks, kernel_size, night_mode, color, recomp):
+    color = color["background-color"]
+    alert_msg = ""
+    try:
+        rdpmsdata._calc_cluster_features(kernel_range=kernel_size)
+        embedding = rdpmsdata.cluster_shifts()
+        fig = plot_dimension_reduction_result(embedding, rdpmsdata, colors=color)
+
+
+    except ValueError as error:
+        print(str(error))
+        fig = go.Figure()
+        fig.add_annotation(
+            xref="paper",
+            yref="paper",
+            xanchor="center",
+            yanchor="middle",
+            x=0.5,
+            y=0.5,
+            text="Data not Calculated<br> Get Scores first",
+            showarrow=False,
+            font=(dict(size=28))
+        )
+        if ctx.triggered_id == "dim-red-btn":
+            print("clicks", clicks)
+            if clicks != 0:
+                alert_msg = html.Div(
+                    dbc.Alert(
+                        "Get Scores first",
+                        color="danger",
+                        dismissable=True,
+                    ),
+                    className="p-2 align-items-center, alert-msg",
+
+                )
+
+
+    fig.layout.template = "plotly_white"
+    if not night_mode:
+        fig.update_layout(
+            font=dict(color="black"),
+            yaxis=dict(gridcolor="black", zeroline=True, color="black"),
+            xaxis=dict(gridcolor="black", zeroline=True, color="black"),
+
+        )
+    fig.update_layout(
+        margin={"t": 0, "b": 30, "r": 50},
+        font=dict(
+            size=16,
+        ),
+        xaxis=dict(showline=True, mirror=True, ticks="outside", zeroline=False, ticklen=0, linecolor="black"),
+        yaxis=dict(showline=True, mirror=True, ticks="outside", zeroline=False, ticklen=0, linecolor="black")
+    )
+    fig.update_yaxes(showgrid=False)
+    fig.update_xaxes(showgrid=False)
+    return fig, alert_msg
+
+
+
+
 
 clientside_callback(
     ClientsideFunction(
@@ -1275,12 +1367,12 @@ def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
 
 
 if __name__ == '__main__':
-    file = os.path.abspath("../../testData/testFile.tsv")
+    file = os.path.abspath("../../testData/rdeep_counts_normalized.tsv")
     assert os.path.exists(file)
     df = pd.read_csv(file, sep="\t", index_col=0)
     df.index = df.index.astype(str)
-    design = pd.read_csv(os.path.abspath("../../testData/testDesign.tsv"), sep="\t")
-    rdpmsdata = RDPMSpecData(df, design, logbase=2)
+    design = pd.read_csv(os.path.abspath("../../testData/rdeep_design_normalized.tsv"), sep="\t")
+    rdpmsdata = RDPMSpecData(df, design)
     data = rdpmsdata.df
 
 
@@ -1290,4 +1382,4 @@ if __name__ == '__main__':
 
 
     _get_app_layout(app)
-    app.run(debug=False, port=8080, host="127.0.0.1")
+    app.run(debug=True, port=8080, host="127.0.0.1")
