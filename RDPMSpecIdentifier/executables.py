@@ -2,7 +2,7 @@ import argparse
 import os
 
 from RDPMSpecIdentifier.datastructures import _analysis_executable_wrapper, RDPMSpecData
-from RDPMSpecIdentifier.visualize.dashboard import _gui_wrapper
+from RDPMSpecIdentifier.visualize.runApp import _gui_wrapper
 from RDPMSpecIdentifier.qtInterface.QtRDPMSpecIdentifier import qt_wrapper
 
 

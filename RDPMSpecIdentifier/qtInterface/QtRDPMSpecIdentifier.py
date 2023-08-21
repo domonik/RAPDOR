@@ -14,7 +14,7 @@ from PyQt5.QtWidgets import (
     QApplication
 )
 from PyQt5.QtSvg import QSvgWidget
-from RDPMSpecIdentifier.visualize.dashboard import gui_wrapper
+from RDPMSpecIdentifier.visualize.runApp import gui_wrapper
 import multiprocessing
 import os
 import time
