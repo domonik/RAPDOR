@@ -190,7 +190,7 @@ def distribution_panel(data):
                     ),
 
                 ],
-                className="databox databox-open",
+                className="databox",
             )
         ],
         className="col-12 px-1 pb-1 justify-content-center"
@@ -398,7 +398,7 @@ def _get_table(rbmsdata: RDPMSpecData):
                             dls.RingChase(
                                 html.Div(
                                     _create_table(rbmsdata),
-                                    className="col-12 justify-content-center h-100",
+                                    className="col-12 justify-content-center h-100 dbc-row-selectable",
                                     id="data-table"
 
                                 ),
@@ -426,10 +426,10 @@ def _get_table(rbmsdata: RDPMSpecData):
                     className="row justify-content-center h-100"
                 ),
 
-                className="databox p-3", style={"resize": "vertical", "overflow-y": "auto", "min-height": "470px"}
+                className="databox databox-open p-3", style={"resize": "vertical", "overflow-y": "auto", "min-height": "470px"}
             )
         ],
-        className="col-12 p-1 justify-content-center",
+        className="col-12 px-1 pb-1 justify-content-center",
     )
     return table
 
@@ -459,6 +459,8 @@ def _create_table(rbmsdata, selected_columns = None):
 
                 num_cols.append(str(i))
             columns.append(d)
+    width = "10%" if len(columns) > 1 else "98%"
+
     t = dash_table.DataTable(
         data.to_dict('records'),
         columns,
@@ -466,6 +468,7 @@ def _create_table(rbmsdata, selected_columns = None):
         sort_action="custom",
         sort_mode="multi",
         sort_by=[],
+        row_selectable="multi",
 
         filter_action='custom',
         filter_query='',
@@ -502,7 +505,7 @@ def _create_table(rbmsdata, selected_columns = None):
                                    {
                                        'if': {'column_id': 'RDPMSpecID'},
                                        'textAlign': 'left',
-                                       "width": "10%"
+                                       "width": width
                                    }
                                ]
     ),
@@ -556,14 +559,21 @@ def _get_app_layout(dash_app):
                 _header_layout(),
                 className="row px-0 justify-content-center align-items-center sticky-top"
             ),
+            html.Div(
+                distribution_panel(rdpmsdata),
+                className="row px-2 justify-content-center align-items-center"
+
+            ),
+            html.Div(id="test-div", style={"display": "none", "height": "0%"}),
             dcc.Tabs(
                 [
                     dcc.Tab(
                         html.Div(
-                            distribution_panel(rdpmsdata),
-                            className="row px-2 justify-content-center align-items-center"
-
-                        ), label="Distribution", className="custom-tab", selected_className='custom-tab--selected'
+                            _get_table(rdpmsdata),
+                            className="row px-2 justify-content-center align-items-center",
+                            id="protein-table"
+                        ),
+                        label="Distribution", className="custom-tab", selected_className='custom-tab--selected'
                     ),
                     dcc.Tab(
                         html.Div(
@@ -580,11 +590,7 @@ def _get_app_layout(dash_app):
 
             ),
 
-            html.Div(
-                _get_table(rdpmsdata),
-                className="row px-2 justify-content-center align-items-center",
-                id="protein-table"
-            ),
+
             html.Div(
                 [correlation_heatmap_box(), selector_box(rdpmsdata)],
                 className="row px-2 row-eq-height justify-content-center"
@@ -866,7 +872,9 @@ SELECTED_STYLE = [
 
 )
 def style_selected_col(active_cell, sort_by, key, page_size, current_page):
-
+    if "tbl.active_cell" in ctx.triggered_prop_ids:
+        if active_cell is None:
+            raise PreventUpdate
     if "tbl.data" in ctx.triggered_prop_ids:
         key = key.split("Protein ")[-1]
         if key in data.index:
@@ -901,16 +909,20 @@ def style_selected_col(active_cell, sort_by, key, page_size, current_page):
 
     [
         Input('tbl', 'active_cell'),
+        Input("test-div", "children")
     ],
 
 )
-def update_selected_id(active_cell):
-
-    if active_cell is None:
+def update_selected_id(active_cell, test_div):
+    if ctx.triggered_id == "tbl":
+        if active_cell is None:
+            raise PreventUpdate
+        active_row_id = active_cell["row_id"]
+        active_row_id = f"Protein {active_row_id}"
+    elif ctx.triggered_id == "test-div":
+        active_row_id = f"Protein {test_div}"
+    else:
         raise PreventUpdate
-    active_row_id = active_cell["row_id"]
-    active_row_id = f"Protein {active_row_id}"
-
 
     return active_row_id
 
@@ -1256,24 +1268,36 @@ def _download_image(n_clicks, filename, key, replicate_mode, primary_color, seco
 
 
 @app.callback(
+    Output("tbl", "active_cell"),
+    Input('tbl', 'selected_row_ids'),
+)
+def reset_selection(selected_row_ids):
+    if selected_row_ids is None or len(selected_row_ids) == 0:
+        raise PreventUpdate
+    return None
+
+
+
+@app.callback(
     Output("cluster-graph", "figure"),
     Output("alert-div", "children", allow_duplicate=True),
     Input('dim-red-btn', 'n_clicks'),
     Input('cluster-feature-slider', 'value'),
     Input("night-mode", "on"),
     Input("primary-open-color-modal", "style"),
+    Input("secondary-open-color-modal", "style"),
     Input("recomputation", "children"),
+    State('tbl', 'selected_row_ids'),
     prevent_intital_call="initial_duplicate"
 
 )
-def update_cluster_graph(clicks, kernel_size, night_mode, color, recomp):
-    color = color["background-color"]
+def update_cluster_graph(clicks, kernel_size, night_mode, color, color2, recomp, selected_row_ids):
+    color = color["background-color"], color2["background-color"]
     alert_msg = ""
     try:
         rdpmsdata._calc_cluster_features(kernel_range=kernel_size)
         embedding = rdpmsdata.cluster_shifts()
-        fig = plot_dimension_reduction_result(embedding, rdpmsdata, colors=color)
-
+        fig = plot_dimension_reduction_result(embedding, rdpmsdata, colors=color, highlight=selected_row_ids)
 
     except ValueError as error:
         print(str(error))
@@ -1324,6 +1348,16 @@ def update_cluster_graph(clicks, kernel_size, night_mode, color, recomp):
     return fig, alert_msg
 
 
+@app.callback(
+    Output("test-div", "children"),
+    Input("cluster-graph", "hoverData")
+)
+def update_plot_with_hover(hover_data):
+    if hover_data is None:
+        raise PreventUpdate
+    hover_data = hover_data["points"][0]
+    protein = rdpmsdata.df.loc[hover_data["hovertext"]]["RDPMSpecID"]
+    return protein
 
 
 
@@ -1367,12 +1401,12 @@ def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
 
 
 if __name__ == '__main__':
-    file = os.path.abspath("../../testData/rdeep_counts_normalized.tsv")
+    file = os.path.abspath("../../testData/testFile.tsv")
     assert os.path.exists(file)
     df = pd.read_csv(file, sep="\t", index_col=0)
     df.index = df.index.astype(str)
-    design = pd.read_csv(os.path.abspath("../../testData/rdeep_design_normalized.tsv"), sep="\t")
-    rdpmsdata = RDPMSpecData(df, design)
+    design = pd.read_csv(os.path.abspath("../../testData/testDesign.tsv"), sep="\t")
+    rdpmsdata = RDPMSpecData(df, design, logbase=2)
     data = rdpmsdata.df
 
 

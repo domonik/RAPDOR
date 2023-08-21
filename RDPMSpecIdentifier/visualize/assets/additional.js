@@ -89,21 +89,19 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
 });
 
-document.addEventListener( 'keydown', ( event ) => {
+document.addEventListener('keydown', (event) => {
+    const currentInput = document.getElementsByClassName("dash-cell focused")[0];
+    const currentTr = currentInput.parentNode;
+    switch (event.key) {
+        case "ArrowUp":
+            // Up pressed
 
-  const currentInput = document.getElementsByClassName("dash-cell focused")[0];
-
-  const currentTr = currentInput.parentNode;
-  switch (event.key) {
-    case "ArrowUp":
-        // Up pressed
-
-        currentTr.previousElementSibling.firstChild.click();
-        break;
-    case "ArrowDown":
-        // Down pressed
-        ( currentTr.nextElementSibling.firstChild ).click();
-        break;
-  }
-} )
+            (currentTr.previousElementSibling.children[1]).click();
+            break;
+        case "ArrowDown":
+            // Down pressed
+            (currentTr.nextElementSibling.children[1]).click();
+            break;
+    }
+})
 

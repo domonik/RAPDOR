@@ -274,9 +274,30 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
     return fig
 
 
-def plot_dimension_reduction_result(embedding, rdpmspecdata, colors):
+def plot_dimension_reduction_result(embedding, rdpmspecdata, colors, highlight = None):
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=embedding[:, 0], y=embedding[:, 1], mode="markers", hovertext=rdpmspecdata.df["RDPMSpecID"], marker=dict(color=colors)))
+    mask = np.ones(embedding.shape[0], dtype=bool)
+    if highlight is not None and len(highlight) > 0:
+        indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
+        mask[indices] = 0
+    fig.add_trace(go.Scatter(
+        x=embedding[mask, :][:, 0],
+        y=embedding[mask, :][:, 1],
+        mode="markers",
+        hovertext=rdpmspecdata.df["RDPMSpecID"][mask],
+        marker=dict(color=colors[0]),
+        name="All Proteins"
+    ))
+    fig.add_trace(
+        go.Scatter(
+            x=embedding[~mask, :][:, 0],
+            y=embedding[~mask, :][:, 1],
+            mode="markers",
+            hovertext=rdpmspecdata.df["RDPMSpecID"][~mask],
+            marker=dict(color=colors[1], size=10),
+            name="Highlighted"
+        )
+    )
     fig.update_layout(
         yaxis_title="TSNE Dimension 2",
         xaxis_title="TSNE Dimension 1",
