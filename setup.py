@@ -42,7 +42,8 @@ setup(
         "dash_loading_spinners",
         "kaleido",
         "PyQt5",
-        "dash_daq"
+        "dash_daq",
+        "umap-learn"
     ],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],

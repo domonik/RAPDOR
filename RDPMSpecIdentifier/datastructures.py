@@ -11,6 +11,8 @@ from multiprocessing import Pool
 from statsmodels.stats.multitest import multipletests
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
+from sklearn.cluster import KMeans, HDBSCAN, DBSCAN
+from umap import UMAP
 
 from statsmodels.distributions.empirical_distribution import ECDF
 
@@ -315,29 +317,48 @@ class RDPMSpecData:
         cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
         self._cluster_values = cluster_values
 
-    def cluster_shifts(self, embedding_dim: int = 2):
+    def reduce_dim(self, embedding_dim: int = 2, method: str = "T-SNE"):
         data = self._cluster_values
         data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
-        t_sne = TSNE(
-            n_components=embedding_dim,
-            perplexity=30,
-            init="random",
-            n_iter=250,
-            random_state=0,
-        )
-        pca = PCA(n_components=2)
+        if method == "T-SNE":
+            reducer = TSNE(
+                n_components=embedding_dim,
+                perplexity=10,
+                init="random",
+                n_iter=250,
+                random_state=0,
+            )
+        elif method == "UMAP":
+            reducer = UMAP()
+        elif method == "PCA":
+            pca = PCA(n_components=2)
+        else: raise NotImplementedError("Method not implemented")
         tsne_embedding = np.zeros((self.array.shape[0], embedding_dim))
         mask = ~np.isnan(self._cluster_values).any(axis=1)
-        tsne_embedding[mask, :] = t_sne.fit_transform(data[mask])
+        tsne_embedding[mask, :] = reducer.fit_transform(data[mask])
         #tsne_embedding[mask, :] = pca.fit_transform(data[mask])
         tsne_embedding[~mask] = np.nan
         return tsne_embedding
 
+    def cluster_data(self, method: str = "HDBSCAN", **kwargs):
+        if self._cluster_values is None:
+            raise ValueError("Cluster Features not calculated. Calculate first")
+        data = self._cluster_values
+        data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
+        if method == "HDBSCAN":
+            clusterer = HDBSCAN(**kwargs)
+        elif method == "K-Means":
+            clusterer = KMeans(n_init="auto", **kwargs)
+        elif method == "DBSCAN":
+            clusterer = DBSCAN(**kwargs)
+        else:
+            raise ValueError("Unsupported Method selected")
 
-
-
-
-
+        clusters = np.empty(self.array.shape[0])
+        mask = ~np.isnan(data).any(axis=1)
+        clusters[mask] = clusterer.fit(data[mask]).labels_
+        clusters[~mask] = np.nan
+        return clusters
 
 
 
@@ -637,11 +658,13 @@ if __name__ == '__main__':
     rdpmspec = RDPMSpecData(sdf, design)
     rdpmspec.normalize_and_get_distances("jensenshannon", 3)
     rdpmspec.calc_all_scores()
-    rdpmspec._calc_cluster_features(kernel_range=4)
-    embedding = rdpmspec.cluster_shifts()
+    rdpmspec._calc_cluster_features(kernel_range=3)
+    clusters = rdpmspec.cluster_data(-1)
+    embedding = rdpmspec.reduce_dim()
     import plotly.graph_objs as go
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=embedding[:, 0], y=embedding[:, 1], mode="markers", hovertext=rdpmspec.df["RDPMSpecID"]))
+    from plotly.colors import qualitative
+    from RDPMSpecIdentifier.plots import plot_dimension_reduction_result
+    fig = plot_dimension_reduction_result(embedding, rdpmspec, colors=qualitative.Light24 + qualitative.Dark24, clusters=clusters)
     fig.show()
     exit()
     rdpmspec.calc_anosim_p_value(100, threads=2, mode="global")

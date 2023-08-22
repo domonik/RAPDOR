@@ -1,6 +1,7 @@
 
 from dash import dcc, dash_table, html
 from dash import html, ctx
+import dash_loading_spinners as dls
 
 from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS
 
@@ -13,7 +14,16 @@ def _get_cluster_panel():
                     [
                         html.Div(html.H4("Clustering"), className="col-12 py-2"),
                         html.Div(
-                            dcc.Graph(id="cluster-graph"),
+                            dls.RingChase(
+                                [
+
+                                    dcc.Graph(id="cluster-graph"),
+
+                                ],
+                                color="var(--primary-color)",
+                                width=200,
+                                thickness=20,
+                            ),
                             className="col-12 col-md-7"
                         ),
                         html.Div(
@@ -52,7 +62,7 @@ def _get_cluster_panel():
                                         ),
                                         html.Div(
                                             dcc.Slider(
-                                                0, 5, step=1,
+                                                0, 10, step=1,
                                                 value=3,
                                                 className="justify-content-center",
                                                 id="cluster-feature-slider"
@@ -62,14 +72,44 @@ def _get_cluster_panel():
                                     ],
                                     className="row justify-content-center p-2"
                                 ),
+
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            html.Span("Cluster Method", style={"text-align": "center"}),
+                                            className="col-3 col-md-3 justify-content-center align-self-center"
+                                        ),
+                                        html.Div(
+                                            dcc.Dropdown(
+                                                ["HDBSCAN", "DBSCAN", "K-Means", "None"], "HDBSCAN",
+                                                className="justify-content-center",
+                                                id="cluster-method",
+                                                clearable=False
+
+                                            ),
+                                            className="col-7 justify-content-center text-align-center"
+                                        )
+                                    ],
+                                    className="row justify-content-center p-2"
+                                ),
                                 html.Div(
                                     html.Div(
-                                        html.Button('Get Low Dim Plot', id='dim-red-btn', n_clicks=0,
+                                        html.Button('Adjust Cluster Settings', id='adj-cluster-settings', n_clicks=0,
                                                     className="btn btn-primary", style={"width": "100%"}),
                                         className="col-10 justify-content-center text-align-center"
                                     ),
                                     className="row justify-content-center p-2"
                                 ),
+                                html.Div(
+                                    html.Div(
+                                        html.Button('Download Image', id='cluster-img-modal-btn', n_clicks=0,
+                                                    className="btn btn-primary", style={"width": "100%"}),
+                                        className="col-10 justify-content-center text-align-center"
+                                    ),
+                                    className="row justify-content-center p-2"
+                                ),
+                                dcc.Download(id="download-cluster-image"),
+
                             ],
 
                             className="col-md-5 col-12"

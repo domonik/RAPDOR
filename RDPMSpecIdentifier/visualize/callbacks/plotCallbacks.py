@@ -3,15 +3,16 @@ import numpy as np
 from dash import Output, Input, State, ctx, html
 from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
-
+from plotly.colors import qualitative
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
     plot_dimension_reduction_result
 from RDPMSpecIdentifier.visualize.appDefinition import app
 import RDPMSpecIdentifier.visualize as rdpv
+import ast
 
 
 
-
+COLORS = qualitative.Alphabet + qualitative.Light24
 
 @app.callback(
     Output("distribution-graph", "figure"),
@@ -139,23 +140,72 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
 @app.callback(
     Output("cluster-graph", "figure"),
     Output("alert-div", "children", allow_duplicate=True),
-    Input('dim-red-btn', 'n_clicks'),
     Input('cluster-feature-slider', 'value'),
     Input("night-mode", "on"),
     Input("primary-open-color-modal", "style"),
     Input("secondary-open-color-modal", "style"),
     Input("recomputation", "children"),
-    State('tbl', 'selected_row_ids'),
+    Input('cluster-method', 'value'),
+    Input('dim-red-method', 'value'),
+    Input('tbl', 'selected_row_ids'),
+    Input("HDBSCAN-apply-settings-modal", "n_clicks"),
+    Input("DBSCAN-apply-settings-modal", "n_clicks"),
+    Input("K-Means-apply-settings-modal", "n_clicks"),
+    State('HDBSCAN-min_cluster_size-input', "value"),
+    State('HDBSCAN-cluster_selection_epsilon-input', "value"),
+    State('DBSCAN-eps-input', "value"),
+    State('DBSCAN-min_samples-input', "value"),
+    State('K-Means-n_clusters-input', "value"),
+    State('K-Means-random_state-input', "value"),
     prevent_intital_call="initial_duplicate"
 
 )
-def update_cluster_graph(clicks, kernel_size, night_mode, color, color2, recomp, selected_row_ids):
+def update_cluster_graph(
+        kernel_size,
+        night_mode,
+        color,
+        color2,
+        recomp,
+        cluster_method,
+        dim_red_method,
+        selected_row_ids,
+        apply_1,
+        apply_2,
+        apply_3,
+        hdb_min_cluster_size,
+        hdb_epsilon,
+        db_eps,
+        db_min_samples,
+        k_clusters,
+        k_random_state
+):
     color = color["background-color"], color2["background-color"]
     alert_msg = ""
     try:
         rdpv.RDPMSDATA._calc_cluster_features(kernel_range=kernel_size)
-        embedding = rdpv.RDPMSDATA.cluster_shifts()
-        fig = plot_dimension_reduction_result(embedding, rdpv.RDPMSDATA, colors=color, highlight=selected_row_ids)
+        if cluster_method != "None":
+            if cluster_method == "HDBSCAN":
+                kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
+            elif cluster_method == "DBSCAN":
+                kwargs = dict(eps=db_eps, min_samples=db_min_samples)
+            elif cluster_method == "K-Means":
+                kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
+            else:
+                raise NotImplementedError("Method Not Implemented")
+            clusters = rdpv.RDPMSDATA.cluster_data(method=cluster_method, **kwargs)
+
+        else:
+            clusters = None
+        embedding = rdpv.RDPMSDATA.reduce_dim(method=dim_red_method)
+        colors = COLORS + list(color)
+        fig = plot_dimension_reduction_result(
+            embedding,
+            rdpv.RDPMSDATA,
+            name=dim_red_method,
+            colors=colors,
+            highlight=selected_row_ids,
+            clusters=clusters
+        )
 
     except ValueError as error:
         print(str(error))
@@ -171,19 +221,6 @@ def update_cluster_graph(clicks, kernel_size, night_mode, color, color2, recomp,
             showarrow=False,
             font=(dict(size=28))
         )
-        if ctx.triggered_id == "dim-red-btn":
-            print("clicks", clicks)
-            if clicks != 0:
-                alert_msg = html.Div(
-                    dbc.Alert(
-                        "Get Scores first",
-                        color="danger",
-                        dismissable=True,
-                    ),
-                    className="p-2 align-items-center, alert-msg",
-
-                )
-
 
     fig.layout.template = "plotly_white"
     if not night_mode:
@@ -194,7 +231,7 @@ def update_cluster_graph(clicks, kernel_size, night_mode, color, color2, recomp,
 
         )
     fig.update_layout(
-        margin={"t": 0, "b": 30, "r": 50},
+        margin={"t": 30, "b": 30, "r": 50},
         font=dict(
             size=16,
         ),

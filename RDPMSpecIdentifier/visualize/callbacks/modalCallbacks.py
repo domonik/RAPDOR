@@ -3,10 +3,11 @@ import os
 import dash
 import numpy as np
 from dash import Output, Input, State, dcc, ctx
-
+import plotly.graph_objs as go
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution
 from RDPMSpecIdentifier.visualize.appDefinition import app, TMPDIR
 import RDPMSpecIdentifier.visualize as rdpv
+
 
 
 
@@ -152,3 +153,70 @@ def _toggle_secondary_color_modal(n1, n2, is_open, color_value):
     else:
         raise ValueError("")
     return not is_open, style
+
+
+@app.callback(
+    [
+        Output("HDBSCAN-cluster-modal", "is_open"),
+        Output("DBSCAN-cluster-modal", "is_open"),
+        Output("K-Means-cluster-modal", "is_open"),
+     ],
+    [
+        Input("adj-cluster-settings", "n_clicks"),
+        Input("HDBSCAN-apply-settings-modal", "n_clicks"),
+        Input("DBSCAN-apply-settings-modal", "n_clicks"),
+        Input("K-Means-apply-settings-modal", "n_clicks"),
+
+    ],
+    [
+        State("HDBSCAN-cluster-modal", "is_open"),
+        State("DBSCAN-cluster-modal", "is_open"),
+        State("K-Means-cluster-modal", "is_open"),
+        State("cluster-method", "value")
+     ],
+    prevent_initial_call=True
+
+)
+def _toggle_cluster_modal(n1, n2, n3, n4, hdb_is_open, db_is_open, k_is_open, cluster_method):
+    if cluster_method == "HDBSCAN":
+        return not hdb_is_open, db_is_open, k_is_open
+    elif cluster_method == "DBSCAN":
+        return hdb_is_open, not db_is_open, k_is_open
+    elif cluster_method == "K-Means":
+        return hdb_is_open, db_is_open, not k_is_open
+    else:
+        return hdb_is_open, db_is_open, k_is_open
+
+
+@app.callback(
+    Output("cluster-img-modal", "is_open"),
+    Output("download-cluster-image", "data"),
+    [
+        Input("cluster-img-modal-btn", "n_clicks"),
+        Input("download-cluster-image-button", "n_clicks"),
+    ],
+    [
+        State("cluster-img-modal", "is_open"),
+        State("cluster-graph", "figure"),
+        State("cluster-download", "value"),
+
+    ],
+    prevent_initial_call=True
+
+)
+def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename):
+
+    if ctx.triggered_id == "cluster-img-modal-btn":
+        return not is_open, dash.no_update
+    else:
+        fig = go.Figure(graph)
+        fig.update_layout(
+            font=dict(color="black"),
+            yaxis=dict(gridcolor="black"),
+            xaxis=dict(gridcolor="black"),
+
+        )
+        tmpfile = os.path.join(TMPDIR.name, filename)
+        fig.write_image(tmpfile)
+        assert os.path.exists(tmpfile)
+        return not is_open, dcc.send_file(tmpfile)
