@@ -164,3 +164,4 @@ crashlytics.properties
 crashlytics-build.properties
 fabric.properties
 /testData/
+*file_system_backend/

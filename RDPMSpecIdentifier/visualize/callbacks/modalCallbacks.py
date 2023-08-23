@@ -6,7 +6,6 @@ from dash import Output, Input, State, dcc, ctx
 import plotly.graph_objs as go
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution
 from RDPMSpecIdentifier.visualize.appDefinition import app, TMPDIR
-import RDPMSpecIdentifier.visualize as rdpv
 
 
 
@@ -25,23 +24,23 @@ import RDPMSpecIdentifier.visualize as rdpv
         State("replicate-mode", "on"),
         State("primary-open-color-modal", "style"),
         State("secondary-open-color-modal", "style"),
+        State("data-store", "data"),
+        State("unique-id", "data"),
     ],
     prevent_initial_call=True
 )
-def _download_image(n_clicks, filename, key, replicate_mode, primary_color, secondary_color):
+def _download_image(n_clicks, filename, key, replicate_mode, primary_color, secondary_color, rdpmsdata, uid):
     key = key.split("Protein ")[-1]
     colors = primary_color['background-color'], secondary_color['background-color']
-
-
     filename = os.path.basename(filename)
-    array, _ = rdpv.RDPMSDATA[key]
+    array, _ = rdpmsdata[key]
     i = 0
-    if rdpv.RDPMSDATA.current_kernel_size is not None:
-        i = int(np.floor(rdpv.RDPMSDATA.current_kernel_size / 2))
+    if rdpmsdata.current_kernel_size is not None:
+        i = int(np.floor(rdpmsdata.current_kernel_size / 2))
     if replicate_mode:
-        fig = plot_replicate_distribution(array, rdpv.RDPMSDATA.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+        fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
     else:
-        fig = plot_distribution(array, rdpv.RDPMSDATA.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+        fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
     fig.layout.template = "plotly_white"
     fig.update_layout(
         font=dict(color="black"),
@@ -63,10 +62,16 @@ def _download_image(n_clicks, filename, key, replicate_mode, primary_color, seco
         )
     )
     fig.update_xaxes(dtick=1)
-    tmpfile = os.path.join(TMPDIR.name, filename)
+    filetype = filename.split(".")[-1]
+    if filetype not in ["svg", "pdf", "png"]:
+        filetype = "svg"
+    tmpfile = os.path.join(TMPDIR.name, f"{uid}.{filetype}")
+
     fig.write_image(tmpfile)
     assert os.path.exists(tmpfile)
-    return dcc.send_file(tmpfile)
+    ret_val = dcc.send_file(tmpfile)
+    ret_val["filename"] = filename
+    return ret_val
 
 
 @app.callback(
@@ -199,12 +204,13 @@ def _toggle_cluster_modal(n1, n2, n3, n4, hdb_is_open, db_is_open, k_is_open, cl
         State("cluster-img-modal", "is_open"),
         State("cluster-graph", "figure"),
         State("cluster-download", "value"),
+        State("unique-id", "data"),
 
     ],
     prevent_initial_call=True
 
 )
-def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename):
+def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename, uid):
 
     if ctx.triggered_id == "cluster-img-modal-btn":
         return not is_open, dash.no_update
@@ -214,9 +220,15 @@ def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename):
             font=dict(color="black"),
             yaxis=dict(gridcolor="black"),
             xaxis=dict(gridcolor="black"),
+            plot_bgcolor='white',
 
         )
-        tmpfile = os.path.join(TMPDIR.name, filename)
+        filetype = filename.split(".")[-1]
+        if filetype not in ["svg", "pdf", "png"]:
+            filetype = "svg"
+        tmpfile = os.path.join(TMPDIR.name, f"{uid}.{filetype}")
         fig.write_image(tmpfile)
         assert os.path.exists(tmpfile)
-        return not is_open, dcc.send_file(tmpfile)
+        ret_val = dcc.send_file(tmpfile)
+        ret_val["filename"] = filename
+        return not is_open, ret_val

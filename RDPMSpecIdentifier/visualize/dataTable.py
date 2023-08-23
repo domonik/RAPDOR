@@ -54,7 +54,6 @@ def _get_table(rdpmsdata):
 
 
 def _create_table(rdpmsdata, selected_columns = None):
-    global data
     if selected_columns is None:
         selected_columns = []
 

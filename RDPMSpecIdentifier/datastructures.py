@@ -60,6 +60,7 @@ class RDPMSpecData:
         self.array = None
         self.internal_design_matrix = None
         self.current_kernel_size = None
+        self.current_method = None
         self.norm_array = None
         self.distances = None
         self._anosim_distribution = None
@@ -221,6 +222,7 @@ class RDPMSpecData:
         """
         if method == "jensenshannon":
             self.distances = self._jensenshannondistance(self.norm_array)
+
         elif method == "symmetric-kl-divergence":
             if self._current_eps is None or self._current_eps <= 0:
                 raise ValueError(
@@ -232,6 +234,7 @@ class RDPMSpecData:
             self.distances = self._euclidean_distance(self.norm_array)
         else:
             raise ValueError(f"methhod: {method} is not supported")
+        self.current_method = method
 
     def _unset_scores_and_pvalues(self):
         for name in self.score_columns:

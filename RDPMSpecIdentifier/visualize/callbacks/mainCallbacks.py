@@ -6,19 +6,45 @@ from dash.exceptions import PreventUpdate
 
 from RDPMSpecIdentifier.visualize.appDefinition import app
 from RDPMSpecIdentifier.visualize.staticContent import IMG_TEXT, COLOR_IDX, COLOR_END
-import RDPMSpecIdentifier.visualize as rdpv
+from dash_extensions.enrich import Serverside, State
+from RDPMSpecIdentifier.datastructures import RDPMSpecData
+import pandas as pd
+import uuid
+
+
+
 
 
 @app.callback(
     Output("recomputation", "children"),
+    Output("data-store", "data"),
+    Output("unique-id", "data"),
     Input("kernel-slider", "value"),
-    Input("distance-method", "value")
+    Input("distance-method", "value"),
+    State("data-store", "data"),
+    State("design-store", "data"),
+    State("intentity-store", "data"),
+    State("logbase-store", "data"),
+    State("unique-id", "data"),
 )
-def recompute_data(kernel_size, distance_method):
-    method = rdpv.RDPMSDATA.methods[distance_method]
+def recompute_data(kernel_size, distance_method, data, design, intensities, logbase, uid):
+    if uid is None:
+        uid = str(uuid.uuid4())
+    if data is None:
+        intensities = pd.read_json(intensities)
+        intensities.index = intensities.index.astype(str)
+        design = pd.read_json(design)
+        rdpmspec = RDPMSpecData(df=intensities, design=design, logbase=logbase)
+    else:
+        rdpmspec: RDPMSpecData = data
+        method = rdpmspec.methods[distance_method]
+        if rdpmspec.current_kernel_size == kernel_size and rdpmspec.current_method == method:
+            return html.Div(), Serverside(rdpmspec, key=uid), uid
+
+    method = rdpmspec.methods[distance_method]
     eps = 0 if distance_method == "Jensen-Shannon-Distance" else 10  # Todo: Make this optional
-    rdpv.RDPMSDATA.normalize_and_get_distances(method=method, kernel=kernel_size, eps=eps)
-    return html.Div()
+    rdpmspec.normalize_and_get_distances(method=method, kernel=kernel_size, eps=eps)
+    return html.Div(), Serverside(rdpmspec, key=uid), uid
 
 
 @app.callback(
@@ -63,7 +89,8 @@ def update_selected_id(active_cell, test_div):
 @app.callback(
     Output("download-dataframe-csv", "data"),
     Input("export-btn", "n_clicks"),
+    State("data-store", "data"),
     prevent_initial_call=True,
 )
-def download_dataframe(n_clicks):
-    return dcc.send_data_frame(rdpv.RDPMSDATA.extra_df.to_csv, "RDPMSpecIdentifier.tsv", sep="\t")
+def download_dataframe(n_clicks, rdpmsdata):
+    return dcc.send_data_frame(rdpmsdata.extra_df.to_csv, "RDPMSpecIdentifier.tsv", sep="\t")
