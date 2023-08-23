@@ -320,8 +320,7 @@ class RDPMSpecData:
         cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
         self._cluster_values = cluster_values
 
-    def reduce_dim(self, embedding_dim: int = 2, method: str = "T-SNE"):
-        data = self._cluster_values
+    def reduce_dim(self, data, embedding_dim: int = 2, method: str = "T-SNE"):
         data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
         if method == "T-SNE":
             reducer = TSNE(
@@ -330,11 +329,12 @@ class RDPMSpecData:
                 init="random",
                 n_iter=250,
                 random_state=0,
+                method="exact" if embedding_dim >= 4 else "barnes_hut"
             )
         elif method == "UMAP":
-            reducer = UMAP()
+            reducer = UMAP(n_components=embedding_dim)
         elif method == "PCA":
-            pca = PCA(n_components=2)
+            reducer = PCA(n_components=embedding_dim)
         else: raise NotImplementedError("Method not implemented")
         tsne_embedding = np.zeros((self.array.shape[0], embedding_dim))
         mask = ~np.isnan(self._cluster_values).any(axis=1)
@@ -343,10 +343,11 @@ class RDPMSpecData:
         tsne_embedding[~mask] = np.nan
         return tsne_embedding
 
-    def cluster_data(self, method: str = "HDBSCAN", **kwargs):
+    def cluster_data(self, method: str = "HDBSCAN", reduction_method: str = "T-SNE", **kwargs):
         if self._cluster_values is None:
             raise ValueError("Cluster Features not calculated. Calculate first")
-        data = self._cluster_values
+        data = self.reduce_dim(data=self._cluster_values[:, 1:], method=reduction_method, embedding_dim=3)
+        data = np.concatenate((self._cluster_values[:, 0:1], data), axis=1)
         data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
         if method == "HDBSCAN":
             clusterer = HDBSCAN(**kwargs)
@@ -361,6 +362,7 @@ class RDPMSpecData:
         mask = ~np.isnan(data).any(axis=1)
         clusters[mask] = clusterer.fit(data[mask]).labels_
         clusters[~mask] = np.nan
+        self.df["Cluster"] = clusters
         return clusters
 
 
@@ -662,12 +664,12 @@ if __name__ == '__main__':
     rdpmspec.normalize_and_get_distances("jensenshannon", 3)
     rdpmspec.calc_all_scores()
     rdpmspec._calc_cluster_features(kernel_range=3)
-    clusters = rdpmspec.cluster_data(-1)
+    clusters = rdpmspec.cluster_data()
     embedding = rdpmspec.reduce_dim()
     import plotly.graph_objs as go
     from plotly.colors import qualitative
     from RDPMSpecIdentifier.plots import plot_dimension_reduction_result
-    fig = plot_dimension_reduction_result(embedding, rdpmspec, colors=qualitative.Light24 + qualitative.Dark24, clusters=clusters)
+    fig = plot_dimension_reduction_result(embedding, rdpmspec, colors=qualitative.Light24 + qualitative.Dark24, clusters=clusters, name="bla")
     fig.show()
     exit()
     rdpmspec.calc_anosim_p_value(100, threads=2, mode="global")

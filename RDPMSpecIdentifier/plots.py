@@ -286,16 +286,20 @@ def plot_dimension_reduction_result(embedding, rdpmspecdata, name, colors=None, 
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
-    for color_idx, cluster in enumerate(range(min(n_cluster, len(colors)-2))):
-        c_mask = mask & (clusters == cluster)
-        fig.add_trace(go.Scatter(
-            x=embedding[c_mask, :][:, 0],
-            y=embedding[c_mask, :][:, 1],
-            mode="markers",
-            hovertext=rdpmspecdata.df["RDPMSpecID"][c_mask],
-            marker=dict(color=colors[color_idx]),
-            name=f"Cluster {cluster}"
-        ))
+
+    if n_cluster > len(colors)-2:
+        fig.add_annotation(
+            xref="paper",
+            yref="paper",
+            xanchor="center",
+            yanchor="middle",
+            x=0.5,
+            y=0.5,
+            text="Too Many Clusters<br> Will not show all<br>Please adjust cluster Settings",
+            showarrow=False,
+            font=(dict(size=28))
+        )
+
     if np.any(clusters == -1):
         c_mask = mask & (clusters == -1)
         fig.add_trace(go.Scatter(
@@ -307,17 +311,42 @@ def plot_dimension_reduction_result(embedding, rdpmspecdata, name, colors=None, 
             name=f"Not Clustered",
             visible="legendonly"
         ))
+        nmask = ~mask & (clusters == -1)
+        fig.add_trace(
+            go.Scatter(
+                x=embedding[nmask, :][:, 0],
+                y=embedding[nmask, :][:, 1],
+                mode="markers",
+                hovertext=rdpmspecdata.df["RDPMSpecID"][nmask],
+                marker=dict(color=colors[-2], size=12, line=dict(color=colors[-1], width=4)),
+                name="Not Clustered",
+                visible="legendonly",
 
-    fig.add_trace(
-        go.Scatter(
-            x=embedding[~mask, :][:, 0],
-            y=embedding[~mask, :][:, 1],
-            mode="markers",
-            hovertext=rdpmspecdata.df["RDPMSpecID"][~mask],
-            marker=dict(color=colors[-1], size=10),
-            name="Highlighted"
         )
-    )
+        )
+    for color_idx, cluster in enumerate(range(min(n_cluster, len(colors)-2))):
+        c_mask = mask & (clusters == cluster)
+        fig.add_trace(go.Scatter(
+            x=embedding[c_mask, :][:, 0],
+            y=embedding[c_mask, :][:, 1],
+            mode="markers",
+            hovertext=rdpmspecdata.df["RDPMSpecID"][c_mask],
+            marker=dict(color=colors[color_idx]),
+            name=f"Cluster {cluster}"
+        ))
+        nmask = ~mask & (clusters == cluster)
+        fig.add_trace(
+            go.Scatter(
+                x=embedding[nmask, :][:, 0],
+                y=embedding[nmask, :][:, 1],
+                mode="markers",
+                hovertext=rdpmspecdata.df["RDPMSpecID"][nmask],
+                marker=dict(color=colors[color_idx], size=12, line=dict(color=colors[-1], width=4)),
+                name=f"Cluster {cluster}"
+            )
+        )
+
+
     fig.update_layout(
         yaxis_title=f"{name} Dimension 2",
         xaxis_title=f"{name} Dimension 1",

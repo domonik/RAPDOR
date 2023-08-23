@@ -68,7 +68,7 @@ def _get_app_layout(intensities: pd.DataFrame, design: pd.DataFrame, logbase: in
                                 className="row px-2 justify-content-center align-items-center",
                                 id="protein-table"
                             ),
-                            label="Distribution", className="custom-tab", selected_className='custom-tab--selected'
+                            label="Table", className="custom-tab", selected_className='custom-tab--selected'
                         ),
                         dcc.Tab(
                             html.Div(

@@ -7,10 +7,10 @@ from plotly.colors import qualitative
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
     plot_dimension_reduction_result
 from RDPMSpecIdentifier.visualize.appDefinition import app
+from dash_extensions.enrich import Serverside
 
 
-
-COLORS = qualitative.Alphabet + qualitative.Light24
+COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + qualitative.G10
 
 @app.callback(
     Output("distribution-graph", "figure"),
@@ -141,6 +141,7 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
 @app.callback(
     Output("cluster-graph", "figure"),
     Output("alert-div", "children", allow_duplicate=True),
+    Output("data-store", "data", allow_duplicate=True),
     Input('cluster-feature-slider', 'value'),
     Input("night-mode", "on"),
     Input("primary-open-color-modal", "style"),
@@ -159,6 +160,7 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
     State('K-Means-n_clusters-input', "value"),
     State('K-Means-random_state-input', "value"),
     State('data-store', "data"),
+    State('unique-id', "data"),
     prevent_intital_call="initial_duplicate"
 
 )
@@ -180,26 +182,32 @@ def update_cluster_graph(
         db_min_samples,
         k_clusters,
         k_random_state,
-        rdpmsdata
+        rdpmsdata,
+        uid
 ):
     color = color["background-color"], color2["background-color"]
     alert_msg = ""
     try:
-        rdpmsdata._calc_cluster_features(kernel_range=kernel_size)
-        if cluster_method != "None":
-            if cluster_method == "HDBSCAN":
-                kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
-            elif cluster_method == "DBSCAN":
-                kwargs = dict(eps=db_eps, min_samples=db_min_samples)
-            elif cluster_method == "K-Means":
-                kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
+        if ctx.triggered_id != "tbl" or "Cluster" not in rdpmsdata.df:
+            rdpmsdata._calc_cluster_features(kernel_range=kernel_size)
+            if cluster_method != "None":
+                if cluster_method == "HDBSCAN":
+                    kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
+                elif cluster_method == "DBSCAN":
+                    kwargs = dict(eps=db_eps, min_samples=db_min_samples)
+                elif cluster_method == "K-Means":
+                    kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
+                else:
+                    raise NotImplementedError("Method Not Implemented")
+                clusters = rdpmsdata.cluster_data(method=cluster_method, reduction_method=dim_red_method, **kwargs, )
             else:
-                raise NotImplementedError("Method Not Implemented")
-            clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs)
-
+                clusters = None
         else:
-            clusters = None
-        embedding = rdpmsdata.reduce_dim(method=dim_red_method)
+            if cluster_method != "None":
+                clusters = rdpmsdata.df["Cluster"]
+            else:
+                clusters = None
+        embedding = rdpmsdata.reduce_dim(data=rdpmsdata._cluster_values, method=dim_red_method)
         colors = COLORS + list(color)
         fig = plot_dimension_reduction_result(
             embedding,
@@ -248,7 +256,7 @@ def update_cluster_graph(
         )
     fig.update_yaxes(showgrid=False)
     fig.update_xaxes(showgrid=False)
-    return fig, alert_msg
+    return fig, alert_msg, Serverside(rdpmsdata, key=uid)
 
 
 @app.callback(
