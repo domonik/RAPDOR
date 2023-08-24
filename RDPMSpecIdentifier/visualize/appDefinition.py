@@ -12,10 +12,13 @@ from RDPMSpecIdentifier.visualize.staticContent import LOGO, LIGHT_LOGO
 assert os.path.exists(LOGO), f"{LOGO} does not exist"
 assert os.path.exists(LIGHT_LOGO), f"{LIGHT_LOGO} does not exist"
 from dash_extensions.enrich import DashProxy, Output, Input, State, Serverside, html, dcc, \
-    ServersideOutputTransform
+    ServersideOutputTransform, FileSystemBackend
 
 FILEDIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(FILEDIR, "assets")
+TMPDIR = tempfile.TemporaryDirectory(suffix="RDPMSpec")
+
+another_backend = FileSystemBackend("file_system_backend", threshold=200)
 
 app = DashProxy(
     "RDPMSpecIdentifier Dashboard",
@@ -25,7 +28,7 @@ app = DashProxy(
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
     prevent_initial_callbacks="initial_duplicate",
-    transforms=[ServersideOutputTransform()]
+    transforms=[ServersideOutputTransform(backends=[another_backend])]
 )
 
 pio.templates["plotly_white"].update(
@@ -63,4 +66,3 @@ clientside_callback(
         Input("night-mode", "on"),
     ],
 )
-TMPDIR = tempfile.TemporaryDirectory(suffix="RDPMSpec")

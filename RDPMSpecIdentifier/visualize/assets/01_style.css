@@ -66,9 +66,14 @@ a:hover {
 
 
 .Select-value {
-    background-color: var(--input-background-color);
+    background-color: transparent !important;
     border-radius: 15px;
     text-align: center;
+
+}
+
+.Select-input input {
+    width: 0 !important;
 }
 
 
@@ -104,7 +109,22 @@ a:hover {
     border-radius: 5px !important;
     background-color: var(--input-background-color) !important;
     border-color: var(--input-background-color) !important;
+    box-shadow: 0px 5px 0px var(--databox-color), inset 0px 5px 0px var(--button-color);
 
+
+}
+
+.Select-control:hover {
+    border-radius: 5px !important;
+    background-color: var(--input-background-color) !important;
+    border-color: var(--input-background-color) !important;
+    box-shadow: 0px 5px 0px var(--databox-color), inset 0px 5px 0px var(--button-color);
+
+
+}
+
+.Select-arrow-zone{
+    background-color: var(--table-head-color) !important;
 }
 
 
@@ -253,9 +273,15 @@ input.current-page, input.current-page::placeholder {
 }
 
 .btn-primary {
-    background-color: var(--button-color);
-    border-color:  var(--button-color);
-    color: var(--r-text-color)
+    background-color: var(--table-dark);
+    border-color: var(--table-head-color) !important;
+    border-width: 2px !important;
+    border-top: 2px solid transparent !important;
+    color: var(--r-text-color);
+    box-shadow: inset 0px -5px 0px var(--button-color), 0px -5px 0px var(--databox-color);
+    padding-bottom: 10px;
+
+
 }
 
 #replicate-mode .daq-booleanswitch--light__background {
@@ -269,12 +295,19 @@ input.current-page, input.current-page::placeholder {
 .btn-primary:hover {
     color: var(--r-text-color);
     background-color:  var(--primary-hover-color);
-    border-color:  var(--primary-hover-color); /*set the color you want here*/
 }
 
 .btn-primary:active {
+    border-top: 2px solid var(--table-head-color) !important;
     background-color:  var(--primary-color) !important;
-    border-color:  var(--primary-color) !important; /*set the color you want here*/
+    color: var(--r-text-color) !important;
+    box-shadow: inset 0px 0px 5px 1px var(--button-color) !important;
+    padding-bottom: 6px;
+    padding-top: 10px;
+
+
+
+/*set the color you want here*/
 }
 
 .alert {
@@ -420,15 +453,52 @@ input.current-page, input.current-page::placeholder {
         box-shadow: none;
 }
 
+
+
 @media screen and (max-width:720px) {
     .custom-tab {
-        border-top-left-radius: 0;
-        border-top-right-radius: 0;
+        border-bottom: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        box-shadow: none !important;
+
+    }
+    .custom-tab:hover{
+        z-index: 2;
+        box-shadow: 0px 10px 10px -3px var(--primary-color) !important;
+
+
+    }
+    .custom-tab--selected:hover{
+        box-shadow: 0 -17px 20px -17px !important;
+
+    }
+
+
+    .custom-tabs-container {
+        border-left: 2px solid black !important;
+        border-right: 2px solid black !important;
+        border-top-right-radius: 10px;
+        border-top-left-radius: 10px;
+        background-color: var(--databox-color);
     }
 
     .custom-tab--selected {
-        border: 3px solid var(--primary-color) !important;
-        border-bottom: 3px solid var(--primary-color) !important;
+        border-bottom: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        order: 2;
+        box-shadow: 0 -17px 20px -17px !important;
+    }
+
+    .custom-tab:last-of-type {
+        border-right:none !important;
+
+    }
+
+    .custom-tab:first-of-type {
+        border-left: none !important;
+
     }
 }
 
