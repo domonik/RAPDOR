@@ -79,7 +79,7 @@ def _get_app_layout(intensities: pd.DataFrame, design: pd.DataFrame, logbase: in
                         )
                     ],
                     parent_className='custom-tabs',
-                    className='custom-tabs-container pt-2',
+                    className='custom-tabs-container',
 
 
 

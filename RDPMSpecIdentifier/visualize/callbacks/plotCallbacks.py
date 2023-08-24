@@ -1,6 +1,7 @@
 import dash_bootstrap_components as dbc
 import numpy as np
 from dash import Output, Input, State, ctx, html
+import dash
 from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
 from plotly.colors import qualitative
@@ -8,6 +9,7 @@ from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribut
     plot_dimension_reduction_result
 from RDPMSpecIdentifier.visualize.appDefinition import app
 from dash_extensions.enrich import Serverside
+from RDPMSpecIdentifier.datastructures import RDPMSpecData
 
 
 COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + qualitative.G10
@@ -139,17 +141,13 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
 
 
 @app.callback(
-    Output("cluster-graph", "figure"),
-    Output("alert-div", "children", allow_duplicate=True),
     Output("data-store", "data", allow_duplicate=True),
+    Output("plot-dim-red", "data"),
     Input('cluster-feature-slider', 'value'),
-    Input("night-mode", "on"),
-    Input("primary-open-color-modal", "style"),
-    Input("secondary-open-color-modal", "style"),
-    Input("recomputation", "children"),
     Input('cluster-method', 'value'),
     Input('dim-red-method', 'value'),
-    Input('tbl', 'selected_row_ids'),
+    Input("recomputation", "children"),
+    Input("run-clustering", "data"),
     Input("HDBSCAN-apply-settings-modal", "n_clicks"),
     Input("DBSCAN-apply-settings-modal", "n_clicks"),
     Input("K-Means-apply-settings-modal", "n_clicks"),
@@ -162,17 +160,13 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
     State('data-store', "data"),
     State('unique-id', "data"),
     prevent_intital_call="initial_duplicate"
-
 )
-def update_cluster_graph(
+def calc_clusters(
         kernel_size,
-        night_mode,
-        color,
-        color2,
-        recomp,
         cluster_method,
-        dim_red_method,
-        selected_row_ids,
+        reduction_method,
+        recomp,
+        run_cluster,
         apply_1,
         apply_2,
         apply_3,
@@ -182,14 +176,14 @@ def update_cluster_graph(
         db_min_samples,
         k_clusters,
         k_random_state,
-        rdpmsdata,
+        rdpmsdata: RDPMSpecData,
         uid
 ):
-    color = color["background-color"], color2["background-color"]
-    alert_msg = ""
+    print(ctx.triggered_id)
     try:
-        if ctx.triggered_id != "tbl" or "Cluster" not in rdpmsdata.df:
+        if ctx.triggered_id == "cluster-feature-slider" or rdpmsdata.cluster_features is None:
             rdpmsdata._calc_cluster_features(kernel_range=kernel_size)
+        if ctx.triggered_id != "dim-red-method":
             if cluster_method != "None":
                 if cluster_method == "HDBSCAN":
                     kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
@@ -199,27 +193,34 @@ def update_cluster_graph(
                     kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
                 else:
                     raise NotImplementedError("Method Not Implemented")
-                clusters = rdpmsdata.cluster_data(method=cluster_method, reduction_method=dim_red_method, **kwargs, )
+                clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
             else:
-                clusters = None
-        else:
-            if cluster_method != "None":
-                clusters = rdpmsdata.df["Cluster"]
-            else:
-                clusters = None
-        embedding = rdpmsdata.reduce_dim(data=rdpmsdata._cluster_values, method=dim_red_method)
-        colors = COLORS + list(color)
-        fig = plot_dimension_reduction_result(
-            embedding,
-            rdpmsdata,
-            name=dim_red_method,
-            colors=colors,
-            highlight=selected_row_ids,
-            clusters=clusters
-        )
+                rdpmsdata.remove_clusters()
+        if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None:
+            rdpmsdata.set_embedding(2, method=reduction_method)
 
-    except ValueError as error:
-        print(str(error))
+        return Serverside(rdpmsdata, key=uid), True
+
+    except ValueError:
+        return dash.no_update, False
+
+
+
+@app.callback(
+    Output("cluster-graph", "figure"),
+    Input("night-mode", "on"),
+    Input("primary-open-color-modal", "style"),
+    Input("secondary-open-color-modal", "style"),
+    Input("plot-dim-red", "data"),
+    Input('tbl', 'selected_row_ids'),
+    State('data-store', "data"),
+)
+def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdpmsdata: RDPMSpecData):
+
+    color = color["background-color"], color2["background-color"]
+    colors = COLORS + list(color)
+
+    if not plotting:
         fig = go.Figure()
         fig.add_annotation(
             xref="paper",
@@ -232,7 +233,15 @@ def update_cluster_graph(
             showarrow=False,
             font=(dict(size=28))
         )
-
+    else:
+        fig = plot_dimension_reduction_result(
+            rdpmsdata.current_embedding,
+            rdpmsdata,
+            name=rdpmsdata.current_dim_red_method,
+            colors=colors,
+            highlight=selected_rows,
+            clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None
+        )
     fig.layout.template = "plotly_white"
 
     fig.update_layout(
@@ -256,7 +265,8 @@ def update_cluster_graph(
         )
     fig.update_yaxes(showgrid=False)
     fig.update_xaxes(showgrid=False)
-    return fig, alert_msg, Serverside(rdpmsdata, key=uid)
+    return fig
+
 
 
 @app.callback(

@@ -69,7 +69,9 @@ class RDPMSpecData:
         self._current_eps = None
         self._indices_true = None
         self._indices_false = None
-        self._cluster_values = None
+        self.cluster_features = None
+        self.current_embedding = None
+        self.current_dim_red_method = None
         self.permutation_sufficient_samples = False
         self._check_design()
         self._check_dataframe()
@@ -240,6 +242,7 @@ class RDPMSpecData:
         for name in self.score_columns:
             if name in self.df:
                 self.df = self.df.drop(name, axis=1)
+        self.remove_clusters()
 
 
     def normalize_and_get_distances(self, method: str, kernel: int = 0, eps: float = 0):
@@ -318,7 +321,7 @@ class RDPMSpecData:
         v2 = np.take_along_axis(rnase_peak, rnase_peak_range, axis=-1)
         shift = ctrl_peak_pos - rnase_peak_pos
         cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
-        self._cluster_values = cluster_values
+        self.cluster_features = cluster_values
 
     def reduce_dim(self, data, embedding_dim: int = 2, method: str = "T-SNE"):
         data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
@@ -336,18 +339,25 @@ class RDPMSpecData:
         elif method == "PCA":
             reducer = PCA(n_components=embedding_dim)
         else: raise NotImplementedError("Method not implemented")
-        tsne_embedding = np.zeros((self.array.shape[0], embedding_dim))
-        mask = ~np.isnan(self._cluster_values).any(axis=1)
-        tsne_embedding[mask, :] = reducer.fit_transform(data[mask])
-        #tsne_embedding[mask, :] = pca.fit_transform(data[mask])
-        tsne_embedding[~mask] = np.nan
-        return tsne_embedding
+        embedding = np.zeros((self.array.shape[0], embedding_dim))
+        mask = ~np.isnan(self.cluster_features).any(axis=1)
+        embedding[mask, :] = reducer.fit_transform(data[mask])
+        embedding[~mask] = np.nan
+        return embedding
 
-    def cluster_data(self, method: str = "HDBSCAN", reduction_method: str = "T-SNE", **kwargs):
-        if self._cluster_values is None:
+    def set_embedding(self, dim, method):
+        self.current_embedding = self.reduce_dim(data=self.cluster_features, method=method, embedding_dim=dim)
+        self.current_dim_red_method = method
+
+    def remove_clusters(self):
+        if "Cluster" in self.df:
+            self.df = self.df.drop("Cluster", axis=1)
+        self.cluster_features = None
+
+    def cluster_data(self, method: str = "HDBSCAN", **kwargs):
+        if self.cluster_features is None:
             raise ValueError("Cluster Features not calculated. Calculate first")
-        data = self.reduce_dim(data=self._cluster_values[:, 1:], method=reduction_method, embedding_dim=3)
-        data = np.concatenate((self._cluster_values[:, 0:1], data), axis=1)
+        data = self.cluster_features
         data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
         if method == "HDBSCAN":
             clusterer = HDBSCAN(**kwargs)

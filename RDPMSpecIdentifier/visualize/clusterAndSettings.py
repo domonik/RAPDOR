@@ -12,7 +12,8 @@ def _get_cluster_panel():
             html.Div(
                 html.Div(
                     [
-                        html.Div(html.H4("Clustering"), className="col-12 py-2"),
+                        dcc.Store(id="plot-dim-red", data=False),
+                        dcc.Store(id="run-clustering"),
                         html.Div(
                             dls.RingChase(
                                 [
@@ -43,7 +44,7 @@ def _get_cluster_panel():
                                         ),
                                         html.Div(
                                             dcc.Dropdown(
-                                                ["T-SNE", "UMAP"], "T-SNE",
+                                                ["T-SNE", "UMAP", "PCA"], "T-SNE",
                                                 className="justify-content-center",
                                                 id="dim-red-method",
                                                 clearable=False

@@ -365,29 +365,59 @@ input.current-page, input.current-page::placeholder {
 
 
 
-.custom-tabs {
-    border-top-left-radius: 3px;
-}
 
 
 
 .custom-tab {
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
     padding: 0;
     height: 50px !important;
+    box-shadow: inset 0px -15px 20px -20px rgb(0, 0, 0);
+    border: 0 solid !important;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+    font-size: 1.5em;
 
-    background-color: var(--table-dark) !important;
+    border-bottom: 2px solid black !important;
+
+
+    background-color: var(--databox-color) !important;
     display: flex !important;
     align-items: center;
     justify-content: center;
-    border: 0 solid !important;
-    border-bottom: 5px solid var(--table-dark) !important;
+    border-top: 2px solid black !important;
 
 }
 
+.custom-tab:last-of-type {
+    border-right: 2px solid black !important;
+
+}
+
+.custom-tab:first-of-type {
+    border-left: 2px solid black !important;
+
+}
+
+.custom-tab:hover {
+        box-shadow: inset 0px -17px 20px -20px var(--primary-color);
+
+}
+
+
+
 .custom-tab--selected {
-    border-bottom: 5px solid var(--primary-color) !important;
+    z-index: 1;
+    box-sizing: content-box;
+    box-shadow: none;
+    border-bottom: 0 solid black !important;
+    border-right: 2px solid black !important;
+    border-left: 2px solid black !important;
+
+
+}
+
+.custom-tab--selected:hover {
+        box-shadow: none;
 }
 
 @media screen and (max-width:720px) {

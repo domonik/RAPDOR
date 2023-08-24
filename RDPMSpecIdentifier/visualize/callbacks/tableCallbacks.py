@@ -1,5 +1,6 @@
 import os
 
+import dash
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
@@ -126,6 +127,7 @@ def style_selected_col(active_cell, sort_by, key, page_size, current_page, data)
         Output("alert-div", "children", allow_duplicate=True),
         Output('tbl', 'sort_by'),
         Output('data-store', 'data', allow_duplicate=True),
+        Output('run-clustering', 'data', allow_duplicate=True),
     ],
     [
         Input('table-selector', 'value'),
@@ -165,6 +167,7 @@ def new_columns(
         uid
 ):
     alert = False
+    run_cluster = dash.no_update
     if ctx.triggered_id == "rank-btn":
         try:
             cols = [col['column_id'] for col in current_sorting if col != "Rank"]
@@ -213,6 +216,7 @@ def new_columns(
             raise PreventUpdate
         else:
             rdpmsdata.calc_all_scores()
+            run_cluster = True
     if alert:
         alert_msg = html.Div(
             dbc.Alert(
@@ -226,7 +230,7 @@ def new_columns(
     else:
         alert_msg = []
 
-    return _create_table(rdpmsdata, sel_columns), alert_msg, current_sorting, Serverside(rdpmsdata, key=uid)
+    return _create_table(rdpmsdata, sel_columns), alert_msg, current_sorting, Serverside(rdpmsdata, key=uid), run_cluster
 
 
 def split_filter_part(filter_part):
