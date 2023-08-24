@@ -16,7 +16,6 @@ from dash_extensions.enrich import DashProxy, Output, Input, State, Serverside, 
 
 FILEDIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(FILEDIR, "assets")
-TMPDIR = tempfile.TemporaryDirectory(suffix="RDPMSpec")
 
 another_backend = FileSystemBackend("file_system_backend", threshold=200)
 
@@ -24,7 +23,6 @@ app = DashProxy(
     "RDPMSpecIdentifier Dashboard",
     title="RDPMSpec Visualizer",
     external_stylesheets=[dbc.themes.DARKLY],
-    #assets_url_path=ASSETS_DIR,
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
     prevent_initial_callbacks="initial_duplicate",

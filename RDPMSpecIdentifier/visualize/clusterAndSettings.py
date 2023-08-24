@@ -31,13 +31,6 @@ def _get_cluster_panel():
                             [
                                 html.Div(
                                     [
-                                        html.Div(html.H4("Cluster Settings"), className="col-12 pt-2")
-                                    ],
-                                    className="row"
-
-                                ),
-                                html.Div(
-                                    [
                                         html.Div(
                                             html.Span("Dimension Reduction", style={"text-align": "center"}),
                                             className="col-3 col-md-3 justify-content-center align-self-center"
@@ -53,7 +46,7 @@ def _get_cluster_panel():
                                             className="col-7 justify-content-center text-align-center"
                                         )
                                     ],
-                                    className="row justify-content-center p-2"
+                                    className="row justify-content-center p-2 pt-5"
                                 ),
                                 html.Div(
                                     [
@@ -289,7 +282,7 @@ def selector_box(rdpmsdata):
                             ),
                             html.Div(
                                 html.Button(
-                                    '', id='primary-open-color-modal', n_clicks=0, className="btn btn-primary",
+                                    '', id='primary-open-color-modal', n_clicks=0, className="btn",
                                     style={"width": "100%", "height": "40px", "background-color": DEFAULT_COLORS["primary"]}
                                 ),
                                 className="col-3 justify-content-center text-align-center primary-color-div"
@@ -297,7 +290,7 @@ def selector_box(rdpmsdata):
                             html.Div(
                                 html.Button(
                                     '', id='secondary-open-color-modal', n_clicks=0,
-                                    className="btn btn-primary",
+                                    className="btn",
                                     style={"width": "100%", "height": "40px", "background-color": DEFAULT_COLORS["secondary"]}
                                 ),
                                 className="col-3 justify-content-center text-align-center primary-color-div"

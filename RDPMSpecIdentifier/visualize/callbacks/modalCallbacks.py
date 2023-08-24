@@ -5,7 +5,8 @@ import numpy as np
 from dash import Output, Input, State, dcc, ctx
 import plotly.graph_objs as go
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution
-from RDPMSpecIdentifier.visualize.appDefinition import app, TMPDIR
+from RDPMSpecIdentifier.visualize.appDefinition import app
+from tempfile import NamedTemporaryFile
 
 
 
@@ -65,12 +66,11 @@ def _download_image(n_clicks, filename, key, replicate_mode, primary_color, seco
     filetype = filename.split(".")[-1]
     if filetype not in ["svg", "pdf", "png"]:
         filetype = "svg"
-    tmpfile = os.path.join(TMPDIR.name, f"{uid}.{filetype}")
-
-    fig.write_image(tmpfile)
-    assert os.path.exists(tmpfile)
-    ret_val = dcc.send_file(tmpfile)
-    ret_val["filename"] = filename
+    with NamedTemporaryFile(suffix=f".{filetype}") as tmpfile:
+        fig.write_image(tmpfile.name)
+        assert os.path.exists(tmpfile.name)
+        ret_val = dcc.send_file(tmpfile.name)
+        ret_val["filename"] = filename
     return ret_val
 
 
@@ -226,9 +226,9 @@ def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename, uid):
         filetype = filename.split(".")[-1]
         if filetype not in ["svg", "pdf", "png"]:
             filetype = "svg"
-        tmpfile = os.path.join(TMPDIR.name, f"{uid}.{filetype}")
-        fig.write_image(tmpfile)
-        assert os.path.exists(tmpfile)
-        ret_val = dcc.send_file(tmpfile)
-        ret_val["filename"] = filename
+        with NamedTemporaryFile(suffix=f".{filetype}") as tmpfile:
+            fig.write_image(tmpfile.name)
+            assert os.path.exists(tmpfile.name)
+            ret_val = dcc.send_file(tmpfile.name)
+            ret_val["filename"] = filename
         return not is_open, ret_val

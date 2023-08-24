@@ -24,19 +24,13 @@ import uuid
 
 
 def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
-    try:
-        df = pd.read_csv(input, sep=sep, index_col=0)
-        df.index = df.index.astype(str)
-        design = pd.read_csv(design_matrix, sep=sep)
+    df = pd.read_csv(input, sep=sep, index_col=0)
+    df.index = df.index.astype(str)
+    design = pd.read_csv(design_matrix, sep=sep)
 
-        app.layout = _get_app_layout(df, design, logbase)
-        app.run(debug=debug, port=port, host=host)
-    except Exception as e:
+    app.layout = _get_app_layout(df, design, logbase)
+    app.run(debug=debug, port=port, host=host)
 
-        TMPDIR.cleanup()
-        raise e
-    finally:
-        TMPDIR.cleanup()
 
 
 
@@ -124,20 +118,15 @@ def _get_app_layout(intensities: pd.DataFrame, design: pd.DataFrame, logbase: in
 
 
 if __name__ == '__main__':
-    try:
-        import os
-        import pandas as pd
-        file = os.path.abspath("testData/testFile.tsv")
-        assert os.path.exists(file)
-        df = pd.read_csv(file, sep="\t", index_col=0)
-        df.index = df.index.astype(str)
-        design = pd.read_csv(os.path.abspath("testData/testDesign.tsv"), sep="\t")
-        logbase = 2
+    import os
+    import pandas as pd
 
-        app.layout = _get_app_layout(df, design, logbase)
-        app.run(debug=True, port=8080, host="127.0.0.1", processes=3, threaded=False)
-    except Exception as e:
-        TMPDIR.cleanup()
-        raise e
-    finally:
-        TMPDIR.cleanup()
+    file = os.path.abspath("testData/testFile.tsv")
+    assert os.path.exists(file)
+    df = pd.read_csv(file, sep="\t", index_col=0)
+    df.index = df.index.astype(str)
+    design = pd.read_csv(os.path.abspath("testData/testDesign.tsv"), sep="\t")
+    logbase = 2
+
+    app.layout = _get_app_layout(df, design, logbase)
+    app.run(debug=True, port=8080, host="127.0.0.1", processes=3, threaded=False)

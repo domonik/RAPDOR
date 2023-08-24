@@ -64,7 +64,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--databox-color', "#181818")
                 r.style.setProperty('--table-light', "#3a363d")
                 r.style.setProperty('--table-dark', "#222023")
-                r.style.setProperty('--button-color', "#3a363d")
+                r.style.setProperty('--button-color', "#222023")
                 r.style.setProperty('--input-background-color', "#1a1a1a")
                 r.style.setProperty('--input-background-color', "#1a1a1a")
                 r.style.setProperty('--background-color', "#3a3a3a")
