@@ -144,6 +144,7 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
     Output("data-store", "data", allow_duplicate=True),
     Output("plot-dim-red", "data"),
     Input('cluster-feature-slider', 'value'),
+    Input('3d-plot', 'on'),
     Input('cluster-method', 'value'),
     Input('dim-red-method', 'value'),
     Input("recomputation", "children"),
@@ -163,6 +164,7 @@ def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode,
 )
 def calc_clusters(
         kernel_size,
+        td_plot,
         cluster_method,
         reduction_method,
         recomp,
@@ -196,8 +198,8 @@ def calc_clusters(
                 clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
             else:
                 rdpmsdata.remove_clusters()
-        if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None or ctx.triggered_id == "cluster-feature-slider":
-            rdpmsdata.set_embedding(2, method=reduction_method)
+        if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None or ctx.triggered_id == "cluster-feature-slider" or ctx.triggered_id == "3d-plot":
+            rdpmsdata.set_embedding(2 if not td_plot else 3, method=reduction_method)
 
         return Serverside(rdpmsdata, key=uid), True
 
@@ -263,6 +265,19 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
 
 
         )
+        if rdpmsdata.current_embedding.shape[-1] == 3:
+            fig.update_scenes(
+                xaxis_backgroundcolor="#e1e1e1",
+                yaxis_backgroundcolor="#e1e1e1",
+                zaxis_backgroundcolor="#e1e1e1",
+            )
+    else:
+        if rdpmsdata.current_embedding.shape[-1] == 3:
+            fig.update_scenes(
+                xaxis_backgroundcolor="#222023",
+                yaxis_backgroundcolor="#222023",
+                zaxis_backgroundcolor="#222023",
+            )
     fig.update_yaxes(showgrid=False)
     fig.update_xaxes(showgrid=False)
     return fig

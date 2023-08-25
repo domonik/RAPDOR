@@ -10,13 +10,17 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
             if (on) {
                 var darker = this.function2(style["background-color"], 0.5);
+                var darker2 = this.function2(style2["background-color"], 0.5);
                 r.style.setProperty('--primary-hover-color', darker);
+                r.style.setProperty('--secondary-hover-color', darker2);
                 var table_head = this.function2(style["background-color"], 0.05);
                 r.style.setProperty('--table-head-color', table_head);
             } else {
                 var lighter = this.makebrighter(style["background-color"], 50);
+                var lighter2 = this.makebrighter(style2["background-color"], 50);
                 r.style.setProperty('--table-head-color', "#181818");
                 r.style.setProperty('--primary-hover-color', lighter);
+                r.style.setProperty('--secondary-hover-color', lighter2);
 
             }
 

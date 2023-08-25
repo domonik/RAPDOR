@@ -1,6 +1,7 @@
 :root {
   --primary-color: rgb(255, 138, 221);
     --primary-hover-color: #945080;
+    --secondary-hover-color: #945080;
     --table-head-color: #1a141a;
     --databox-color: #181818;
     --r-text-color: #ffffff;
@@ -552,9 +553,9 @@ input.current-page, input.current-page::placeholder {
 
 
 .selected-row td{
-        background-color: var(--secondary-color) !important;
+        background-color: var(--secondary-hover-color) !important;
 }
 
 .cell--selected {
-    border: 0px solid var(--secondary-color) !important;
+    border: 0px solid var(--secondary-hover-color) !important;
 }

@@ -2,7 +2,7 @@
 from dash import dcc, dash_table, html
 from dash import html, ctx
 import dash_loading_spinners as dls
-
+import dash_daq as daq
 from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS
 
 
@@ -46,6 +46,28 @@ def _get_cluster_panel():
                                         )
                                     ],
                                     className="row justify-content-center p-2 pt-5"
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            html.Span("3D", style={"text-align": "center"}),
+                                            className="col-3 col-md-3 justify-content-center align-self-center"
+                                        ),
+                                        html.Div(
+                                            daq.BooleanSwitch(
+                                                label='',
+                                                labelPosition='left',
+                                                color="var(--primary-color)",
+                                                on=False,
+                                                id="3d-plot",
+                                                className="align-self-center px-2",
+                                                persistence=True
+
+                                            ),
+                                            className="col-7 justify-content-center text-align-center"
+                                        )
+                                    ],
+                                    className="row justify-content-center p-2"
                                 ),
                                 html.Div(
                                     [

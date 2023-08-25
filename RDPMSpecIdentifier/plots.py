@@ -274,13 +274,106 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
 
     return fig
 
-
 def plot_dimension_reduction_result(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None):
-    fig = go.Figure()
     if clusters is None:
         clusters = np.zeros(embedding.shape[0])
     if colors is None:
         colors = qualitative.Alphabet + qualitative.Light24
+    if embedding.shape[-1] == 2:
+        return plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors, clusters, highlight)
+    elif embedding.shape[-1] == 3:
+        return plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors, clusters, highlight)
+    else:
+        raise ValueError("Unsupported shape in embedding")
+
+
+def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None):
+    fig = go.Figure()
+    n_cluster = int(np.nanmax(clusters)) + 1
+    mask = np.ones(embedding.shape[0], dtype=bool)
+    if highlight is not None and len(highlight) > 0:
+        indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
+        mask[indices] = 0
+    if n_cluster > len(colors)-2:
+        fig.add_annotation(
+            xref="paper",
+            yref="paper",
+            xanchor="center",
+            yanchor="middle",
+            x=0.5,
+            y=0.5,
+            text="Too Many Clusters<br> Will not show all<br>Please adjust cluster Settings",
+            showarrow=False,
+            font=(dict(size=28))
+        )
+    if np.any(clusters == -1):
+        c_mask = mask & (clusters == -1)
+        fig.add_trace(go.Scatter3d(
+            x=embedding[c_mask, :][:, 0],
+            y=embedding[c_mask, :][:, 1],
+            z=embedding[c_mask, :][:, 2],
+            mode="markers",
+            hovertext=rdpmspecdata.df["RDPMSpecID"][c_mask],
+            marker=dict(color=colors[-2], size=4),
+            name=f"Not Clustered",
+            visible="legendonly"
+        ))
+        nmask = ~mask & (clusters == -1)
+        fig.add_trace(
+            go.Scatter3d(
+                x=embedding[nmask, :][:, 0],
+                y=embedding[nmask, :][:, 1],
+                z=embedding[nmask, :][:, 2],
+                mode="markers",
+                hovertext=rdpmspecdata.df["RDPMSpecID"][nmask],
+                marker=dict(color=colors[-2], size=8, line=dict(color=colors[-1], width=4)),
+                name="Not Clustered",
+                visible="legendonly",
+
+        )
+        )
+    for color_idx, cluster in enumerate(range(min(n_cluster, len(colors)-2))):
+        c_mask = mask & (clusters == cluster)
+        fig.add_trace(go.Scatter3d(
+            x=embedding[c_mask, :][:, 0],
+            y=embedding[c_mask, :][:, 1],
+            z=embedding[c_mask, :][:, 2],
+            mode="markers",
+            hovertext=rdpmspecdata.df["RDPMSpecID"][c_mask],
+            marker=dict(color=colors[color_idx], size=4),
+            name=f"Cluster {cluster}"
+        ))
+        nmask = ~mask & (clusters == cluster)
+        fig.add_trace(
+            go.Scatter3d(
+                x=embedding[nmask, :][:, 0],
+                y=embedding[nmask, :][:, 1],
+                z=embedding[nmask, :][:, 2],
+                mode="markers",
+                hovertext=rdpmspecdata.df["RDPMSpecID"][nmask],
+                marker=dict(color=colors[color_idx], size=8, line=dict(color=colors[-1], width=4)),
+                name=f"Cluster {cluster}"
+            )
+        )
+
+
+    fig.update_layout(
+        scene=go.layout.Scene(
+            xaxis=go.layout.scene.XAxis(title=f"{name} Dimension 1"),
+            yaxis=go.layout.scene.YAxis(title=f"{name} Dimension 2"),
+            zaxis=go.layout.scene.ZAxis(title=f"{name} Dimension 3"),
+        )
+
+    )
+    return fig
+
+
+
+
+
+def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None):
+    fig = go.Figure()
+
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
     if highlight is not None and len(highlight) > 0:
