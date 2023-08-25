@@ -5,7 +5,7 @@ from dash import Output, Input, html, ctx, dcc
 from dash.exceptions import PreventUpdate
 
 from RDPMSpecIdentifier.visualize.appDefinition import app
-from RDPMSpecIdentifier.visualize.staticContent import IMG_TEXT, COLOR_IDX, COLOR_END
+from RDPMSpecIdentifier.visualize.staticContent import IMG_TEXT, COLOR_IDX, COLOR_END, BS, BE
 from dash_extensions.enrich import Serverside, State
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import pandas as pd
@@ -46,21 +46,20 @@ def recompute_data(kernel_size, distance_method, data, design, intensities, logb
     rdpmspec.normalize_and_get_distances(method=method, kernel=kernel_size, eps=eps)
     return html.Div(), Serverside(rdpmspec, key=uid), uid
 
-
-@app.callback(
-    Output("logo-container", "children"),
-    Input("night-mode", "on"),
-    Input("secondary-open-color-modal", "style"),
-)
-def update_logo(night_mode, style):
-    color2 = style["background-color"]
-    rep = f"fill:{color2}"
-    l_image_text = IMG_TEXT[:COLOR_IDX] + rep + IMG_TEXT[COLOR_END:]
-    if not night_mode:
-        l_image_text = re.sub("fill:#f2f2f2", "fill:black", l_image_text)
-    encoded_img = base64.b64encode(l_image_text.encode())
-    img = 'data:image/svg+xml;base64,{}'.format(encoded_img.decode())
-    return html.Img(src=img, style={"width": "20%", "min-width": "300px"}, className="p-1"),
+#
+# @app.callback(
+#     Output("logo-container", "children"),
+#     Input("night-mode", "on"),
+#     Input("secondary-color", "data"),
+# )
+# def update_logo(night_mode, color):
+#     rep = f"fill:{color}"
+#     l_image_text = IMG_TEXT[:COLOR_IDX] + rep + IMG_TEXT[COLOR_END:]
+#     if not night_mode:
+#         l_image_text = re.sub("fill:#f2f2f2", "fill:black", l_image_text)
+#     encoded_img = base64.b64encode(l_image_text.encode())
+#     img = 'data:image/svg+xml;base64,{}'.format(encoded_img.decode())
+#     return html.Img(src=img, style={"width": "20%", "min-width": "300px"}, className="p-1"),
 
 
 @app.callback(

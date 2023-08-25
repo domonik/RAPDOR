@@ -5,6 +5,7 @@ import re
 
 import dash_daq as daq
 from dash import html
+from dash import dcc
 
 import RDPMSpecIdentifier
 
@@ -18,6 +19,11 @@ color = "fill:#ff8add"
 res = re.search(color, IMG_TEXT)
 COLOR_IDX = res.start()
 COLOR_END =res.end()
+
+res2 = re.search("fill:#f2f2f2", IMG_TEXT)
+BS = res2.start()
+BE = res2.end()
+
 logger = logging.getLogger("RDPMSpecIdentifier")
 DEFAULT_COLORS = {"primary": "rgb(138, 255, 172)", "secondary": "rgb(255, 138, 221)"}
 
@@ -29,9 +35,12 @@ def _header_layout():
         html.Div(
             html.Div(
                 [
+                    dcc.Store(id="fill-start", data=COLOR_IDX),
+                    dcc.Store(id="black-start", data=BS),
                     html.Div(className="col-md-3 col-0"),
                     html.Div(
-                        html.Img(src=svg, style={"width": "20%", "min-width": "300px"}, className="p-1"),
+                        html.Img(src=svg, style={"width": "20%", "min-width": "300px"}, className="p-1",
+                                 id="flamingo-svg"),
                         className="col-md-6 col-11 justify-content-center justify-conent-md-start", id="logo-container"
                     ),
                     html.Div(

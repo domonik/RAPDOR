@@ -1,6 +1,52 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
 
+        styleFlamingo: function (on, style, fill_start, black_start) {
+            const svgImage = document.getElementById('flamingo-svg');
+            style = this.rgbToHex(style)
+            const fill = "fill:" + style;
+            console.log(fill)
+            if (svgImage) {
+                const base64EncodedSvg = svgImage.getAttribute('src').replace(/^data:image\/svg\+xml;base64,/, '');
+                const decodedSvg = atob(base64EncodedSvg);
+                var modifiedSvg = this.substrReplace(decodedSvg, fill_start, fill);
+                if (!on) {
+                    modifiedSvg = this.substrReplace(modifiedSvg, black_start, "fill:#000000");
+
+                } else {
+                    modifiedSvg = this.substrReplace(modifiedSvg, black_start, "fill:#f2f2f2");
+
+                }
+                svgImage.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(modifiedSvg));
+            }
+            return ""
+        },
+
+        rgbToHex: function rgbToHex(rgbString) {
+            const match = rgbString.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+
+            if (!match) {
+                throw new Error('Invalid RGB string format');
+            }
+
+            const [, red, green, blue] = match;
+
+            const hexRed = parseInt(red).toString(16).padStart(2, '0');
+            const hexGreen = parseInt(green).toString(16).padStart(2, '0');
+            const hexBlue = parseInt(blue).toString(16).padStart(2, '0');
+
+            return `#${hexRed}${hexGreen}${hexBlue}`;
+        },
+
+        substrReplace: function replaceInRange(inputString, startCoordinate, replacement) {
+            const startIndex = startCoordinate;
+            const endIndex = startIndex + replacement.length;
+
+            const newString = inputString.slice(0, startIndex) + replacement + inputString.slice(endIndex);
+
+            return newString;
+        },
+
         function1: function (on, style, style2) {
             // Get the root element
 
@@ -159,3 +205,5 @@ document.addEventListener('focus', function (event) {
     }
     // Add your code to run when an element gains focus
 }, true);
+
+

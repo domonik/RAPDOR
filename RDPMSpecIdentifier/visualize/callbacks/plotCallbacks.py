@@ -19,8 +19,8 @@ COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + quali
     [
         Input("protein-id", "children"),
         Input('recomputation', 'children'),
-        Input("primary-open-color-modal", "style"),
-        Input("secondary-open-color-modal", "style"),
+        Input("primary-color", "data"),
+        Input("secondary-color", "data"),
         Input("replicate-mode", "on"),
         Input("night-mode", "on")
     ],
@@ -28,7 +28,7 @@ COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + quali
 
 )
 def update_distribution_plot(key, kernel_size, primary_color, secondary_color, replicate_mode, night_mode, rdpmsdata):
-    colors = primary_color['background-color'], secondary_color['background-color']
+    colors = primary_color, secondary_color
     key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
@@ -64,15 +64,15 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
     [
         Input("protein-id", "children"),
         Input('recomputation', 'children'),
-        Input("primary-open-color-modal", "style"),
-        Input("secondary-open-color-modal", "style"),
+        Input("primary-color", "data"),
+        Input("secondary-color", "data"),
         Input("night-mode", "on"),
     ],
     State("data-store", "data")
 
 )
 def update_westernblot(key, kernel_size, primary_color, secondary_color, night_mode, rdpmsdata):
-    colors = primary_color['background-color'], secondary_color['background-color']
+    colors = primary_color, secondary_color
     key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
@@ -108,8 +108,8 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
     [
         Input("protein-id", "children"),
         Input('recomputation', 'children'),
-        Input("primary-open-color-modal", "style"),
-        Input("secondary-open-color-modal", "style"),
+        Input("primary-color", "data"),
+        Input("secondary-color", "data"),
         Input("night-mode", "on"),
 
     ],
@@ -118,7 +118,7 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
 
 )
 def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode, distance_method, rdpmsdata):
-    colors = primary_color['background-color'], secondary_color['background-color']
+    colors = primary_color, secondary_color
     key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
@@ -211,15 +211,15 @@ def calc_clusters(
 @app.callback(
     Output("cluster-graph", "figure"),
     Input("night-mode", "on"),
-    Input("primary-open-color-modal", "style"),
-    Input("secondary-open-color-modal", "style"),
+    Input("primary-color", "data"),
+    Input("secondary-color", "data"),
     Input("plot-dim-red", "data"),
     Input('tbl', 'selected_row_ids'),
     State('data-store', "data"),
 )
 def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdpmsdata: RDPMSpecData):
 
-    color = color["background-color"], color2["background-color"]
+    color = color, color2
     colors = COLORS + list(color)
 
     if not plotting:
@@ -265,14 +265,14 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
 
 
         )
-        if rdpmsdata.current_embedding.shape[-1] == 3:
+        if plotting and rdpmsdata.current_embedding.shape[-1] == 3:
             fig.update_scenes(
                 xaxis_backgroundcolor="#e1e1e1",
                 yaxis_backgroundcolor="#e1e1e1",
                 zaxis_backgroundcolor="#e1e1e1",
             )
     else:
-        if rdpmsdata.current_embedding.shape[-1] == 3:
+        if plotting and rdpmsdata.current_embedding.shape[-1] == 3:
             fig.update_scenes(
                 xaxis_backgroundcolor="#222023",
                 yaxis_backgroundcolor="#222023",

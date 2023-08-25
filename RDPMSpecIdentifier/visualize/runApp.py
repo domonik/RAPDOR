@@ -51,6 +51,8 @@ def _get_app_layout(intensities: pd.DataFrame, design: pd.DataFrame, logbase: in
                 dcc.Store(id="intentity-store", data=json_intentsities),
                 dcc.Store(id="logbase-store", data=logbase),
                 dcc.Store(id="unique-id", storage_type="session"),
+                dcc.Store(id="primary-color", storage_type="session", data="rgb(138, 255, 172)"),
+                dcc.Store(id="secondary-color", storage_type="session", data="rgb(255, 138, 221)"),
                 html.Div(id="recomputation"),
                 html.Div(id="placeholder3"),
                 html.Div(

@@ -101,63 +101,82 @@ def _toggle_modal(n1, n2, n3, is_open, key):
 @app.callback(
     [
         Output("primary-color-modal", "is_open"),
-        Output("primary-open-color-modal", "style")
-     ],
+        Output("primary-color", "data"),
+        Output("primary-open-color-modal", "style"),
+
+    ],
     [
         Input("primary-open-color-modal", "n_clicks"),
         Input("primary-apply-color-modal", "n_clicks"),
-        #Input("select-color", "n_clicks"),
     ],
     [
         State("primary-color-modal", "is_open"),
-        State("primary-color-picker", "value")
+        State("primary-color-picker", "value"),
+        State("primary-open-color-modal", "style"),
 
     ],
     prevent_initial_call=True
 )
-def _toggle_primary_color_modal(n1, n2, is_open, color_value):
+def _toggle_primary_color_modal(n1, n2, is_open, color_value, style):
     tid = ctx.triggered_id
     if tid == "primary-open-color-modal":
-        return not is_open, dash.no_update
+        return not is_open, dash.no_update, dash.no_update
     elif tid == "primary-apply-color-modal":
         rgb = color_value["rgb"]
         r, g, b = rgb["r"], rgb["g"], rgb["b"]
         color = f"rgb({r}, {g}, {b})"
-        style = {"width": "100%", "height": "40px", "background-color": color}
+        style["background-color"] = color
     else:
         raise ValueError("")
-    return not is_open, style
+    return not is_open, color, style
 
 
 @app.callback(
     [
         Output("secondary-color-modal", "is_open"),
-        Output("secondary-open-color-modal", "style")
-     ],
+        Output("secondary-color", "data"),
+        Output("secondary-open-color-modal", "style"),
+
+    ],
     [
         Input("secondary-open-color-modal", "n_clicks"),
         Input("secondary-apply-color-modal", "n_clicks"),
-        #Input("select-color", "n_clicks"),
     ],
     [
         State("secondary-color-modal", "is_open"),
-        State("secondary-color-picker", "value")
+        State("secondary-color-picker", "value"),
+        State("secondary-open-color-modal", "style"),
 
     ],
     prevent_initial_call=True
 )
-def _toggle_secondary_color_modal(n1, n2, is_open, color_value):
+def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
     tid = ctx.triggered_id
     if tid == "secondary-open-color-modal":
-        return not is_open, dash.no_update
+        return not is_open, dash.no_update, dash.no_update
     elif tid == "secondary-apply-color-modal":
         rgb = color_value["rgb"]
         r, g, b = rgb["r"], rgb["g"], rgb["b"]
         color = f"rgb({r}, {g}, {b})"
-        style = {"width": "100%", "height": "40px", "background-color": color}
+        style["background-color"] = color
     else:
         raise ValueError("")
-    return not is_open, style
+    return not is_open, color, style
+
+
+@app.callback(
+    Output("primary-open-color-modal", "style", allow_duplicate=True),
+    Output("secondary-open-color-modal", "style", allow_duplicate=True),
+    Input("primary-color", "data"),
+    Input("secondary-color", "data"),
+    State("primary-open-color-modal", "style"),
+    State("secondary-open-color-modal", "style"),
+
+)
+def update_colors(primary_color, secondary_color, primary_style, secondary_style):
+    primary_style["background-color"] = primary_color
+    secondary_style["background-color"] = secondary_color
+    return primary_style, secondary_style
 
 
 @app.callback(

@@ -65,3 +65,21 @@ clientside_callback(
         Input("night-mode", "on"),
     ],
 )
+
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="styleFlamingo",
+
+    ),
+    [Output("placeholder3", "children")],
+    [
+        Input("night-mode", "on"),
+        Input("secondary-color", "data"),
+    ],
+    [
+        State("fill-start", "data"),
+        State("black-start", "data")
+    ]
+)
