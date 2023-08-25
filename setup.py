@@ -28,7 +28,7 @@ setup(
     package_data={
         "RDPMSpecIdentifier.visualize": ["assets/*"],
         "RDPMSpecIdentifier": ["tests/*.py", "tests/test_data/*"],
-        "RDPMSpecIdentifier.qtInterface": ["Icon.svg", "RDPMSpecIdentifier_dark_no_text.svg", "01_style.css"],
+        "RDPMSpecIdentifier.qtInterface": ["Icon.svg", "RDPMSpecIdentifier_dark_no_text.svg", "style.css"],
     },
     install_requires=[
         "statsmodels",
