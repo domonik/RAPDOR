@@ -9,6 +9,7 @@
     --table-dark: #222023;
     --button-color: #3a363d;
     --background-color: #3a3a3a;
+    --secondary-color: red;
 }
 
 span {
@@ -153,11 +154,11 @@ a:hover {
 }
 
 tr:nth-child(even) {
-    background-color: var(--table-light) !important;
+    background-color: var(--table-light);
 }
 
 tr:nth-child(odd) {
-    background-color: var(--table-dark) !important;
+    background-color: var(--table-dark);
 
 }
 tr:nth-child(even):hover{
@@ -547,4 +548,13 @@ input.current-page, input.current-page::placeholder {
     height: 1em;
     line-height: 1em;
     text-align: center;
+}
+
+
+.selected-row td{
+        background-color: var(--secondary-color) !important;
+}
+
+.cell--selected {
+    border: 0px solid var(--secondary-color) !important;
 }

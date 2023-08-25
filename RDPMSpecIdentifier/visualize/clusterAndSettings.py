@@ -12,12 +12,11 @@ def _get_cluster_panel():
             html.Div(
                 html.Div(
                     [
-                        dcc.Store(id="plot-dim-red", data=False),
                         dcc.Store(id="run-clustering"),
                         html.Div(
                             dls.RingChase(
                                 [
-
+                                    dcc.Store(id="plot-dim-red", data=False),
                                     dcc.Graph(id="cluster-graph"),
 
                                 ],

@@ -134,17 +134,15 @@ def _create_table(rdpmsdata, selected_columns = None):
 SELECTED_STYLE = [
         {
             "if": {"state": "active"},
-            "backgroundColor": "rgba(150, 180, 225, 0.2)",
-            "border-top": "2px solid var(--primary-color)",
-            "border-bottom": "2px solid var(--primary-color)",
+            "border-top": "0px solid var(--primary-color)",
+            "border-bottom": "0px solid var(--primary-color)",
             "border-left": "0px solid var(--primary-color)",
             "border-right": "0px solid var(--primary-color)",
         },
         {
             "if": {"state": "selected"},
-            "backgroundColor": "rgba(14, 102, 232, 1) !important",
-            "border-top": "2px solid var(--primary-color)",
-            "border-bottom": "2px solid var(--primary-color)",
+            "border-top": "0px solid var(--primary-color)",
+            "border-bottom": "0px solid var(--primary-color)",
             "border-left": "0px solid var(--primary-color)",
             "border-right": "0px solid var(--primary-color)",
         },

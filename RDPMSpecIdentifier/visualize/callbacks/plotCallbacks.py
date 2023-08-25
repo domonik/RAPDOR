@@ -196,7 +196,7 @@ def calc_clusters(
                 clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
             else:
                 rdpmsdata.remove_clusters()
-        if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None:
+        if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None or ctx.triggered_id == "cluster-feature-slider":
             rdpmsdata.set_embedding(2, method=reduction_method)
 
         return Serverside(rdpmsdata, key=uid), True

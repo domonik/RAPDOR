@@ -50,6 +50,7 @@ clientside_callback(
     [
         Input("night-mode", "on"),
         Input("secondary-open-color-modal", "style"),
+        Input("primary-open-color-modal", "style"),
     ],
 )
 

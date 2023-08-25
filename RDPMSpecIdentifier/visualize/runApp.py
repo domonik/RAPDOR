@@ -52,6 +52,7 @@ def _get_app_layout(intensities: pd.DataFrame, design: pd.DataFrame, logbase: in
                 dcc.Store(id="logbase-store", data=logbase),
                 dcc.Store(id="unique-id", storage_type="session"),
                 html.Div(id="recomputation"),
+                html.Div(id="placeholder3"),
                 html.Div(
                     _header_layout(),
                     className="row px-0 justify-content-center align-items-center sticky-top"

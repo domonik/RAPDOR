@@ -77,48 +77,6 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, Serverside(data, uid + "tbl")
 
 
-@app.callback(
-    Output("tbl", "style_data_conditional"),
-    Input('tbl', 'active_cell'),
-    Input('tbl', 'data'),
-    State("protein-id", "children"),
-    State("tbl", "page_size"),
-    State('tbl', "page_current"),
-    State("tbl-store", "data"),
-
-)
-def style_selected_col(active_cell, sort_by, key, page_size, current_page, data):
-    if "tbl.active_cell" in ctx.triggered_prop_ids:
-        if active_cell is None:
-            raise PreventUpdate
-    if "tbl.data" in ctx.triggered_prop_ids:
-        key = key.split("Protein ")[-1]
-        if key in data.index:
-            loc = data.index.get_loc(key)
-            page = int(np.floor(loc / page_size))
-            if page != current_page:
-                row_idx = -1
-            else:
-                row_idx = int(loc % page_size)
-        else:
-            row_idx = -1
-    else:
-        if active_cell is None:
-            raise PreventUpdate
-        row_idx = active_cell["row"]
-
-    style = [
-        {
-            "if": {"row_index": row_idx},
-            "backgroundColor": "red !important",
-            "border-top": "2px solid var(--primary-color)",
-            "border-bottom": "2px solid var(--primary-color)",
-            "border-left": "0px solid var(--primary-color)",
-            "border-right": "0px solid var(--primary-color)",
-        },
-    ]
-    style_data_conditional = SELECTED_STYLE + style
-    return style_data_conditional
 
 
 @app.callback(
@@ -257,14 +215,6 @@ def split_filter_part(filter_part):
     return [None] * 3
 
 
-@app.callback(
-    Output("tbl", "active_cell"),
-    Input('tbl', 'selected_row_ids'),
-)
-def reset_selection(selected_row_ids):
-    if selected_row_ids is None or len(selected_row_ids) == 0:
-        raise PreventUpdate
-    return None
 
 
 operators = [['ge ', '>='],
