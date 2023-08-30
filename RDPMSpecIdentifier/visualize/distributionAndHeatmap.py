@@ -3,9 +3,7 @@ import dash_loading_spinners as dls
 from dash import html, dcc
 
 
-def distribution_panel(data):
-    sel_data = data.df.index[0:100]
-
+def distribution_panel(name):
     distribution_panel = html.Div(
         [
             html.Div(
@@ -19,7 +17,7 @@ def distribution_panel(data):
                                 className="col-0 col-md-4", id="placeholder"
                             ),
                             html.Div(
-                                html.H4(f"Protein {sel_data[0]}", style={"text-align": "center"}, id="protein-id"),
+                                html.H4(f"Protein {name}", style={"text-align": "center"}, id="protein-id"),
                                 className="col-12 col-md-4 justify-content-center align-self-center",
                             ),
                             html.Div(

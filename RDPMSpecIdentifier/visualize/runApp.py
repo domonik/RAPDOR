@@ -21,9 +21,15 @@ from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import *
 import RDPMSpecIdentifier.visualize.callbacks
 import RDPMSpecIdentifier.visualize
 import uuid
+from dash_extensions.enrich import Serverside
+from hashlib import sha256
+import logging
+
+logging.basicConfig()
+logger = logging.getLogger("RDPMSpecIdentifier")
 
 
-def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
+def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host, pickled = None):
     df = pd.read_csv(input, sep=sep, index_col=0)
     df.index = df.index.astype(str)
     design = pd.read_csv(design_matrix, sep=sep)
@@ -35,22 +41,20 @@ def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
 
 
 def _gui_wrapper(args):
-    gui_wrapper(args.input, args.design_matrix, args.sep, args.logbase, args.debug, args.port, args.host)
+    gui_wrapper(args.input, args.design_matrix, args.sep, args.logbase, args.debug, args.port, args.host, args.pickled)
 
 
-def _get_app_layout(intensities: pd.DataFrame, design: pd.DataFrame, logbase: int, ):
+def _get_app_layout(rdpmsdata):
     def return_layout():
-        json_intentsities = intensities.to_json()
-        json_design = design.to_json()
-        rdpmsdata = RDPMSpecData(intensities, design, logbase)
+        content = rdpmsdata.to_jsons()
+        name = rdpmsdata.df.loc[0, "RDPMSpecID"]
         div = html.Div(
             [
                 dcc.Store(id="data-store", storage_type="session"),
+                dcc.Store(id="data-initial-store", data=content),
                 dcc.Store(id="tbl-store"),
-                dcc.Store(id="design-store", data=json_design),
-                dcc.Store(id="intentity-store", data=json_intentsities),
-                dcc.Store(id="logbase-store", data=logbase),
                 dcc.Store(id="unique-id", storage_type="session"),
+                dcc.Store(id="current-protein-id", data=0),
                 dcc.Store(id="primary-color", storage_type="session", data="rgb(138, 255, 172)"),
                 dcc.Store(id="secondary-color", storage_type="session", data="rgb(255, 138, 221)"),
                 html.Div(id="recomputation"),
@@ -60,7 +64,7 @@ def _get_app_layout(intensities: pd.DataFrame, design: pd.DataFrame, logbase: in
                     className="row px-0 justify-content-center align-items-center sticky-top"
                 ),
                 html.Div(
-                    distribution_panel(rdpmsdata),
+                    distribution_panel(name),
                     className="row px-2 justify-content-center align-items-center"
 
                 ),
@@ -126,10 +130,11 @@ if __name__ == '__main__':
 
     file = os.path.abspath("testData/testFile.tsv")
     assert os.path.exists(file)
-    df = pd.read_csv(file, sep="\t", index_col=0)
-    df.index = df.index.astype(str)
+    logger.setLevel(logging.INFO)
+    df = pd.read_csv(file, sep="\t")
+    logger.info("Startup")
     design = pd.read_csv(os.path.abspath("testData/testDesign.tsv"), sep="\t")
     logbase = 2
-
-    app.layout = _get_app_layout(df, design, logbase)
+    rdpmsdata = RDPMSpecData(df, design, logbase)
+    app.layout = _get_app_layout(rdpmsdata)
     app.run(debug=True, port=8080, host="127.0.0.1", processes=3, threaded=False)

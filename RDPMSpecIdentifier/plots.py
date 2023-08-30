@@ -291,6 +291,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
     fig = go.Figure()
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
+    hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
@@ -313,7 +314,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
             y=embedding[c_mask, :][:, 1],
             z=embedding[c_mask, :][:, 2],
             mode="markers",
-            hovertext=rdpmspecdata.df["RDPMSpecID"][c_mask],
+            hovertext=hovertext[c_mask],
             marker=dict(color=colors[-2], size=4),
             name=f"Not Clustered",
             visible="legendonly"
@@ -325,7 +326,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
                 y=embedding[nmask, :][:, 1],
                 z=embedding[nmask, :][:, 2],
                 mode="markers",
-                hovertext=rdpmspecdata.df["RDPMSpecID"][nmask],
+                hovertext=hovertext[nmask],
                 marker=dict(color=colors[-2], size=8, line=dict(color=colors[-1], width=4)),
                 name="Not Clustered",
                 visible="legendonly",
@@ -339,7 +340,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
             y=embedding[c_mask, :][:, 1],
             z=embedding[c_mask, :][:, 2],
             mode="markers",
-            hovertext=rdpmspecdata.df["RDPMSpecID"][c_mask],
+            hovertext=hovertext[c_mask],
             marker=dict(color=colors[color_idx], size=4),
             name=f"Cluster {cluster}"
         ))
@@ -350,7 +351,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
                 y=embedding[nmask, :][:, 1],
                 z=embedding[nmask, :][:, 2],
                 mode="markers",
-                hovertext=rdpmspecdata.df["RDPMSpecID"][nmask],
+                hovertext=hovertext[nmask],
                 marker=dict(color=colors[color_idx], size=8, line=dict(color=colors[-1], width=4)),
                 name=f"Cluster {cluster}"
             )
@@ -373,6 +374,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
 
 def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None):
     fig = go.Figure()
+    hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
 
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
@@ -399,7 +401,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
             mode="markers",
-            hovertext=rdpmspecdata.df["RDPMSpecID"][c_mask],
+            hovertext=hovertext[c_mask],
             marker=dict(color=colors[-2]),
             name=f"Not Clustered",
             visible="legendonly"
@@ -410,7 +412,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
                 x=embedding[nmask, :][:, 0],
                 y=embedding[nmask, :][:, 1],
                 mode="markers",
-                hovertext=rdpmspecdata.df["RDPMSpecID"][nmask],
+                hovertext=hovertext[nmask],
                 marker=dict(color=colors[-2], size=12, line=dict(color=colors[-1], width=4)),
                 name="Not Clustered",
                 visible="legendonly",
@@ -423,7 +425,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
             mode="markers",
-            hovertext=rdpmspecdata.df["RDPMSpecID"][c_mask],
+            hovertext=hovertext[c_mask],
             marker=dict(color=colors[color_idx]),
             name=f"Cluster {cluster}"
         ))
@@ -433,7 +435,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
                 x=embedding[nmask, :][:, 0],
                 y=embedding[nmask, :][:, 1],
                 mode="markers",
-                hovertext=rdpmspecdata.df["RDPMSpecID"][nmask],
+                hovertext=hovertext[nmask],
                 marker=dict(color=colors[color_idx], size=12, line=dict(color=colors[-1], width=4)),
                 name=f"Cluster {cluster}"
             )

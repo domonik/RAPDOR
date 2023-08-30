@@ -10,6 +10,9 @@ from dash.exceptions import PreventUpdate
 from RDPMSpecIdentifier.visualize.appDefinition import app
 from RDPMSpecIdentifier.visualize.dataTable import SELECTED_STYLE, _create_table
 from dash_extensions.enrich import Serverside, State
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @app.callback(
@@ -28,6 +31,7 @@ from dash_extensions.enrich import Serverside, State
 
 )
 def update_table(page_current, page_size, sort_by, filter, selected_columns, key, rdpmspec, uid):
+    logger.info(f"{ctx.triggered_id} triggered update of table")
     key = key.split("Protein ")[-1]
     if selected_columns is None:
         selected_columns = []
@@ -124,6 +128,7 @@ def new_columns(
         rdpmsdata,
         uid
 ):
+    logger.info(f"{ctx.triggered_id} triggered rendering of new table")
     alert = False
     run_cluster = dash.no_update
     if ctx.triggered_id == "rank-btn":

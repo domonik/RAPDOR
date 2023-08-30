@@ -160,7 +160,7 @@ def selector_box(rdpmsdata):
                             ),
                             html.Div(
                                 dcc.Dropdown(
-                                    list(rdpmsdata.methods.keys()), list(rdpmsdata.methods.keys())[0],
+                                    rdpmsdata.methods, rdpmsdata.methods[0],
                                     className="justify-content-center",
                                     id="distance-method",
                                     clearable=False
@@ -291,6 +291,18 @@ def selector_box(rdpmsdata):
                                 className="col-10 justify-content-center text-align-center"
                             ),
                             dcc.Download(id="download-dataframe-csv"),
+                        ],
+
+                        className="row justify-content-center p-2"
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
+                                html.Button('Export JSON', id='export-pickle-btn', n_clicks=0, className="btn btn-primary",
+                                            style={"width": "100%"}),
+                                className="col-10 justify-content-center text-align-center"
+                            ),
+                            dcc.Download(id="download-pickle"),
                         ],
 
                         className="row justify-content-center p-2"

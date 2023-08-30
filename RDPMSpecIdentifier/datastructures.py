@@ -35,6 +35,8 @@ class RDPMState:
     scored: bool = False
     anosim_r: bool = None
     permanova_f: bool = None
+    cluster_method: str = None
+    cluster_args: dict = None
 
     def to_json(self):
         return self.__dict__
@@ -194,8 +196,8 @@ class RDPMSpecData:
             sub_df = self.df[row["Name"]].to_numpy()
             rnames += row["Name"]
             l.append(sub_df)
+        self.df["RDPMSpecID"] = self.df.iloc[:, 0]
         self.df["id"] = self.df.index
-        self.df["RDPMSpecID"] = self.df.index
         self._data_rows = np.asarray(rnames)
         array = np.stack(l, axis=1)
         if self.logbase is not None:
@@ -376,6 +378,7 @@ class RDPMSpecData:
         shift = ctrl_peak_pos - rnase_peak_pos
         cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
         self.cluster_features = cluster_values
+        self.state.cluster_kernel_distance = kernel_range
 
     def reduce_dim(self, data, embedding_dim: int = 2, method: str = "T-SNE"):
         data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
@@ -428,6 +431,8 @@ class RDPMSpecData:
         clusters[mask] = clusterer.fit(data[mask]).labels_
         clusters[~mask] = np.nan
         self.df["Cluster"] = clusters
+        self.state.cluster_method = method
+        self.state.cluster_args = kwargs
         return clusters
 
     @staticmethod

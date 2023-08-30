@@ -10,14 +10,16 @@ from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribut
 from RDPMSpecIdentifier.visualize.appDefinition import app
 from dash_extensions.enrich import Serverside
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
+import logging
 
+logger = logging.getLogger(__name__)
 
 COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + qualitative.G10
 
 @app.callback(
     Output("distribution-graph", "figure"),
     [
-        Input("protein-id", "children"),
+        Input("current-protein-id", "data"),
         Input('recomputation', 'children'),
         Input("primary-color", "data"),
         Input("secondary-color", "data"),
@@ -28,14 +30,14 @@ COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + quali
 
 )
 def update_distribution_plot(key, kernel_size, primary_color, secondary_color, replicate_mode, night_mode, rdpmsdata):
+    logger.info(f"{ctx.triggered_id} triggered update of distribution plot")
     colors = primary_color, secondary_color
-    key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
     array, _ = rdpmsdata[key]
     i = 0
-    if rdpmsdata.current_kernel_size is not None:
-        i = int(np.floor(rdpmsdata.current_kernel_size / 2))
+    if rdpmsdata.state.kernel_size is not None:
+        i = int(np.floor(rdpmsdata.state.kernel_size / 2))
     if replicate_mode:
         fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
     else:
@@ -62,7 +64,7 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
 @app.callback(
     Output("westernblot-graph", "figure"),
     [
-        Input("protein-id", "children"),
+        Input("current-protein-id", "data"),
         Input('recomputation', 'children'),
         Input("primary-color", "data"),
         Input("secondary-color", "data"),
@@ -73,7 +75,6 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
 )
 def update_westernblot(key, kernel_size, primary_color, secondary_color, night_mode, rdpmsdata):
     colors = primary_color, secondary_color
-    key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
     array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
@@ -106,7 +107,7 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
         Output("distance-header", "children")
     ],
     [
-        Input("protein-id", "children"),
+        Input("current-protein-id", "data"),
         Input('recomputation', 'children'),
         Input("primary-color", "data"),
         Input("secondary-color", "data"),
@@ -117,9 +118,8 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
     State("data-store", "data")
 
 )
-def update_heatmap(key, kernel_size, primary_color, secondary_color, night_mode, distance_method, rdpmsdata):
+def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, distance_method, rdpmsdata):
     colors = primary_color, secondary_color
-    key = key.split("Protein ")[-1]
     if key is None:
         raise PreventUpdate
     _, distances = rdpmsdata[key]
@@ -181,10 +181,17 @@ def calc_clusters(
         rdpmsdata: RDPMSpecData,
         uid
 ):
-    print(ctx.triggered_id)
+    logger.info(f"{ctx.triggered_id} - triggered cluster-callback")
     try:
+        dim = 2 if not td_plot else 3
+
         if ctx.triggered_id == "cluster-feature-slider" or rdpmsdata.cluster_features is None:
-            rdpmsdata._calc_cluster_features(kernel_range=kernel_size)
+            if rdpmsdata.state.cluster_kernel_distance != kernel_size:
+                rdpmsdata.calc_cluster_features(kernel_range=kernel_size)
+                logger.info("Calculated Cluster Features")
+
+                rdpmsdata.set_embedding(dim, method=reduction_method)
+                logger.info("Running Dimension Reduction - because cluster features changed")
         if ctx.triggered_id != "dim-red-method":
             if cluster_method != "None":
                 if cluster_method == "HDBSCAN":
@@ -195,11 +202,14 @@ def calc_clusters(
                     kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
                 else:
                     raise NotImplementedError("Method Not Implemented")
-                clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
+                if rdpmsdata.state.cluster_method != cluster_method or rdpmsdata.state.cluster_args != kwargs:
+                    logger.info("Running Clustering")
+                    clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
             else:
                 rdpmsdata.remove_clusters()
-        if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None or ctx.triggered_id == "cluster-feature-slider" or ctx.triggered_id == "3d-plot":
-            rdpmsdata.set_embedding(2 if not td_plot else 3, method=reduction_method)
+        if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None or ctx.triggered_id == "3d-plot":
+            if rdpmsdata.current_embedding is None or rdpmsdata.current_embedding.shape[-1] != dim or rdpmsdata.state.dimension_reduction != reduction_method:
+                logger.info("Running Dimension Reduction")
 
         return Serverside(rdpmsdata, key=uid), True
 
@@ -239,7 +249,7 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
         fig = plot_dimension_reduction_result(
             rdpmsdata.current_embedding,
             rdpmsdata,
-            name=rdpmsdata.current_dim_red_method,
+            name=rdpmsdata.state.dimension_reduction,
             colors=colors,
             highlight=selected_rows,
             clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None
@@ -287,14 +297,15 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
 @app.callback(
     Output("test-div", "children"),
     Input("cluster-graph", "hoverData"),
-    State("data-store", "data")
 )
-def update_plot_with_hover(hover_data, rdpmsdata):
+def update_plot_with_hover(hover_data):
+    logger.info("Hover Callback triggered")
     if hover_data is None:
         raise PreventUpdate
     hover_data = hover_data["points"][0]
-    protein = rdpmsdata.df.loc[hover_data["hovertext"]]["RDPMSpecID"]
-    return protein
+    split_l = hover_data["hovertext"].split(": ")[0]
+    p_id, protein = split_l[0], split_l[1]
+    return p_id
 
 
 
