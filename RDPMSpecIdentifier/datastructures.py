@@ -2,21 +2,52 @@ import multiprocessing
 import os
 from scipy.stats import ttest_ind
 import pandas as pd
+from pandas.api.types import is_float_dtype
 import numpy as np
 from typing import Callable
 from scipy.spatial.distance import jensenshannon
 from scipy.special import rel_entr
-#from RDPMSpecIdentifier.stats import fit_ecdf, get_permanova_results
+# from RDPMSpecIdentifier.stats import fit_ecdf, get_permanova_results
 from multiprocessing import Pool
 from statsmodels.stats.multitest import multipletests
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, HDBSCAN, DBSCAN
 from umap import UMAP
-
+from dataclasses import dataclass
+import json
+from json import JSONEncoder
+from pandas.testing import assert_frame_equal
 from statsmodels.distributions.empirical_distribution import ECDF
 
+DECIMALS = 15
 
+@dataclass()
+class RDPMState:
+    distance_method: str = None
+    kernel_size: int = None
+    eps: float = None
+    dimension_reduction: str = None
+    cluster_kernel_distance: int = None
+    permanova: str = None
+    permanova_permutations: int = None
+    permanova_cutoff: float = None
+    scored: bool = False
+    anosim_r: bool = None
+    permanova_f: bool = None
+
+    def to_json(self):
+        return self.__dict__
+
+    def __eq__(self, other):
+        if not isinstance(other, RDPMState):
+            return False
+        else:
+            other_dict = other.__dict__
+            for key, value in self.__dict__.items():
+                if value != other_dict[key]:
+                    return False
+            return True
 
 
 class RDPMSpecData:
@@ -48,19 +79,39 @@ class RDPMSpecData:
         >>> design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
         >>> rdpmspec = RDPMSpecData(df, design, logbase=2)
     """
-    methods = {
-        "Jensen-Shannon-Distance": "jensenshannon",
-        "KL-Divergence": "symmetric-kl-divergence",
-        "Euclidean-Distance": "euclidean"
-    }
+    methods = [
+        "Jensen-Shannon-Distance",
+        "KL-Divergence",
+        "Euclidean-Distance",
+    ]
+    score_columns = [
+        "Rank",
+        "RDPMSScore",
+        "ANOSIM R",
+        "global ANOSIM adj p-Value",
+        "local ANOSIM adj p-Value",
+        "PERMANOVA F",
+        "global PERMANOVA adj p-Value",
+        "local PERMANOVA adj p-Value",
+        "Mean Distance",
+        "shift direction",
+        "RNAse False peak pos",
+        "RNAse True peak pos",
+        "Permanova p-value",
+        "Permanova adj-p-value",
+        "CTRL Peak adj p-Value",
+        "RNAse Peak adj p-Value"
+    ]
+
+    _id_columns = ["RDPMSpecID", "id"]
+
     def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None):
+        self.state = RDPMState()
         self.df = df
         self.logbase = logbase
         self.design = design
         self.array = None
         self.internal_design_matrix = None
-        self.current_kernel_size = None
-        self.current_method = None
         self.norm_array = None
         self.distances = None
         self._anosim_distribution = None
@@ -71,36 +122,39 @@ class RDPMSpecData:
         self._indices_false = None
         self.cluster_features = None
         self.current_embedding = None
-        self.current_dim_red_method = None
         self.permutation_sufficient_samples = False
         self._check_design()
         self._check_dataframe()
-        self.score_columns = [
-            "Rank",
-            "RDPMSScore",
-            "ANOSIM R",
-            "global ANOSIM adj p-Value",
-            "local ANOSIM adj p-Value",
-            "PERMANOVA F",
-            "global PERMANOVA adj p-Value",
-            "local PERMANOVA adj p-Value",
-            "Mean Distance",
-            "shift direction",
-            "RNAse False peak pos",
-            "RNAse True peak pos",
-            "Permanova p-value",
-            "Permanova adj-p-value",
-            "CTRL Peak adj p-Value",
-            "RNAse Peak adj p-Value"
-        ]
-        self._id_columns = ["RDPMSpecID", "id"]
-
         self._set_design_and_array()
 
+    def __eq__(self, other):
+        if not isinstance(other, RDPMSpecData):
+            return False
+        else:
+            other_dict = other.__dict__
+            for key, value in self.__dict__.items():
+                other_item = other_dict[key]
+                if not isinstance(value, type(other_item)):
+                    return False
+                elif isinstance(value, pd.DataFrame):
+                    try:
+                        assert_frame_equal(value, other_item, check_dtype=False)
+                    except AssertionError:
+                        return False
+                elif isinstance(value, np.ndarray):
+                    if value.dtype.kind in ["U", "S"]:
+                        if not np.all(value == other_item):
+                            return False
+                    else:
+                        if not np.allclose(value, other_item, equal_nan=True):
+                            return False
+                else:
+                    if value != other_item:
+                        return False
+            return True
 
     def __getitem__(self, item):
         """
-
         Args:
             item (str): The index of the protein which data should be returned
 
@@ -119,9 +173,6 @@ class RDPMSpecData:
         return self.norm_array[index], self.distances[index]
 
     def _check_dataframe(self):
-        if not pd.api.types.is_string_dtype(self.df.index.dtype):
-            raise ValueError("The dataframe must have a string type index")
-
         if not set(self.design["Name"]).issubset(set(self.df.columns)):
             raise ValueError("Not all Names in the designs Name column are columns in the count df")
 
@@ -133,7 +184,10 @@ class RDPMSpecData:
     def _set_design_and_array(self):
         design_matrix = self.design.sort_values(by="Fraction")
         tmp = design_matrix.groupby(["RNAse", "Replicate"])["Name"].apply(list).reset_index()
-        self.permutation_sufficient_samples = np.all(tmp.groupby("RNAse", group_keys=True)["Replicate"].count() >= 5)
+        self.df.index = np.arange(self.df.shape[0])
+        self.df = self.df.round(decimals=DECIMALS)
+
+        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("RNAse", group_keys=True)["Replicate"].count() >= 5))
         l = []
         rnames = []
         for idx, row in tmp.iterrows():
@@ -142,7 +196,7 @@ class RDPMSpecData:
             l.append(sub_df)
         self.df["id"] = self.df.index
         self.df["RDPMSpecID"] = self.df.index
-        self._data_rows = rnames
+        self._data_rows = np.asarray(rnames)
         array = np.stack(l, axis=1)
         if self.logbase is not None:
             array = np.power(self.logbase, array)
@@ -151,8 +205,8 @@ class RDPMSpecData:
         self.array = array
         self.internal_design_matrix = tmp
         indices = self.internal_design_matrix.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
-        self._indices_false = indices[False]
-        self._indices_true = indices[True]
+        self._indices_false = np.asarray(indices[False])
+        self._indices_true = np.asarray(indices[True])
 
     @classmethod
     def from_files(cls, intensities: str, design: str, logbase: int = None, sep: str = ","):
@@ -200,8 +254,6 @@ class RDPMSpecData:
 
         """
         array = self.array
-        self.current_kernel_size = kernel_size
-        self._current_eps = eps
 
         if kernel_size:
             if not kernel_size % 2:
@@ -210,6 +262,8 @@ class RDPMSpecData:
             array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="valid"), axis=-1, arr=array)
 
         self.norm_array = self._normalize_rows(array, eps=eps)
+        self.state.kernel_size = kernel_size
+        self.state.eps = eps
 
     def calc_distances(self, method: str):
         """Calculates between sample distances.
@@ -222,28 +276,27 @@ class RDPMSpecData:
                 epsilon to the protein intensities
 
         """
-        if method == "jensenshannon":
+        if method == "Jensen-Shannon-Distance":
             self.distances = self._jensenshannondistance(self.norm_array)
 
-        elif method == "symmetric-kl-divergence":
+        elif method == "KL-Divergence":
             if self._current_eps is None or self._current_eps <= 0:
                 raise ValueError(
                     "Cannot calculate KL-Divergence for Counts with 0 entries. "
                     "Need to set epsilon which is added to the raw Protein intensities"
                 )
             self.distances = self._symmetric_kl_divergence(self.norm_array)
-        elif method == "euclidean":
+        elif method == "Euclidean-Distance":
             self.distances = self._euclidean_distance(self.norm_array)
         else:
             raise ValueError(f"methhod: {method} is not supported")
-        self.current_method = method
+        self.state.distance_method = method
 
     def _unset_scores_and_pvalues(self):
         for name in self.score_columns:
             if name in self.df:
                 self.df = self.df.drop(name, axis=1)
         self.remove_clusters()
-
 
     def normalize_and_get_distances(self, method: str, kernel: int = 0, eps: float = 0):
         """Normalizes the array and calculates sample distances.
@@ -280,14 +333,14 @@ class RDPMSpecData:
         mid = 0.5 * (rnase_true + rnase_false)
         rel1 = rel_entr(rnase_false, mid)
         r1 = np.argmax(rel1, axis=-1)
-        r1 = r1 + int(np.ceil(self.current_kernel_size / 2))
+        r1 = r1 + int(np.ceil(self.state.kernel_size / 2))
         self.df["RNAse False peak pos"] = r1
 
         rel2 = rel_entr(rnase_true, mid)
         r2 = np.argmax(rel2, axis=-1)
         jsd = jensenshannon(rnase_true, rnase_false, axis=-1, base=2)
 
-        r2 = r2 + int(np.ceil(self.current_kernel_size / 2))
+        r2 = r2 + int(np.ceil(self.state.kernel_size / 2))
         self.df["RNAse True peak pos"] = r2
         self.df["Mean Distance"] = jsd
         side = r1 - r2
@@ -299,7 +352,7 @@ class RDPMSpecData:
         shift_strings = np.where(side == 1, "left", shift_strings)
         self.df["shift direction"] = shift_strings
 
-    def _calc_cluster_features(self, kernel_range: int = 2):
+    def calc_cluster_features(self, kernel_range: int = 2):
         if "shift direction" not in self.df:
             raise ValueError("Peaks not determined. Determine Peaks first")
         rnase_false = self.norm_array[:, self._indices_false].mean(axis=-2)
@@ -307,17 +360,18 @@ class RDPMSpecData:
         mixture = 0.5 * (rnase_true + rnase_false)
         ctrl_peak = rel_entr(rnase_false, mixture)
         rnase_peak = rel_entr(rnase_true, mixture)
-        ctrl_peak_pos = (self.df["RNAse False peak pos"] - int(np.floor(self.current_kernel_size / 2)) - 1).to_numpy()
-        rnase_peak_pos = (self.df["RNAse True peak pos"] - int(np.floor(self.current_kernel_size / 2)) - 1).to_numpy()
+        ctrl_peak_pos = (self.df["RNAse False peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
+        rnase_peak_pos = (self.df["RNAse True peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
 
         ctrl_peak = np.pad(ctrl_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
-        ctrl_peak_range = np.stack((ctrl_peak_pos, ctrl_peak_pos + 2*kernel_range + 1), axis=1)
+        ctrl_peak_range = np.stack((ctrl_peak_pos, ctrl_peak_pos + 2 * kernel_range + 1), axis=1)
         ctrl_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=ctrl_peak_range, axis=-1)
         v1 = np.take_along_axis(ctrl_peak, ctrl_peak_range, axis=-1)
 
         rnase_peak = np.pad(rnase_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
         rnase_peak_range = np.stack((rnase_peak_pos, rnase_peak_pos + 2 * kernel_range + 1), axis=1)
-        rnase_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=rnase_peak_range, axis=-1)
+        rnase_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=rnase_peak_range,
+                                               axis=-1)
         v2 = np.take_along_axis(rnase_peak, rnase_peak_range, axis=-1)
         shift = ctrl_peak_pos - rnase_peak_pos
         cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
@@ -338,7 +392,8 @@ class RDPMSpecData:
             reducer = UMAP(n_components=embedding_dim)
         elif method == "PCA":
             reducer = PCA(n_components=embedding_dim)
-        else: raise NotImplementedError("Method not implemented")
+        else:
+            raise NotImplementedError("Method not implemented")
         embedding = np.zeros((self.array.shape[0], embedding_dim))
         mask = ~np.isnan(self.cluster_features).any(axis=1)
         embedding[mask, :] = reducer.fit_transform(data[mask])
@@ -347,7 +402,7 @@ class RDPMSpecData:
 
     def set_embedding(self, dim, method):
         self.current_embedding = self.reduce_dim(data=self.cluster_features, method=method, embedding_dim=dim)
-        self.current_dim_red_method = method
+        self.state.dimension_reduction = method
 
     def remove_clusters(self):
         if "Cluster" in self.df:
@@ -374,9 +429,6 @@ class RDPMSpecData:
         clusters[~mask] = np.nan
         self.df["Cluster"] = clusters
         return clusters
-
-
-
 
     @staticmethod
     def _jensenshannondistance(array) -> np.ndarray:
@@ -409,7 +461,7 @@ class RDPMSpecData:
         distances = distances.reshape((n_genes, len(indices_true) * len(indices_false)))
         return distances
 
-    def _get_innergroup_distances(self,  indices_false, indices_true):
+    def _get_innergroup_distances(self, indices_false, indices_true):
         distances = self.distances
         indices = [indices_false, indices_true]
         inner_distances = []
@@ -444,8 +496,9 @@ class RDPMSpecData:
         """
         if "RNAse True peak pos" not in self.df:
             raise ValueError("Need to compute peak positions first")
-        for peak, name in (("RNAse True peak pos", "RNAse Peak adj p-Value"), ("RNAse False peak pos", "CTRL Peak adj p-Value")):
-            idx = np.asarray(self.df[peak] - int(np.ceil(self.current_kernel_size / 2)))
+        for peak, name in (
+                ("RNAse True peak pos", "RNAse Peak adj p-Value"), ("RNAse False peak pos", "CTRL Peak adj p-Value")):
+            idx = np.asarray(self.df[peak] - int(np.ceil(self.state.kernel_size / 2)))
             t = np.take_along_axis(self.norm_array, idx[:, np.newaxis, np.newaxis], axis=2).squeeze()
             t_idx = np.tile(np.asarray(self._indices_true), t.shape[0]).reshape(t.shape[0], -1)
             f_idx = np.tile(np.asarray(self._indices_false), t.shape[0]).reshape(t.shape[0], -1)
@@ -461,7 +514,6 @@ class RDPMSpecData:
             adj_pval[mask] = np.nan
             _, adj_pval[~mask], _, _ = multipletests(t_test.pvalue[~mask], method="fdr_bh")
             self.df[name] = adj_pval
-
 
     def rank_table(self, values, ascending):
         """Ranks the :attr:`df`
@@ -481,8 +533,6 @@ class RDPMSpecData:
         rdf["Rank"] = np.arange(1, len(rdf) + 1)
         self.df = self.df.reset_index(drop=True).merge(rdf, how="left", on="RDPMSpecID").set_index("id")
         self.df["id"] = self.df.index
-
-
 
     def calc_all_scores(self):
         """Calculates ANOSIM R, shift direction, peak positions and Mean Sample Distance.
@@ -519,19 +569,22 @@ class RDPMSpecData:
         ) / bn
         ssw = np.sum(np.square(inner_group_distances), axis=-1) / n
         ssa = sst - ssw
-        f = (ssa) / (ssw / (bn-2))
+        f = (ssa) / (ssw / (bn - 2))
         return f
 
     def calc_all_permanova_f(self):
         """Calculates PERMANOVA F for each protein and stores it in :py:attr:`df`
         """
         f = self._calc_permanova_f(self._indices_false, self._indices_true)
-        self.df["PERMANOVA F"] = f
+        self.df["PERMANOVA F"] = f.round(decimals=DECIMALS)
+        self.state.permanova_f = True
+
 
     def calc_all_anosim_value(self):
         """Calculates ANOSIM R for each protein and stores it in :py:attr:`df`"""
         r = self._calc_anosim(self._indices_false, self._indices_true)
-        self.df["ANOSIM R"] = r
+        self.df["ANOSIM R"] = r.round(decimals=DECIMALS)
+        self.state.anosim_r = True
 
     def _calc_global_anosim_distribution(self, nr_permutations: int, threads: int, seed: int = 0):
         np.random.seed(seed)
@@ -561,7 +614,8 @@ class RDPMSpecData:
         result = np.stack(result)
         self._permanova_distribution = result
 
-    def calc_anosim_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None, mode: str = "local"):
+    def calc_anosim_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None,
+                            mode: str = "local"):
         """Calculates ANOSIM p-value via shuffling and stores it in :attr:`df`.
         Adjusts for multiple testing.
 
@@ -596,7 +650,8 @@ class RDPMSpecData:
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
         self.df[f"{mode} ANOSIM adj p-Value"] = p_values
 
-    def calc_permanova_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None, mode: str = "local"):
+    def calc_permanova_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None,
+                               mode: str = "local"):
         """Calculates PERMANOVA p-value via shuffling and stores it in :attr:`df`.
         Adjusts for multiple testing.
 
@@ -629,8 +684,11 @@ class RDPMSpecData:
         p_values[mask] = np.nan
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
         self.df[f"{mode} PERMANOVA adj p-Value"] = p_values
+        self.state.permanova = mode
+        self.state.permanova_permutations = permutations
+        self.state.permanova_cutoff = distance_cutoff
 
-    def export_csv(self, file: str,  sep: str = ","):
+    def export_csv(self, file: str, sep: str = ","):
         """Exports the :attr:`extra_df` to a file.
 
         Args:
@@ -641,49 +699,98 @@ class RDPMSpecData:
         df = self.extra_df.drop(["id"], axis=1)
         df.to_csv(file, sep=sep, index=False)
 
+    def to_jsons(self):
+        s = json.dumps(self, cls=RDPMSpecEncoder)
+        return s
+
+    @classmethod
+    def from_json(cls, json_string):
+        json_obj = json.loads(json_string)
+        data = cls._from_dict(json_obj)
+        return data
+
+    @classmethod
+    def _from_dict(cls, dict_repr):
+
+        for key, value in dict_repr.items():
+            if key == "state":
+                dict_repr[key] = RDPMState(**value)
+            elif key in ("df", "design", "internal_design_matrix"):
+                dict_repr[key] = pd.read_json(value).round(decimals=DECIMALS).fillna(value=np.nan)
+            elif isinstance(value, list):
+                dict_repr[key] = np.asarray(value)
+                if isinstance(dict_repr[key], np.floating):
+                    dict_repr[key] = dict_repr[key].round(decimals=DECIMALS)
+            elif value == "true":
+                dict_repr[key] = True
+            elif value == "false":
+                dict_repr[key] = False
+        data = cls(dict_repr["df"], design=dict_repr["design"], logbase=dict_repr["logbase"])
+        for key, value in dict_repr.items():
+            setattr(data, key, value)
+        return data
+
+
+
+
+
+
+
+
+class RDPMSpecEncoder(JSONEncoder):
+    def default(self, obj_to_encode):
+        if isinstance(obj_to_encode, pd.DataFrame):
+            return obj_to_encode.to_json(double_precision=15)
+            # ndarray -> list, pretty straightforward.
+        if isinstance(obj_to_encode, np.ndarray):
+            return obj_to_encode.tolist()
+        if hasattr(obj_to_encode, 'to_json'):
+            return obj_to_encode.to_json()
+        if isinstance(obj_to_encode, np.bool_):
+            return super().encode(bool(obj_to_encode))
+        return obj_to_encode.__dict__
+
 
 def _analysis_executable_wrapper(args):
     rdpmspec = RDPMSpecData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
     kernel_size = args.kernel_size if args.kernel_size > 0 else 0
     rdpmspec.normalize_and_get_distances(args.distance_method, kernel_size, args.eps)
     rdpmspec.calc_all_scores()
-    if args.method is not None:
+    if args.distance_method is not None:
         if not args.global_permutation:
-            if args.method.upper() == "PERMANOVA":
+            if args.distance_method.upper() == "PERMANOVA":
                 rdpmspec.calc_permanova_p_value(args.permutations, args.num_threads, mode="local")
-            elif args.method.upper() == "ANOSIM":
+            elif args.distance_method.upper() == "ANOSIM":
                 rdpmspec.calc_anosim_p_value(args.permutations, args.num_threads, mode="local")
         else:
-            if args.method.upper() == "PERMANOVA":
+            if args.distance_method.upper() == "PERMANOVA":
                 rdpmspec.calc_permanova_p_value(args.permutations, args.num_threads, mode="global")
-            elif args.method.upper() == "ANOSIM":
+            elif args.distance_method.upper() == "ANOSIM":
                 rdpmspec.calc_anosim_p_value(args.permutations, args.num_threads, mode="global")
     rdpmspec.export_csv(args.output, args.sep)
 
 
-
-
-
 if __name__ == '__main__':
     df = pd.read_csv("../testData/rdeep_counts_normalized.tsv", sep="\t", index_col=0)
-    #sdf = df[[col for col in df.columns if "LFQ" in col]]
+    # sdf = df[[col for col in df.columns if "LFQ" in col]]
     sdf = df
     sdf.index = sdf.index.astype(str)
     design = pd.read_csv("../testData/rdeep_design_normalized.tsv", sep="\t")
     rdpmspec = RDPMSpecData(sdf, design)
     rdpmspec.normalize_and_get_distances("jensenshannon", 3)
     rdpmspec.calc_all_scores()
-    rdpmspec._calc_cluster_features(kernel_range=3)
+    rdpmspec.calc_cluster_features(kernel_range=3)
     clusters = rdpmspec.cluster_data()
     embedding = rdpmspec.reduce_dim()
     import plotly.graph_objs as go
     from plotly.colors import qualitative
     from RDPMSpecIdentifier.plots import plot_dimension_reduction_result
-    fig = plot_dimension_reduction_result(embedding, rdpmspec, colors=qualitative.Light24 + qualitative.Dark24, clusters=clusters, name="bla")
+
+    fig = plot_dimension_reduction_result(embedding, rdpmspec, colors=qualitative.Light24 + qualitative.Dark24,
+                                          clusters=clusters, name="bla")
     fig.show()
     exit()
     rdpmspec.calc_anosim_p_value(100, threads=2, mode="global")
     rdpmspec.calc_permanova_p_value(100, threads=2, mode="global")
     rdpmspec.rank_table(["ANOSIM R"], ascending=(True,))
-    #rdpmspec.calc_welchs_t_test()
-
+    # rdpmspec.calc_welchs_t_test()
