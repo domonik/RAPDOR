@@ -1,11 +1,8 @@
 import os
-import tempfile
 
-import dash
 import dash_bootstrap_components as dbc
 import plotly.io as pio
 from dash import clientside_callback, ClientsideFunction
-from dash.dependencies import Input, Output
 
 from RDPMSpecIdentifier.visualize.staticContent import LOGO, LIGHT_LOGO
 
@@ -26,7 +23,9 @@ app = DashProxy(
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
     prevent_initial_callbacks="initial_duplicate",
-    transforms=[ServersideOutputTransform(backends=[another_backend])]
+    transforms=[ServersideOutputTransform(backends=[another_backend])],
+    use_pages=True,
+    pages_folder=os.path.join(FILEDIR, "pages")
 )
 
 pio.templates["plotly_white"].update(
@@ -40,19 +39,6 @@ pio.templates["plotly_white"].update(
     }
 )
 
-clientside_callback(
-    ClientsideFunction(
-        namespace="clientside",
-        function_name="function1"
-
-    ),
-    [Output("placeholder", "children")],
-    [
-        Input("night-mode", "on"),
-        Input("secondary-open-color-modal", "style"),
-        Input("primary-open-color-modal", "style"),
-    ],
-)
 
 clientside_callback(
     ClientsideFunction(
@@ -63,6 +49,9 @@ clientside_callback(
     [Output("placeholder2", "children")],
     [
         Input("night-mode", "on"),
+        Input("secondary-color", "data"),
+        Input("primary-color", "data"),
+
     ],
 )
 

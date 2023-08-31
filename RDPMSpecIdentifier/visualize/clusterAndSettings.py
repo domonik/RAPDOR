@@ -4,7 +4,8 @@ from dash import html, ctx
 import dash_loading_spinners as dls
 import dash_daq as daq
 from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS
-
+from RDPMSpecIdentifier.datastructures import RDPMSpecData
+from RDPMSpecIdentifier.plots import empty_figure
 
 def _get_cluster_panel():
     panel = html.Div(
@@ -17,7 +18,7 @@ def _get_cluster_panel():
                             dls.RingChase(
                                 [
                                     dcc.Store(id="plot-dim-red", data=False),
-                                    dcc.Graph(id="cluster-graph"),
+                                    dcc.Graph(id="cluster-graph", figure=empty_figure()),
 
                                 ],
                                 color="var(--primary-color)",
@@ -140,7 +141,7 @@ def _get_cluster_panel():
     return panel
 
 
-def selector_box(rdpmsdata):
+def selector_box():
     sel_box = html.Div(
         [
             html.Div(
@@ -160,7 +161,7 @@ def selector_box(rdpmsdata):
                             ),
                             html.Div(
                                 dcc.Dropdown(
-                                    rdpmsdata.methods, rdpmsdata.methods[0],
+                                    RDPMSpecData.methods, RDPMSpecData.methods[0],
                                     className="justify-content-center",
                                     id="distance-method",
                                     clearable=False
@@ -316,7 +317,7 @@ def selector_box(rdpmsdata):
                             html.Div(
                                 html.Button(
                                     '', id='primary-open-color-modal', n_clicks=0, className="btn",
-                                    style={"width": "100%", "height": "40px", "background-color": DEFAULT_COLORS["primary"]}
+                                    style={"width": "100%", "height": "40px"}
                                 ),
                                 className="col-3 justify-content-center text-align-center primary-color-div"
                             ),
@@ -324,7 +325,7 @@ def selector_box(rdpmsdata):
                                 html.Button(
                                     '', id='secondary-open-color-modal', n_clicks=0,
                                     className="btn",
-                                    style={"width": "100%", "height": "40px", "background-color": DEFAULT_COLORS["secondary"]}
+                                    style={"width": "100%", "height": "40px"}
                                 ),
                                 className="col-3 justify-content-center text-align-center primary-color-div"
                             ),

@@ -1,14 +1,13 @@
 import dash_bootstrap_components as dbc
 import numpy as np
-from dash import Output, Input, State, ctx, html
+from dash import Output, Input, State, ctx
 import dash
 from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
 from plotly.colors import qualitative
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
-    plot_dimension_reduction_result
-from RDPMSpecIdentifier.visualize.appDefinition import app
-from dash_extensions.enrich import Serverside
+    plot_dimension_reduction_result, empty_figure
+from dash_extensions.enrich import Serverside, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
 
@@ -16,7 +15,10 @@ logger = logging.getLogger(__name__)
 
 COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + qualitative.G10
 
-@app.callback(
+
+
+
+@callback(
     Output("distribution-graph", "figure"),
     [
         Input("current-protein-id", "data"),
@@ -34,22 +36,29 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
     colors = primary_color, secondary_color
     if key is None:
         raise PreventUpdate
-    array, _ = rdpmsdata[key]
-    i = 0
-    if rdpmsdata.state.kernel_size is not None:
-        i = int(np.floor(rdpmsdata.state.kernel_size / 2))
-    if replicate_mode:
-        fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
-    else:
-        fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
-    fig.layout.template = "plotly_white"
-    if not night_mode:
-        fig.update_layout(
-            font=dict(color="black"),
-            yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
-            xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
-
+    if rdpmsdata is None:
+        fig = empty_figure(
+            "There is no data uploaded yet.<br> Please go to the Data upload Page",
+            "black" if not night_mode else "white"
         )
+
+    else:
+        array, _ = rdpmsdata[key]
+        i = 0
+        if rdpmsdata.state.kernel_size is not None:
+            i = int(np.floor(rdpmsdata.state.kernel_size / 2))
+        if replicate_mode:
+            fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+        else:
+            fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+        fig.layout.template = "plotly_white"
+        if not night_mode:
+            fig.update_layout(
+                font=dict(color="black"),
+                yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+                xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+
+            )
     fig.update_layout(
         margin={"t": 0, "b": 30, "r": 50},
         font=dict(
@@ -61,7 +70,7 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
     return fig
 
 
-@app.callback(
+@callback(
     Output("westernblot-graph", "figure"),
     [
         Input("current-protein-id", "data"),
@@ -77,31 +86,34 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
     colors = primary_color, secondary_color
     if key is None:
         raise PreventUpdate
-    array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
+    if rdpmsdata is None:
+        raise PreventUpdate
+    else:
+        array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
+        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
+        fig.update_yaxes(showticklabels=False, showgrid=False)
+        fig.update_xaxes(showgrid=False, showticklabels=False)
+        if not night_mode:
+            fig.update_layout(
+                font=dict(color="black"),
 
-    fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
-    fig.update_yaxes(showticklabels=False, showgrid=False)
-    fig.update_xaxes(showgrid=False, showticklabels=False)
-    if not night_mode:
+            )
         fig.update_layout(
-            font=dict(color="black"),
-            yaxis=dict(gridcolor="black"),
-            xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+            margin={"t": 0, "b": 0, "r": 50},
+            font=dict(
+                size=16,
+            ),
+            yaxis=dict(zeroline=False),
+            xaxis=dict(zeroline=False),
 
         )
-    fig.update_layout(
-        margin={"t": 0, "b": 0, "r": 50},
-        font=dict(
-            size=16,
-        )
-    )
-    fig.update_xaxes(fixedrange=True)
+        fig.update_xaxes(fixedrange=True)
 
-    fig.layout.template = "plotly_white"
+        fig.layout.template = "plotly_white"
     return fig
 
 
-@app.callback(
+@callback(
     [
         Output("heatmap-graph", "figure"),
         Output("distance-header", "children")
@@ -122,25 +134,28 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
     colors = primary_color, secondary_color
     if key is None:
         raise PreventUpdate
-    _, distances = rdpmsdata[key]
-    fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
-    fig.layout.template = "plotly_white"
-    if not night_mode:
-        fig.update_layout(
-            font=dict(color="black"),
-            yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
-            xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+    if rdpmsdata is None:
+        raise PreventUpdate
+    else:
+        _, distances = rdpmsdata[key]
+        fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
+        fig.layout.template = "plotly_white"
+        if not night_mode:
+            fig.update_layout(
+                font=dict(color="black"),
+                yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+                xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
 
+            )
+        fig.update_layout(
+            margin={"t": 0, "b": 0, "l": 0, "r": 0}
         )
-    fig.update_layout(
-        margin={"t": 0, "b": 0, "l": 0, "r": 0}
-    )
-    fig.update_yaxes(showgrid=False)
-    fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showgrid=False)
+        fig.update_xaxes(showgrid=False)
     return fig, f"Sample {distance_method}"
 
 
-@app.callback(
+@callback(
     Output("data-store", "data", allow_duplicate=True),
     Output("plot-dim-red", "data"),
     Input('cluster-feature-slider', 'value'),
@@ -182,6 +197,8 @@ def calc_clusters(
         uid
 ):
     logger.info(f"{ctx.triggered_id} - triggered cluster-callback")
+    if rdpmsdata is None:
+        raise PreventUpdate
     try:
         dim = 2 if not td_plot else 3
 
@@ -218,7 +235,7 @@ def calc_clusters(
 
 
 
-@app.callback(
+@callback(
     Output("cluster-graph", "figure"),
     Input("night-mode", "on"),
     Input("primary-color", "data"),
@@ -231,6 +248,8 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
 
     color = color, color2
     colors = COLORS + list(color)
+    if rdpmsdata is None:
+        raise PreventUpdate
 
     if not plotting:
         fig = go.Figure()
@@ -294,7 +313,7 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
 
 
 
-@app.callback(
+@callback(
     Output("test-div", "children"),
     Input("cluster-graph", "hoverData"),
 )
@@ -303,7 +322,7 @@ def update_plot_with_hover(hover_data):
     if hover_data is None:
         raise PreventUpdate
     hover_data = hover_data["points"][0]
-    split_l = hover_data["hovertext"].split(": ")[0]
+    split_l = hover_data["hovertext"].split(": ")
     p_id, protein = split_l[0], split_l[1]
     return p_id
 

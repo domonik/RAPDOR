@@ -1,52 +1,52 @@
-import base64
-import pickle
-import re
+
 
 import dash
 from dash import Output, Input, html, ctx, dcc
 from dash.exceptions import PreventUpdate
 
-from RDPMSpecIdentifier.visualize.appDefinition import app
-from RDPMSpecIdentifier.visualize.staticContent import IMG_TEXT, COLOR_IDX, COLOR_END, BS, BE
-from dash_extensions.enrich import Serverside, State
+from dash_extensions.enrich import Serverside, State, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
-import pandas as pd
 import uuid
-from tempfile import TemporaryDirectory
-import os
-import RDPMSpecIdentifier.visualize as rdv
+
 import logging
 
 logger = logging.getLogger(__name__)
 
-@app.callback(
-    Output("data-store", "data", allow_duplicate=True),
-    Output("kernel-slider", "value"),
-    Output("distance-method", "value"),
-    Output("unique-id", "data"),
-    Output('cluster-feature-slider', 'value'),
-    Input("unique-id", "data"),
-    State("data-initial-store", "data"),
-    State("data-store", "data"),
 
+@callback(
+    Output("unique-id", "data"),
+    Input("unique-id", "data"),
 )
-def load_state(uid, data, saved):
-    logger.info("Loading Data")
+def assign_session_identifier(uid):
     if uid is None:
         uid = str(uuid.uuid4())
-    if saved is None:
-        logger.info("Loading from initial state")
-        rdpmspec = RDPMSpecData.from_json(data)
-    else:
-        logger.info("Loading from saved state")
-        rdpmspec = saved
-    kernel = rdpmspec.state.kernel_size if rdpmspec.state.kernel_size is not None else 3
-    dm = rdpmspec.state.distance_method if rdpmspec.state.distance_method is not None else dash.no_update
-    cf_slider = rdpmspec.state.cluster_kernel_distance if rdpmspec.state.cluster_kernel_distance is not None else dash.no_update
-    return Serverside(rdpmspec, key=uid), kernel, dm, uid, cf_slider
+    return uid
+
+#
+# @callback(
+#     Output("data-store", "data", allow_duplicate=True),
+#     Output("kernel-slider", "value"),
+#     Output("distance-method", "value"),
+#     Output('cluster-feature-slider', 'value'),
+#     State("data-initial-store", "data"),
+#     Input("data-store", "data"),
+#
+# )
+# def load_state(uid, data, saved):
+#     logger.info("Loading Data")
+#     if saved is None:
+#         logger.info("Loading from initial state")
+#         rdpmspec = RDPMSpecData.from_json(data)
+#     else:
+#         logger.info("Loading from saved state")
+#         rdpmspec = saved
+#     kernel = rdpmspec.state.kernel_size if rdpmspec.state.kernel_size is not None else 3
+#     dm = rdpmspec.state.distance_method if rdpmspec.state.distance_method is not None else dash.no_update
+#     cf_slider = rdpmspec.state.cluster_kernel_distance if rdpmspec.state.cluster_kernel_distance is not None else dash.no_update
+#     return Serverside(rdpmspec, key=uid), kernel, dm, uid, cf_slider
 
 
-@app.callback(
+@callback(
     Output("recomputation", "children"),
     Output("data-store", "data"),
     Input("kernel-slider", "value"),
@@ -56,6 +56,8 @@ def load_state(uid, data, saved):
     prevent_initial_call=True
 )
 def recompute_data(kernel_size, distance_method, rdpmsdata, uid):
+    if rdpmsdata is None:
+        raise PreventUpdate
     logger.info("Normalization")
     eps = 0 if distance_method == "Jensen-Shannon-Distance" else 10  # Todo: Make this optional
     rdpmsdata: RDPMSpecData
@@ -81,7 +83,7 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid):
 #     return html.Img(src=img, style={"width": "20%", "min-width": "300px"}, className="p-1"),
 
 
-@app.callback(
+@callback(
         Output("protein-id", "children"),
         Output("current-protein-id", "data"),
 
@@ -92,7 +94,7 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid):
     State("data-store", "data")
 )
 def update_selected_id(active_cell, test_div, rdpmsdata):
-    logger.info("Updating Selected Protein")
+    logger.info(f"{ctx.triggered_id} -- triggered update of selected Protein")
     if ctx.triggered_id == "tbl":
         if active_cell is None:
             raise PreventUpdate
@@ -100,6 +102,9 @@ def update_selected_id(active_cell, test_div, rdpmsdata):
         protein = rdpmsdata.df.loc[active_row_id, "RDPMSpecID"]
         protein = f"Protein {protein}"
     elif ctx.triggered_id == "test-div":
+        logger.info(f"{test_div} - value")
+        if test_div is None:
+            raise PreventUpdate
         active_row_id = int(test_div)
         protein = rdpmsdata.df.loc[active_row_id, "RDPMSpecID"]
 
@@ -109,7 +114,7 @@ def update_selected_id(active_cell, test_div, rdpmsdata):
     return protein, active_row_id
 
 
-@app.callback(
+@callback(
     Output("download-dataframe-csv", "data"),
     Input("export-btn", "n_clicks"),
     State("data-store", "data"),
@@ -121,7 +126,7 @@ def download_dataframe(n_clicks, rdpmsdata):
 
 
 
-@app.callback(
+@callback(
     Output("download-pickle", "data"),
     Input("export-pickle-btn", "n_clicks"),
     State("data-store", "data"),
@@ -134,3 +139,20 @@ def download_json(n_clicks, rdpmsdata):
     )
 
     return ret_val
+
+@callback(
+    Output("offcanvas", "is_open"),
+    Input("open-offcanvas", "n_clicks"),
+    Input("url", "pathname"),
+    [State("offcanvas", "is_open")],
+)
+def toggle_offcanvas(n1, url, is_open):
+    logger.info(f"{ctx.triggered_id} - triggered side canvas")
+    if ctx.triggered_id == "url":
+        if is_open:
+            logger.info("Closing off-canvas")
+            return not is_open
+    else:
+        if n1:
+            return not is_open
+    return is_open

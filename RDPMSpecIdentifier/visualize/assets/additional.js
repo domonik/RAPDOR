@@ -10,13 +10,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 const base64EncodedSvg = svgImage.getAttribute('src').replace(/^data:image\/svg\+xml;base64,/, '');
                 const decodedSvg = atob(base64EncodedSvg);
                 var modifiedSvg = this.substrReplace(decodedSvg, fill_start, fill);
-                if (!on) {
-                    modifiedSvg = this.substrReplace(modifiedSvg, black_start, "fill:#000000");
-
-                } else {
-                    modifiedSvg = this.substrReplace(modifiedSvg, black_start, "fill:#f2f2f2");
-
-                }
+                // if (!on) {
+                //     modifiedSvg = this.substrReplace(modifiedSvg, black_start, "fill:#000000");
+                //
+                // } else {
+                //     modifiedSvg = this.substrReplace(modifiedSvg, black_start, "fill:#f2f2f2");
+                //
+                // }
                 svgImage.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(modifiedSvg));
             }
             return ""
@@ -47,32 +47,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             return newString;
         },
 
-        function1: function (on, style, style2) {
-            // Get the root element
-
-            var r = document.querySelector(':root');
-            r.style.setProperty('--primary-color', style["background-color"])
-            r.style.setProperty('--secondary-color', style2["background-color"])
-
-            if (on) {
-                var darker = this.function2(style["background-color"], 0.5);
-                var darker2 = this.function2(style2["background-color"], 0.5);
-                r.style.setProperty('--primary-hover-color', darker);
-                r.style.setProperty('--secondary-hover-color', darker2);
-                var table_head = this.function2(style["background-color"], 0.05);
-                r.style.setProperty('--table-head-color', table_head);
-            } else {
-                var lighter = this.makebrighter(style["background-color"], 50);
-                var lighter2 = this.makebrighter(style2["background-color"], 50);
-                r.style.setProperty('--table-head-color', "#181818");
-                r.style.setProperty('--primary-hover-color', lighter);
-                r.style.setProperty('--secondary-hover-color', lighter2);
-
-            }
-
-
-            return "";
-        },
 
         function2: function modifyRGB(inputRGB, multiplier) {
             const valuesStr = inputRGB.substring(inputRGB.indexOf("(") + 1, inputRGB.indexOf(")")).split(",");
@@ -107,8 +81,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             return `rgb(${newR}, ${newG}, ${newB})`;
         },
 
-        nightMode: function changeMode(on) {
+        nightMode: function changeMode(on, primaryColor, secondaryColor) {
+            console.log("Running night mode function")
             var r = document.querySelector(':root');
+            console.log(primaryColor)
+            r.style.setProperty('--primary-color', primaryColor)
+            r.style.setProperty('--secondary-color', secondaryColor)
 
             if (on) {
                 r.style.setProperty('--r-text-color', "white")
@@ -119,6 +97,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--input-background-color', "#1a1a1a")
                 r.style.setProperty('--input-background-color', "#1a1a1a")
                 r.style.setProperty('--background-color', "#3a3a3a")
+                var darker = this.function2(primaryColor, 0.5);
+                var darker2 = this.function2(secondaryColor, 0.5);
+                r.style.setProperty('--primary-hover-color', darker);
+                r.style.setProperty('--secondary-hover-color', darker2);
+                var table_head = this.function2(primaryColor, 0.05);
+                r.style.setProperty('--table-head-color', table_head);
+                console.log("Setup Night Mode")
 
 
             } else {
@@ -129,6 +114,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--button-color', "#8f8f8f")
                 r.style.setProperty('--input-background-color', "#9a9a9a")
                 r.style.setProperty('--background-color', "#ffffff")
+                var lighter = this.makebrighter(primaryColor, 50);
+                var lighter2 = this.makebrighter(secondaryColor, 50);
+                r.style.setProperty('--table-head-color', "#181818");
+                r.style.setProperty('--primary-hover-color', lighter);
+                r.style.setProperty('--secondary-hover-color', lighter2);
+                console.log("Setup Day Mode")
+
 
 
 
@@ -207,3 +199,9 @@ document.addEventListener('focus', function (event) {
 }, true);
 
 
+addEventListener("dragover", (event) => {
+    const dragOverElement = event.target;
+    if (dragOverElement.classList.contains("custom-tab")) {
+        dragOverElement.click()
+    }
+});

@@ -5,15 +5,17 @@ import numpy as np
 from dash import Output, Input, State, dcc, ctx
 import plotly.graph_objs as go
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution
-from RDPMSpecIdentifier.visualize.appDefinition import app
 from tempfile import NamedTemporaryFile
+from dash_extensions.enrich import callback
+from dash.exceptions import PreventUpdate
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 
 
-
-
-@app.callback(
+@callback(
     Output("download-image", "data"),
     [
         Input("download-image-button", "n_clicks"),
@@ -74,7 +76,7 @@ def _download_image(n_clicks, filename, key, replicate_mode, primary_color, seco
     return ret_val
 
 
-@app.callback(
+@callback(
     [
         Output("modal", "is_open"),
         Output("named-download", "value")
@@ -98,7 +100,7 @@ def _toggle_modal(n1, n2, n3, is_open, key):
     return is_open, filename
 
 
-@app.callback(
+@callback(
     [
         Output("primary-color-modal", "is_open"),
         Output("primary-color", "data"),
@@ -118,8 +120,12 @@ def _toggle_modal(n1, n2, n3, is_open, key):
     prevent_initial_call=True
 )
 def _toggle_primary_color_modal(n1, n2, is_open, color_value, style):
+    logger.info(f"{ctx.triggered_id} - triggered primary color modal")
+    if n1 == 0:
+        raise PreventUpdate
     tid = ctx.triggered_id
     if tid == "primary-open-color-modal":
+        logger.info(f"button pressed {n1} times")
         return not is_open, dash.no_update, dash.no_update
     elif tid == "primary-apply-color-modal":
         rgb = color_value["rgb"]
@@ -131,7 +137,7 @@ def _toggle_primary_color_modal(n1, n2, is_open, color_value, style):
     return not is_open, color, style
 
 
-@app.callback(
+@callback(
     [
         Output("secondary-color-modal", "is_open"),
         Output("secondary-color", "data"),
@@ -151,7 +157,10 @@ def _toggle_primary_color_modal(n1, n2, is_open, color_value, style):
     prevent_initial_call=True
 )
 def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
+    logger.info(f"{ctx.triggered_id} - triggered secondary color modal")
     tid = ctx.triggered_id
+    if n1 == 0:
+        raise PreventUpdate
     if tid == "secondary-open-color-modal":
         return not is_open, dash.no_update, dash.no_update
     elif tid == "secondary-apply-color-modal":
@@ -164,22 +173,9 @@ def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
     return not is_open, color, style
 
 
-@app.callback(
-    Output("primary-open-color-modal", "style", allow_duplicate=True),
-    Output("secondary-open-color-modal", "style", allow_duplicate=True),
-    Input("primary-color", "data"),
-    Input("secondary-color", "data"),
-    State("primary-open-color-modal", "style"),
-    State("secondary-open-color-modal", "style"),
-
-)
-def update_colors(primary_color, secondary_color, primary_style, secondary_style):
-    primary_style["background-color"] = primary_color
-    secondary_style["background-color"] = secondary_color
-    return primary_style, secondary_style
 
 
-@app.callback(
+@callback(
     [
         Output("HDBSCAN-cluster-modal", "is_open"),
         Output("DBSCAN-cluster-modal", "is_open"),
@@ -202,6 +198,9 @@ def update_colors(primary_color, secondary_color, primary_style, secondary_style
 
 )
 def _toggle_cluster_modal(n1, n2, n3, n4, hdb_is_open, db_is_open, k_is_open, cluster_method):
+    logger.info(f"{ctx.triggered_id} - triggered cluster modal")
+    if n1 == 0:
+        raise PreventUpdate
     if cluster_method == "HDBSCAN":
         return not hdb_is_open, db_is_open, k_is_open
     elif cluster_method == "DBSCAN":
@@ -212,7 +211,7 @@ def _toggle_cluster_modal(n1, n2, n3, n4, hdb_is_open, db_is_open, k_is_open, cl
         return hdb_is_open, db_is_open, k_is_open
 
 
-@app.callback(
+@callback(
     Output("cluster-img-modal", "is_open"),
     Output("download-cluster-image", "data"),
     [
@@ -230,7 +229,9 @@ def _toggle_cluster_modal(n1, n2, n3, n4, hdb_is_open, db_is_open, k_is_open, cl
 
 )
 def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename, uid):
-
+    logger.info(f"{ctx.triggered_id} - triggered cluster image download modal")
+    if n1 == 0:
+        raise PreventUpdate
     if ctx.triggered_id == "cluster-img-modal-btn":
         return not is_open, dash.no_update
     else:
@@ -251,3 +252,6 @@ def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename, uid):
             ret_val = dcc.send_file(tmpfile.name)
             ret_val["filename"] = filename
         return not is_open, ret_val
+
+
+

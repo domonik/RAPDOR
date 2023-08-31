@@ -13,10 +13,25 @@
     --secondary-color: red;
 }
 
+html {
+  height: 100%;
+}
+body {
+  min-height: 100%;
+}
+
+#react-entry-point {
+    min-height: 100% !important;
+    height: 100%;
+}
+
 span {
     color: var(--r-text-color);
 }
-.container-fluid {background-color: var(--background-color)
+.container-fluid {
+    background-color: var(--background-color);
+    position: absolute;
+    height: 100%;
 }
 html {
     background-color: var(--background-color);
@@ -63,7 +78,19 @@ a:hover {
 
 .header-box {
    border-radius: 0 !important;
-   border-color: var(--table-head-color) !important;
+   border-color: transparent !important;
+    background-color: var(--table-head-color);
+    box-shadow: none !important;
+    font-size: 1.2em;
+    color: white !important;
+}
+
+.header-box a{
+    color: white;
+}
+
+.header-box a:hover{
+    color: var(--primary-color);
 }
 
 
@@ -558,4 +585,43 @@ input.current-page, input.current-page::placeholder {
 
 .cell--selected {
     border: 0px solid var(--secondary-hover-color) !important;
+}
+
+
+.dont-show {
+   visibility: hidden;
+}
+
+input[type="radio"] {
+    margin-right: 5px;
+    background-color: var(--button-color) !important;
+}
+
+input[type="radio"]:checked {
+    background-color: var(--primary-color) !important;
+}
+
+.checked-radio-item {
+    background-color: var(--primary-color) !important;
+    border: 2px solid var(--primary-color) !important;
+}
+
+.checked-radio-text {
+    color: var(--primary-color) !important;
+}
+
+#primary-open-color-modal{
+    background-color: var(--secondary-color) !important;
+}
+
+#secondary-open-color-modal{
+    background-color: var(--primary-color) !important;
+}
+
+.pages-btn {
+    background-color: transparent;
+    color: white;
+    border: none !important;
+    height: 100%;
+    width: 80px;
 }

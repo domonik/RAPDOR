@@ -3,8 +3,9 @@ import pandas as pd
 from dash import html, dcc, dash_table
 from dash.dash_table.Format import Format
 from pandas.core.dtypes.common import is_numeric_dtype
+import logging
 
-from RDPMSpecIdentifier.datastructures import RDPMSpecData
+logger = logging.getLogger(__name__)
 
 
 def _get_table(rdpmsdata):
@@ -29,7 +30,7 @@ def _get_table(rdpmsdata):
                             ),
                             html.Div(
                                 dcc.Dropdown(
-                                    rdpmsdata.extra_df.columns,
+                                    [],
                                     placeholder="Select Table Columns",
                                     className="justify-content-center dropUp",
                                     multi=True,
@@ -45,7 +46,7 @@ def _get_table(rdpmsdata):
                     className="row justify-content-center h-100"
                 ),
 
-                className="databox databox-open p-3", style={"resize": "vertical", "overflow-y": "auto", "min-height": "470px"}
+                className="databox databox-open p-3", style={"resize": "vertical", "overflow-y": "auto", "min-height": "470px", "height": "470px"}
             )
         ],
         className="col-12 px-1 pb-1 justify-content-center",
@@ -53,9 +54,17 @@ def _get_table(rdpmsdata):
     return table
 
 
-def _create_table(rdpmsdata, selected_columns = None):
+def _create_table(rdpmsdata, selected_columns=None):
     if selected_columns is None:
         selected_columns = []
+    if rdpmsdata is None:
+        columns = ["empty", "Empty2"]
+        data = [{"empty": 1, "Empty2": 2}]
+        return html.Div(dash_table.DataTable(
+            data,
+            id="tbl",
+        ), className="dont-show h-100"
+        )
 
     data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
     for name in rdpmsdata.score_columns:
@@ -78,8 +87,7 @@ def _create_table(rdpmsdata, selected_columns = None):
                 num_cols.append(str(i))
             columns.append(d)
     width = "10%" if len(columns) > 1 else "98%"
-
-    t = dash_table.DataTable(
+    t = html.Div(dash_table.DataTable(
         data.to_dict('records'),
         columns,
         id='tbl',
@@ -126,7 +134,8 @@ def _create_table(rdpmsdata, selected_columns = None):
                                        "width": width
                                    }
                                ]
-    ),
+    ), className="h-100"
+    )
 
     return t
 

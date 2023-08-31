@@ -4,35 +4,39 @@ import dash
 import dash_bootstrap_components as dbc
 import numpy as np
 import pandas as pd
-from dash import Output, Input, State, ctx, html
+from dash import Output, Input, ctx, html
 from dash.exceptions import PreventUpdate
 
-from RDPMSpecIdentifier.visualize.appDefinition import app
 from RDPMSpecIdentifier.visualize.dataTable import SELECTED_STYLE, _create_table
-from dash_extensions.enrich import Serverside, State
+from dash_extensions.enrich import Serverside, State, callback
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-@app.callback(
+@callback(
     Output('tbl', 'data'),
     Output('tbl', "page_current"),
     Output("tbl-store", "data"),
+    Output("table-selector", "options"),
 
     Input('tbl', "page_current"),
     Input('tbl', "page_size"),
     Input('tbl', 'sort_by'),
     Input('tbl', 'filter_query'),
     State('table-selector', 'value'),
-    State("protein-id", "children"),
+    State("current-protein-id", "data"),
     State("data-store", "data"),
     State("unique-id", "data"),
+    State("table-selector", "options"),
 
 )
-def update_table(page_current, page_size, sort_by, filter, selected_columns, key, rdpmspec, uid):
+def update_table(page_current, page_size, sort_by, filter, selected_columns, key, rdpmspec, uid, options):
     logger.info(f"{ctx.triggered_id} triggered update of table")
-    key = key.split("Protein ")[-1]
+    if rdpmspec is None:
+        raise PreventUpdate
+    new_options = rdpmspec.extra_df.columns
+    options = dash.no_update if set(new_options) == set(options) else new_options
     if selected_columns is None:
         selected_columns = []
 
@@ -78,12 +82,12 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     else:
         page = page_current
         size = page_size
-    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, Serverside(data, uid + "tbl")
+    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, Serverside(data, uid + "tbl"), options
 
 
 
 
-@app.callback(
+@callback(
     [
         Output("data-table", "children"),
         Output("alert-div", "children", allow_duplicate=True),
@@ -192,8 +196,10 @@ def new_columns(
         )
     else:
         alert_msg = []
-
-    return _create_table(rdpmsdata, sel_columns), alert_msg, current_sorting, Serverside(rdpmsdata, key=uid), run_cluster
+    tbl = _create_table(rdpmsdata, sel_columns)
+    logger.info(f"Created New Table - sorting: {current_sorting}; run_cluster: {run_cluster}")
+    current_sorting = dash.no_update if current_sorting is None else current_sorting
+    return tbl, alert_msg, current_sorting, Serverside(rdpmsdata, key=uid), run_cluster
 
 
 def split_filter_part(filter_part):

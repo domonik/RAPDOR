@@ -36,6 +36,42 @@ def _plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
         )
     return fig
 
+def empty_figure(annotation: str = None, font_color: str = None):
+    fig = go.Figure()
+    fig.update_yaxes(showticklabels=False, showgrid=False)
+    fig.update_xaxes(showgrid=False, showticklabels=False)
+    fig.update_layout(
+        margin={"t": 0, "b": 0, "r": 50},
+        font=dict(
+            size=16,
+        ),
+        yaxis=dict(zeroline=False),
+        xaxis=dict(zeroline=False),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+
+    )
+    if annotation is not None:
+        fig.add_annotation(
+            xref="paper",
+            yref="paper",
+            xanchor="center",
+            yanchor="middle",
+            x=0.5,
+            y=0.5,
+            text=annotation,
+            showarrow=False,
+            font=(dict(size=28))
+        )
+    fig.layout.template = "plotly_white"
+    fig.update_layout(
+        font=dict(color=font_color),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+
+    )
+    return fig
+
 
 def plot_replicate_distribution(
         subdata: np.ndarray,

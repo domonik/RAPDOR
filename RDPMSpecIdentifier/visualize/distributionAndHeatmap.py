@@ -1,6 +1,9 @@
 import dash_daq as daq
 import dash_loading_spinners as dls
 from dash import html, dcc
+from RDPMSpecIdentifier.plots import empty_figure
+
+
 
 
 def distribution_panel(name):
@@ -12,7 +15,6 @@ def distribution_panel(name):
                     html.Div(
                         [
                             html.Div(
-                                html.Div(id="placeholder2"),
 
                                 className="col-0 col-md-4", id="placeholder"
                             ),
@@ -65,7 +67,7 @@ def distribution_panel(name):
                     html.Div(
                         [
                             html.Div(
-                                dcc.Graph(id="distribution-graph", style={"height": "320px"}),
+                                dcc.Graph(id="distribution-graph", style={"height": "320px"}, figure=empty_figure()),
                                 className="col-12"
                             ),
                         ],
@@ -74,7 +76,7 @@ def distribution_panel(name):
                     html.Div(
                         [
                             html.Div(
-                                dcc.Graph(id="westernblot-graph", style={"height": "70px"}),
+                                dcc.Graph(id="westernblot-graph", style={"height": "70px"}, figure=empty_figure()),
                                 className="col-12"
                             ),
                             html.Div("Fraction", className="col-12 pt-2", style={"text-align": "center", "font-size": "20px"})
@@ -107,7 +109,7 @@ def distance_heatmap_box():
                                     className="col-12 pb-2"
                                 ),
                                 html.Div(
-                                    dcc.Graph(id="heatmap-graph", style={"height": "370px"}),
+                                    dcc.Graph(id="heatmap-graph", style={"height": "370px"}, figure=empty_figure()),
                                     className="col-12"
                                 ),
 
