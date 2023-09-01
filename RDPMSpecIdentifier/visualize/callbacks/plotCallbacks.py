@@ -60,7 +60,7 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
 
             )
     fig.update_layout(
-        margin={"t": 0, "b": 30, "r": 50},
+        margin={"t": 0, "b": 30, "r": 50, "l": 100},
         font=dict(
             size=16,
         )
@@ -99,7 +99,7 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
 
             )
         fig.update_layout(
-            margin={"t": 0, "b": 0, "r": 50},
+            margin={"t": 0, "b": 0, "r": 50, "l": 100},
             font=dict(
                 size=16,
             ),

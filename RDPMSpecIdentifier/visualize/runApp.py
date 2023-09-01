@@ -11,25 +11,27 @@ logging.basicConfig()
 logger = logging.getLogger("RDPMSpecIdentifier")
 
 
-def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host, pickled = None):
-    df = pd.read_csv(input, sep=sep, index_col=0)
-    df.index = df.index.astype(str)
-    design = pd.read_csv(design_matrix, sep=sep)
+def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
+    if input is not None:
+        df = pd.read_csv(input, sep=sep, index_col=0)
+        design = pd.read_csv(design_matrix, sep=sep)
+        rdpmsdata = RDPMSpecData(df, design, logbase=logbase)
+    else:
+        rdpmsdata = None
 
-    app.layout = _get_app_layout(df, design, logbase)
+    app.layout = _get_app_layout(rdpmsdata)
     app.run(debug=debug, port=port, host=host)
 
 
 
 
 def _gui_wrapper(args):
-    gui_wrapper(args.input, args.design_matrix, args.sep, args.logbase, args.debug, args.port, args.host, args.pickled)
+    gui_wrapper(args.input, args.design_matrix, args.sep, args.logbase, args.debug, args.port, args.host)
 
 
 def _get_app_layout(rdpmsdata):
     def return_layout():
-        content = rdpmsdata.to_jsons()
-        name = rdpmsdata.df.loc[0, "RDPMSpecID"]
+        content = rdpmsdata.to_jsons() if rdpmsdata is not None else None
         div = html.Div(
             [
                 dcc.Location(id='url', refresh="callback-nav"),

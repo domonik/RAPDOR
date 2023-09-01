@@ -161,14 +161,21 @@ def from_json():
             className="row justify-content-center p-2"
         ),
 
-    ], className="databox databox-open py-3"), label="From JSON", className="custom-tab", selected_className='custom-tab--selected'
+    ], className="databox databox-open py-3"), label="From JSON", className="custom-tab",
+        selected_className='custom-tab--selected'
     )
     return data
+
 
 layout = html.Div(
     [
         html.Div(
-            html.Div(html.Div(html.H3("Import Data"), className="col-md-5 col-12 databox text-center"), className="row justify-content-center"),
+            id="upload-alert-div",
+            className="col-10"
+        ),
+        html.Div(
+            html.Div(html.Div(html.H3("Import Data"), className="col-lg-7 col-xl-5 col-12 databox text-center"),
+                     className="row justify-content-center"),
             className="col-12"
         ),
         html.Div(
@@ -184,7 +191,7 @@ layout = html.Div(
 
 
             ],
-            className="col-md-5 col-12 p-2"
+            className="col-lg-7 col-12 col-xl-5 p-2"
         ),
     ], className="row p-2 justify-content-center"
 )
@@ -193,6 +200,7 @@ layout = html.Div(
 @callback(
     Output("data-store", "data", allow_duplicate=True),
     Output("url", "pathname", allow_duplicate=True),
+    Output("upload-alert-div", "children", allow_duplicate=True),
     Input("upload-json", "contents"),
     State("unique-id", "data")
 
@@ -203,10 +211,26 @@ def upload_json(data, uid):
     if uid is None:
         logger.error("User ID missing. Cannot assign Data without a user ID")
         return dash.no_update
-    content = data.split(',')[1]
-    decoded = base64.b64decode(content)
-    rdpmspec = RDPMSpecData.from_json(decoded)
-    return Serverside(rdpmspec, key=uid), "analysis"
+    try:
+        content = data.split(',')[1]
+        decoded = base64.b64decode(content)
+        rdpmspec = RDPMSpecData.from_json(decoded)
+        rdpmspec = Serverside(rdpmspec, key=uid)
+        redirect = "analysis"
+        alert = []
+    except Exception:
+        rdpmspec = dash.no_update
+        redirect = dash.no_update
+        alert = html.Div(
+            dbc.Alert(
+                "Data is not in the expected format.",
+                color="danger",
+                dismissable=True,
+            ),
+            className="p-2 align-items-center, alert-msg",
+
+        )
+    return rdpmspec, redirect, alert
 
 
 for name in ("intensities", "design", "json"):
@@ -225,7 +249,7 @@ for name in ("intensities", "design", "json"):
 @callback(
     Output("data-store", "data", allow_duplicate=True),
     Output("url", "pathname", allow_duplicate=True),
-    Output("backup", "data", allow_duplicate=True),
+    Output("upload-alert-div", "children", allow_duplicate=True),
     Input("upload-csv-btn", "n_clicks"),
     State("unique-id", "data"),
     State("seperator-radio", "value"),
@@ -237,12 +261,26 @@ for name in ("intensities", "design", "json"):
 def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase):
     if intensities_content is None and design_content is None:
         raise PreventUpdate
-    intensities_content = intensities_content.split(",")[1]
-    intensities_content = base64.b64decode(intensities_content).decode()
-    design_content = design_content.split(",")[1]
-    design_content = base64.b64decode(design_content).decode()
-    df = pd.read_csv(StringIO(intensities_content), sep=sep)
-    design = pd.read_csv(StringIO(design_content), sep=sep)
-    rdpmsdata = RDPMSpecData(df, design, logbase=None if logbase == 0 else logbase)
-    json_state = rdpmsdata.state.to_json()
-    return Serverside(rdpmsdata, key=uid), "analysis", json_state
+    try:
+        intensities_content = intensities_content.split(",")[1]
+        intensities_content = base64.b64decode(intensities_content).decode()
+        design_content = design_content.split(",")[1]
+        design_content = base64.b64decode(design_content).decode()
+        df = pd.read_csv(StringIO(intensities_content), sep=sep)
+        design = pd.read_csv(StringIO(design_content), sep=sep)
+        rdpmsdata = RDPMSpecData(df, design, logbase=None if logbase == 0 else logbase)
+        redirect = "analysis"
+        alert = []
+    except Exception:
+        rdpmsdata = dash.no_update
+        redirect = dash.no_update
+        alert = html.Div(
+            dbc.Alert(
+                "Data is not in the expected format.",
+                color="danger",
+                dismissable=True,
+            ),
+            className="p-2 align-items-center, alert-msg",
+
+        )
+    return rdpmsdata, redirect, alert

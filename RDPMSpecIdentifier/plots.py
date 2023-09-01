@@ -202,7 +202,7 @@ def _update_distribution_layout(fig, names, x, offset):
     fig.update_layout(hovermode="x")
     fig.update_layout(xaxis_range=[x[0] - offset - 0.5, x[-1] + offset + 0.5])
     fig.update_layout(
-        yaxis_title="Protein Amount in Fraction [%]",
+        yaxis_title="Protein Amount [%]",
     )
     fig.update_layout(
         legend=dict(

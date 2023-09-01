@@ -15,12 +15,20 @@ logger = logging.getLogger(__name__)
 
 @callback(
     Output("unique-id", "data"),
+    Output("data-store", "data", allow_duplicate=True),
     Input("unique-id", "data"),
+    State("data-store", "data"),
+    State("data-initial-store", "data")
 )
-def assign_session_identifier(uid):
+def assign_session_identifier(uid, data, initial_data):
+    rdata = dash.no_update
     if uid is None:
         uid = str(uuid.uuid4())
-    return uid
+    if data is None and initial_data is not None:
+        rdata = Serverside(RDPMSpecData.from_json(initial_data), key=uid)
+        logger.info("Setting initial from initital data")
+
+    return uid, rdata
 
 #
 # @callback(
@@ -56,10 +64,16 @@ def assign_session_identifier(uid):
 
 )
 def load_initital_state(url, rdpmsdata: RDPMSpecData):
+    if rdpmsdata is None:
+        raise PreventUpdate
     logger.info(f" {ctx.triggered_id} triggered Setting from state")
     state = rdpmsdata.state
     logger.info(f"state: {state}")
-    return state.kernel_size, state.cluster_kernel_distance, state.dimension_reduction, state.cluster_method
+    kernel_size = state.kernel_size if state.kernel_size is not None else dash.no_update
+    cluster_kernel_distance = state.cluster_kernel_distance if state.cluster_kernel_distance is not None else dash.no_update
+    dimension_reduction = state.dimension_reduction if state.dimension_reduction is not None else dash.no_update
+    cluster_method = state.cluster_method if state.cluster_method is not None else dash.no_update
+    return kernel_size, cluster_kernel_distance, dimension_reduction, cluster_method
 
 
 

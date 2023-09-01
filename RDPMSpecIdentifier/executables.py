@@ -7,12 +7,13 @@ from RDPMSpecIdentifier.qtInterface.QtRDPMSpecIdentifier import qt_wrapper
 
 
 
-def _add_common_args(parser):
+def _add_common_args(parser, needed: bool = True):
     parser.add_argument(
         '--input',
         type=str,
         help="Path to the csv file containing protein counts as well as any additional information",
-        required=True
+        required=needed,
+        default=None
     )
     parser.add_argument(
         '--sep',
@@ -24,7 +25,8 @@ def _add_common_args(parser):
         '--design-matrix',
         type=str,
         help="Design matrix specifying which columns in the --input contain the count data",
-        required=True,
+        required=needed,
+        default=None
     )
     parser.add_argument(
         '--logbase',
@@ -107,7 +109,7 @@ def _dash_parser(subparsers, name):
         name,
         description="Runs the RDPMSpecIdentifier GUI"
     )
-    parser = _add_common_args(parser)
+    parser = _add_common_args(parser, needed=False)
     parser.add_argument(
         '--port',
         type=str,
