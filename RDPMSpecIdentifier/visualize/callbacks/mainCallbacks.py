@@ -45,6 +45,23 @@ def assign_session_identifier(uid):
 #     cf_slider = rdpmspec.state.cluster_kernel_distance if rdpmspec.state.cluster_kernel_distance is not None else dash.no_update
 #     return Serverside(rdpmspec, key=uid), kernel, dm, uid, cf_slider
 
+@callback(
+    Output("kernel-slider", "value"),
+    Output("cluster-feature-slider", "value"),
+    Output("dim-red-method", "value"),
+    Output("cluster-method", "value"),
+    Input("url", "pathname"),
+    State("data-store", "data"),
+    supress_callback_exceptions=True
+
+)
+def load_initital_state(url, rdpmsdata: RDPMSpecData):
+    logger.info(f" {ctx.triggered_id} triggered Setting from state")
+    state = rdpmsdata.state
+    logger.info(f"state: {state}")
+    return state.kernel_size, state.cluster_kernel_distance, state.dimension_reduction, state.cluster_method
+
+
 
 @callback(
     Output("recomputation", "children"),

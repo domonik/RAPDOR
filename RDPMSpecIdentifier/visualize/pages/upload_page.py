@@ -225,6 +225,7 @@ for name in ("intensities", "design", "json"):
 @callback(
     Output("data-store", "data", allow_duplicate=True),
     Output("url", "pathname", allow_duplicate=True),
+    Output("backup", "data", allow_duplicate=True),
     Input("upload-csv-btn", "n_clicks"),
     State("unique-id", "data"),
     State("seperator-radio", "value"),
@@ -243,4 +244,5 @@ def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase)
     df = pd.read_csv(StringIO(intensities_content), sep=sep)
     design = pd.read_csv(StringIO(design_content), sep=sep)
     rdpmsdata = RDPMSpecData(df, design, logbase=None if logbase == 0 else logbase)
-    return Serverside(rdpmsdata, key=uid), "analysis"
+    json_state = rdpmsdata.state.to_json()
+    return Serverside(rdpmsdata, key=uid), "analysis", json_state

@@ -36,6 +36,7 @@ def _get_app_layout(rdpmsdata):
                 dcc.Store(id="data-store", storage_type="session"),
                 dcc.Store(id="data-initial-store", data=content),
                 dcc.Store(id="tbl-store"),
+                dcc.Store(id="backup"),
                 dcc.Store(id="unique-id", storage_type="session"),
                 dcc.Store(id="current-protein-id", data=0),
                 dcc.Store(id="primary-color", storage_type="session", data="rgb(138, 255, 172)"),
@@ -69,6 +70,7 @@ def _get_app_layout(rdpmsdata):
 if __name__ == '__main__':
     import os
     import pandas as pd
+    import multiprocessing
 
     file = os.path.abspath("testData/testFile.tsv")
     assert os.path.exists(file)
@@ -79,4 +81,4 @@ if __name__ == '__main__':
     logbase = 2
     rdpmsdata = RDPMSpecData(df, design, logbase)
     app.layout = _get_app_layout(rdpmsdata)
-    app.run(debug=True, port=8080, host="127.0.0.1", processes=3, threaded=False)
+    app.run(debug=True, port=8080, host="127.0.0.1", threaded=True)

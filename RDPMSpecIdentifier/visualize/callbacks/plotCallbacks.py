@@ -227,6 +227,8 @@ def calc_clusters(
         if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None or ctx.triggered_id == "3d-plot":
             if rdpmsdata.current_embedding is None or rdpmsdata.current_embedding.shape[-1] != dim or rdpmsdata.state.dimension_reduction != reduction_method:
                 logger.info("Running Dimension Reduction")
+                rdpmsdata.set_embedding(dim, method=reduction_method)
+
 
         return Serverside(rdpmsdata, key=uid), True
 

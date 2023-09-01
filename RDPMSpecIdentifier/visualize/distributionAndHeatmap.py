@@ -67,7 +67,7 @@ def distribution_panel(name):
                     html.Div(
                         [
                             html.Div(
-                                dcc.Graph(id="distribution-graph", style={"height": "320px"}, figure=empty_figure()),
+                                dcc.Graph(id="distribution-graph", style={"height": "360px"}, figure=empty_figure()),
                                 className="col-12"
                             ),
                         ],

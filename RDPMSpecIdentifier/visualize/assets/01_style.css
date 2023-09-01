@@ -487,12 +487,13 @@ input.current-page, input.current-page::placeholder {
 
 
 
-@media screen and (max-width:720px) {
+@media screen and (max-width:768px) {
     .custom-tab {
         border-bottom: none !important;
         border-left: none !important;
         border-right: none !important;
         box-shadow: none !important;
+        order: 1;
 
     }
     .custom-tab:hover{
