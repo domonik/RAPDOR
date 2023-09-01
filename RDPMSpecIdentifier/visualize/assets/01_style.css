@@ -294,7 +294,7 @@ input.current-page, input.current-page::placeholder {
     background-color: var(--table-light);
     border-color: var(--table-head-color) !important;
     border-width: 2px !important;
-    border-top: 2px solid transparent !important;
+    border-top: 2px solid var(--databox-color) !important;
     color: var(--r-text-color);
     box-shadow: inset 0px -5px 0px var(--button-color), 0px -5px 0px var(--databox-color);
     padding-bottom: 10px;

@@ -497,7 +497,7 @@ if __name__ == '__main__':
     array = rdpmspec.norm_array
     design = rdpmspec.internal_design_matrix
 
-    fig = plot_replicate_distribution(array[0], design, "RNAse")
+    fig = plot_replicate_distribution(array[0], design, "RNase")
     fig.show()
 
 

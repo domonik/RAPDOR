@@ -66,15 +66,15 @@ Calculates the default values that you can use to rank your table. Those values 
    * - Value
      - Explanation
    * - ANOSIM R
-     - The ANOSIM R Value ranges between -1 and 1. Proteins that show a different distribution upon RNAse treatment will have a higher R value (ideally 1). This value can be used instead of a p-Value if you have a low number of replicates (approximately < 5).
+     - The ANOSIM R Value ranges between -1 and 1. Proteins that show a different distribution upon RNase treatment will have a higher R value (ideally 1). This value can be used instead of a p-Value if you have a low number of replicates (approximately < 5).
    * - Mean Distance
      - Mean Jensen-Shannon-Distance between treated and untreated replicates. This is a measure of effect size of the treatment.
    * - shift direction
-     - The direction in which the protein shifts upon RNAse treatment.
-   * - RNAse False peak pos
-     - The fraction of the control from which the largest shift in probability mass towards the RNAse treated samples is detected.
-   * - RNAse True peak pos
-     - The fraction from the RNAse from which the largest shift in probability mass towards the control samples is detected.
+     - The direction in which the protein shifts upon RNase treatment.
+   * - RNase False peak pos
+     - The fraction of the control from which the largest shift in probability mass towards the RNase treated samples is detected.
+   * - RNase True peak pos
+     - The fraction from the RNase from which the largest shift in probability mass towards the control samples is detected.
 
 .. _rank-table:
 Rank Table
@@ -88,7 +88,7 @@ an insufficient number of samples for a PERMANOVA you might consider ranking the
 Peak T-Tests
 ++++++++++++
 
-Performs Welchs T-Tests to determine whether there is a significant difference at the RNAse or Control peaks.
+Performs Welchs T-Tests to determine whether there is a significant difference at the RNase or Control peaks.
 
 .. warning::
     Since you are dealing with multivariate data, this is not the recommended way to calculate p-Values.
@@ -98,7 +98,7 @@ Performs Welchs T-Tests to determine whether there is a significant difference a
 Run PERMANOVA
 +++++++++++++
 
-Performs a Permanova to calculate whether RNAse treatment leads to a difference in the distribution of the Proteins.
+Performs a Permanova to calculate whether RNase treatment leads to a difference in the distribution of the Proteins.
 You can select the number of permutations via the Input Field next to the button. The Default is 999.
 
 .. note::
@@ -108,7 +108,7 @@ You can select the number of permutations via the Input Field next to the button
 Run ANOSIM
 ++++++++++
 
-Performs ANOSIM to calculate whether RNAse treatment leads to a difference in the distribution of the Proteins.
+Performs ANOSIM to calculate whether RNase treatment leads to a difference in the distribution of the Proteins.
 You can select the number of permutations via the Input Field next to the button. The Default is 999.
 
 .. note::

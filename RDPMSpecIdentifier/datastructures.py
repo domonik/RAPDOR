@@ -97,12 +97,12 @@ class RDPMSpecData:
         "local PERMANOVA adj p-Value",
         "Mean Distance",
         "shift direction",
-        "RNAse False peak pos",
-        "RNAse True peak pos",
+        "RNase False peak pos",
+        "RNase True peak pos",
         "Permanova p-value",
         "Permanova adj-p-value",
         "CTRL Peak adj p-Value",
-        "RNAse Peak adj p-Value"
+        "RNase Peak adj p-Value"
     ]
 
     _id_columns = ["RDPMSpecID", "id"]
@@ -179,17 +179,17 @@ class RDPMSpecData:
             raise ValueError("Not all Names in the designs Name column are columns in the count df")
 
     def _check_design(self):
-        for col in ["Fraction", "RNAse", "Replicate", "Name"]:
+        for col in ["Fraction", "RNase", "Replicate", "Name"]:
             if not col in self.design.columns:
                 raise IndexError(f"{col} must be a column in the design dataframe\n")
 
     def _set_design_and_array(self):
         design_matrix = self.design.sort_values(by="Fraction")
-        tmp = design_matrix.groupby(["RNAse", "Replicate"])["Name"].apply(list).reset_index()
+        tmp = design_matrix.groupby(["RNase", "Replicate"])["Name"].apply(list).reset_index()
         self.df.index = np.arange(self.df.shape[0])
         self.df = self.df.round(decimals=DECIMALS)
 
-        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("RNAse", group_keys=True)["Replicate"].count() >= 5))
+        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("RNase", group_keys=True)["Replicate"].count() >= 5))
         l = []
         rnames = []
         for idx, row in tmp.iterrows():
@@ -206,7 +206,7 @@ class RDPMSpecData:
             array[mask] = 0
         self.array = array
         self.internal_design_matrix = tmp
-        indices = self.internal_design_matrix.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
+        indices = self.internal_design_matrix.groupby("RNase", group_keys=True).apply(lambda x: list(x.index))
         self._indices_false = np.asarray(indices[False])
         self._indices_true = np.asarray(indices[True])
 
@@ -329,21 +329,21 @@ class RDPMSpecData:
         The Mean Distance is just the Jensen-Shannon-Distance between the mean distributions
 
         """
-        indices = self.internal_design_matrix.groupby("RNAse", group_keys=True).apply(lambda x: list(x.index))
+        indices = self.internal_design_matrix.groupby("RNase", group_keys=True).apply(lambda x: list(x.index))
         rnase_false = self.norm_array[:, indices[False]].mean(axis=-2)
         rnase_true = self.norm_array[:, indices[True]].mean(axis=-2)
         mid = 0.5 * (rnase_true + rnase_false)
         rel1 = rel_entr(rnase_false, mid)
         r1 = np.argmax(rel1, axis=-1)
         r1 = r1 + int(np.ceil(self.state.kernel_size / 2))
-        self.df["RNAse False peak pos"] = r1
+        self.df["RNase False peak pos"] = r1
 
         rel2 = rel_entr(rnase_true, mid)
         r2 = np.argmax(rel2, axis=-1)
         jsd = jensenshannon(rnase_true, rnase_false, axis=-1, base=2)
 
         r2 = r2 + int(np.ceil(self.state.kernel_size / 2))
-        self.df["RNAse True peak pos"] = r2
+        self.df["RNase True peak pos"] = r2
         self.df["Mean Distance"] = jsd
         side = r1 - r2
         side[side < 0] = -1
@@ -362,8 +362,8 @@ class RDPMSpecData:
         mixture = 0.5 * (rnase_true + rnase_false)
         ctrl_peak = rel_entr(rnase_false, mixture)
         rnase_peak = rel_entr(rnase_true, mixture)
-        ctrl_peak_pos = (self.df["RNAse False peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
-        rnase_peak_pos = (self.df["RNAse True peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
+        ctrl_peak_pos = (self.df["RNase False peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
+        rnase_peak_pos = (self.df["RNase True peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
 
         ctrl_peak = np.pad(ctrl_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
         ctrl_peak_range = np.stack((ctrl_peak_pos, ctrl_peak_pos + 2 * kernel_range + 1), axis=1)
@@ -499,10 +499,10 @@ class RDPMSpecData:
             distance_cutoff (float): P-Values are not Calculated for proteins with a mean distance below this threshold.
                 This reduces number of tests.
         """
-        if "RNAse True peak pos" not in self.df:
+        if "RNase True peak pos" not in self.df:
             raise ValueError("Need to compute peak positions first")
         for peak, name in (
-                ("RNAse True peak pos", "RNAse Peak adj p-Value"), ("RNAse False peak pos", "CTRL Peak adj p-Value")):
+                ("RNase True peak pos", "RNase Peak adj p-Value"), ("RNase False peak pos", "CTRL Peak adj p-Value")):
             idx = np.asarray(self.df[peak] - int(np.ceil(self.state.kernel_size / 2)))
             t = np.take_along_axis(self.norm_array, idx[:, np.newaxis, np.newaxis], axis=2).squeeze()
             t_idx = np.tile(np.asarray(self._indices_true), t.shape[0]).reshape(t.shape[0], -1)

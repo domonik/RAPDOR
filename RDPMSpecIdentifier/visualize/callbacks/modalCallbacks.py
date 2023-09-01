@@ -41,9 +41,9 @@ def _download_image(n_clicks, filename, key, replicate_mode, primary_color, seco
     if rdpmsdata.current_kernel_size is not None:
         i = int(np.floor(rdpmsdata.current_kernel_size / 2))
     if replicate_mode:
-        fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+        fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
     else:
-        fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+        fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
     fig.layout.template = "plotly_white"
     fig.update_layout(
         font=dict(color="black"),

@@ -48,9 +48,9 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
         if rdpmsdata.state.kernel_size is not None:
             i = int(np.floor(rdpmsdata.state.kernel_size / 2))
         if replicate_mode:
-            fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+            fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
         else:
-            fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNAse", offset=i, colors=colors)
+            fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
         fig.layout.template = "plotly_white"
         if not night_mode:
             fig.update_layout(
@@ -90,7 +90,7 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
         raise PreventUpdate
     else:
         array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
-        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
+        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
         fig.update_yaxes(showticklabels=False, showgrid=False)
         fig.update_xaxes(showgrid=False, showticklabels=False)
         if not night_mode:
@@ -138,7 +138,7 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
         raise PreventUpdate
     else:
         _, distances = rdpmsdata[key]
-        fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNAse", colors=colors)
+        fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
         fig.layout.template = "plotly_white"
         if not night_mode:
             fig.update_layout(

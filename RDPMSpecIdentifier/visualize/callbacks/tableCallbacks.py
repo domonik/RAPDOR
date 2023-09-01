@@ -174,7 +174,7 @@ def new_columns(
                 alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
                 " This might be unreliable"
     if ctx.triggered_id == "local-t-test-btn":
-        if "RNAse True peak pos" not in rdpmsdata.df:
+        if "RNase True peak pos" not in rdpmsdata.df:
             rdpmsdata.determine_peaks()
         rdpmsdata.calc_welchs_t_test(distance_cutoff=distance_cutoff)
 

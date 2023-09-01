@@ -11,11 +11,24 @@ logging.basicConfig()
 logger = logging.getLogger("RDPMSpecIdentifier")
 
 
-def gui_wrapper(input, design_matrix, sep, logbase, debug, port, host):
+def gui_wrapper(
+        input: str = None,
+        design_matrix: str = None,
+        sep: str = "\t",
+        logbase: int = None,
+        debug: bool = False,
+        port: int = 8080,
+        host: str = "127.0.0.1"
+):
     if input is not None:
-        df = pd.read_csv(input, sep=sep, index_col=0)
-        design = pd.read_csv(design_matrix, sep=sep)
-        rdpmsdata = RDPMSpecData(df, design, logbase=logbase)
+        if design_matrix is not None:
+            df = pd.read_csv(input, sep=sep, index_col=0)
+            design = pd.read_csv(design_matrix, sep=sep)
+            rdpmsdata = RDPMSpecData(df, design, logbase=logbase)
+        else:
+            with open(input) as handle:
+                jsons = handle.read()
+            rdpmsdata = RDPMSpecData.from_json(jsons)
     else:
         rdpmsdata = None
 

@@ -49,8 +49,8 @@ conditions.
          - Explanation
        * - Name
          - The Names of the Columns that contain the Intensities in the Intensity Table
-       * - RNAse
-         - A Boolean column that specifies whether that Intensities are treated with RNAse or not
+       * - RNase
+         - A Boolean column that specifies whether that Intensities are treated with RNase or not
        * - Fraction
          - The fraction to which those intensities belong to
        * - Replicate
