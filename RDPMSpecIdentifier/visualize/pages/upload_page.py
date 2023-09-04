@@ -269,6 +269,7 @@ def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase)
         df = pd.read_csv(StringIO(intensities_content), sep=sep)
         design = pd.read_csv(StringIO(design_content), sep=sep)
         rdpmsdata = RDPMSpecData(df, design, logbase=None if logbase == 0 else logbase)
+        rdpmsdata = Serverside(rdpmsdata, key=uid)
         redirect = "analysis"
         alert = []
     except Exception:
