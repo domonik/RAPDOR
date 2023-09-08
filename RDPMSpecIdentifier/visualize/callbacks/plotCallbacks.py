@@ -28,7 +28,8 @@ COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + quali
         Input("replicate-mode", "on"),
         Input("night-mode", "on")
     ],
-    State("data-store", "data")
+    State("data-store", "data"),
+    prevent_initial_call=True
 
 )
 def update_distribution_plot(key, kernel_size, primary_color, secondary_color, replicate_mode, night_mode, rdpmsdata):

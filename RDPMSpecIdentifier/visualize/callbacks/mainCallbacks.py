@@ -59,18 +59,22 @@ def assign_session_identifier(uid, data, initial_data):
     Output("cluster-feature-slider", "value"),
     Output("dim-red-method", "value"),
     Output("cluster-method", "value"),
-    Input("url", "pathname"),
+    Input("unique-id", "data"),
     State("data-store", "data"),
-    supress_callback_exceptions=True
+    supress_callback_exceptions=True,
+    prevent_initial_call=True
+
 
 )
-def load_initital_state(url, rdpmsdata: RDPMSpecData):
+def load_initital_state(uid, rdpmsdata: RDPMSpecData):
+    if uid is None:
+        raise PreventUpdate
     if rdpmsdata is None:
         raise PreventUpdate
     logger.info(f" {ctx.triggered_id} triggered Setting from state")
     state = rdpmsdata.state
     logger.info(f"state: {state}")
-    kernel_size = state.kernel_size if state.kernel_size is not None else dash.no_update
+    kernel_size = state.kernel_size if state.kernel_size is not None else 3
     cluster_kernel_distance = state.cluster_kernel_distance if state.cluster_kernel_distance is not None else dash.no_update
     dimension_reduction = state.dimension_reduction if state.dimension_reduction is not None else dash.no_update
     cluster_method = state.cluster_method if state.cluster_method is not None else dash.no_update
@@ -89,6 +93,8 @@ def load_initital_state(url, rdpmsdata: RDPMSpecData):
 )
 def recompute_data(kernel_size, distance_method, rdpmsdata, uid):
     if rdpmsdata is None:
+        raise PreventUpdate
+    if uid is None:
         raise PreventUpdate
     logger.info("Normalization")
     eps = 0 if distance_method == "Jensen-Shannon-Distance" else 10  # Todo: Make this optional
@@ -127,10 +133,14 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid):
 )
 def update_selected_id(active_cell, test_div, rdpmsdata):
     logger.info(f"{ctx.triggered_id} -- triggered update of selected Protein")
+    if rdpmsdata is None:
+        raise PreventUpdate
     if ctx.triggered_id == "tbl":
         if active_cell is None:
-            raise PreventUpdate
-        active_row_id = active_cell["row_id"]
+            active_row_id = 0
+        else:
+            logger.info(f"active cell is: {active_cell}")
+            active_row_id = active_cell["row_id"]
         protein = rdpmsdata.df.loc[active_row_id, "RDPMSpecID"]
     elif ctx.triggered_id == "test-div":
         logger.info(f"{test_div} - value")

@@ -21,9 +21,12 @@ def gui_wrapper(
         port: int = 8080,
         host: str = "127.0.0.1"
 ):
+    logger.setLevel(logging.INFO)
+
     if input is not None:
         if design_matrix is not None:
-            df = pd.read_csv(input, sep=sep, index_col=0)
+            df = pd.read_csv(input, sep=sep, index_col=False)
+            logger.info(f"loading df:\n{df}")
             design = pd.read_csv(design_matrix, sep=sep)
             rdpmsdata = RDPMSpecData(df, design, logbase=logbase)
         else:
@@ -87,13 +90,8 @@ if __name__ == '__main__':
     import os
     import multiprocessing
 
-    file = os.path.abspath("testData/testFile.tsv")
+    file = os.path.abspath("testData/rdeep_counts_normalized.tsv")
     assert os.path.exists(file)
     logger.setLevel(logging.INFO)
-    df = pd.read_csv(file, sep="\t")
-    logger.info("Startup")
-    design = pd.read_csv(os.path.abspath("testData/testDesign.tsv"), sep="\t")
-    logbase = 2
-    rdpmsdata = RDPMSpecData(df, design, logbase)
-    app.layout = _get_app_layout(rdpmsdata)
-    app.run(debug=False, port=8080, host="0.0.0.0", threaded=True)
+    design = "testData/rdeep_design_normalized.tsv"
+    gui_wrapper(file, design, host="0.0.0.0", port=8080, debug=True)

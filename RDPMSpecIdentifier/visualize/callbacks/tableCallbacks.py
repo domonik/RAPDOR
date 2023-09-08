@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 @callback(
     Output('tbl', 'data'),
     Output('tbl', "page_current"),
-    Output("tbl-store", "data"),
     Output("table-selector", "options"),
 
     Input('tbl', "page_current"),
@@ -29,11 +28,11 @@ logger = logging.getLogger(__name__)
     State("data-store", "data"),
     State("unique-id", "data"),
     State("table-selector", "options"),
-
+    prevent_initial_call=True
 )
 def update_table(page_current, page_size, sort_by, filter, selected_columns, key, rdpmspec, uid, options):
     logger.info(f"{ctx.triggered_id} triggered update of table")
-    if rdpmspec is None:
+    if rdpmspec is None or page_current is None:
         raise PreventUpdate
     new_options = rdpmspec.extra_df.columns
     options = dash.no_update if set(new_options) == set(options) else new_options
@@ -45,22 +44,23 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
         if name in rdpmspec.extra_df:
             data = pd.concat((data, rdpmspec.extra_df[name]), axis=1)
 
-    filtering_expressions = filter.split(' && ')
-    for filter_part in filtering_expressions:
-        col_name, operator, filter_value = split_filter_part(filter_part)
+    if filter is not None:
+        filtering_expressions = filter.split(' && ')
+        for filter_part in filtering_expressions:
+            col_name, operator, filter_value = split_filter_part(filter_part)
 
-        if operator in ('eq', 'ne', 'lt', 'le', 'gt', 'ge'):
-            # these operators match pandas series operator method names
-            data = data.loc[getattr(data[col_name], operator)(filter_value)]
-        elif operator == 'contains':
-            filter_value = str(filter_value).split(".0")[0]
-            data = data.loc[data[col_name].str.contains(filter_value).fillna(False)]
-        elif operator == 'datestartswith':
-            filter_value = str(filter_value).split(".0")[0]
+            if operator in ('eq', 'ne', 'lt', 'le', 'gt', 'ge'):
+                # these operators match pandas series operator method names
+                data = data.loc[getattr(data[col_name], operator)(filter_value)]
+            elif operator == 'contains':
+                filter_value = str(filter_value).split(".0")[0]
+                data = data.loc[data[col_name].str.contains(filter_value).fillna(False)]
+            elif operator == 'datestartswith':
+                filter_value = str(filter_value).split(".0")[0]
 
-            # this is a simplification of the front-end filtering logic,
-            # only works with complete fields in standard format
-            data = data.loc[data[col_name].str.startswith(filter_value)]
+                # this is a simplification of the front-end filtering logic,
+                # only works with complete fields in standard format
+                data = data.loc[data[col_name].str.startswith(filter_value)]
 
     if sort_by is not None:
         if len(sort_by):
@@ -82,7 +82,8 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     else:
         page = page_current
         size = page_size
-    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, Serverside(data, uid + "tbl"), options
+    logger.info(f"updated Table: page:{page}, options: {options}")
+    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, options
 
 
 
@@ -114,7 +115,7 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
         State("unique-id", "data"),
 
     ],
-    prevent_intital_call="initial_duplicate"
+    prevent_intital_call=True
 
 )
 def new_columns(
@@ -133,6 +134,8 @@ def new_columns(
         uid
 ):
     logger.info(f"{ctx.triggered_id} triggered rendering of new table")
+    if rdpmsdata is None:
+        raise PreventUpdate
     alert = False
     run_cluster = dash.no_update
     if ctx.triggered_id == "rank-btn":
