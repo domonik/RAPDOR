@@ -1,4 +1,5 @@
 from dash import html, dcc
+import pandas as pd
 
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 from RDPMSpecIdentifier.visualize.appDefinition import app
@@ -84,7 +85,6 @@ def _get_app_layout(rdpmsdata):
 
 if __name__ == '__main__':
     import os
-    import pandas as pd
     import multiprocessing
 
     file = os.path.abspath("testData/testFile.tsv")
@@ -96,4 +96,4 @@ if __name__ == '__main__':
     logbase = 2
     rdpmsdata = RDPMSpecData(df, design, logbase)
     app.layout = _get_app_layout(rdpmsdata)
-    app.run(debug=True, port=8080, host="127.0.0.1", threaded=True)
+    app.run(debug=False, port=8080, host="0.0.0.0", threaded=True)

@@ -1,12 +1,12 @@
+import dash
 import pytest
 import pandas as pd
 import os
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 
+
 TESTFILE_DIR = os.path.dirname(os.path.abspath(__file__))
 TESTDATA_DIR = os.path.join(TESTFILE_DIR, "testData")
-
-
 
 
 @pytest.fixture(scope="session")

@@ -2,6 +2,7 @@
 
 import dash
 from dash import Output, Input, html, ctx, dcc
+
 from dash.exceptions import PreventUpdate
 
 from dash_extensions.enrich import Serverside, State, callback

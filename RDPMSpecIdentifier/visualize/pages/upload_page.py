@@ -272,9 +272,10 @@ def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase)
         rdpmsdata = Serverside(rdpmsdata, key=uid)
         redirect = "analysis"
         alert = []
-    except Exception:
+    except Exception as e:
         rdpmsdata = dash.no_update
         redirect = dash.no_update
+        print(str(e))
         alert = html.Div(
             dbc.Alert(
                 "Data is not in the expected format.",

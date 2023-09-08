@@ -23,23 +23,22 @@ logger = logging.getLogger(__name__)
     ],
     [
         State("named-download", "value"),
-        State("protein-id", "children"),
+        State("current-protein-id", "data"),
         State("replicate-mode", "on"),
-        State("primary-open-color-modal", "style"),
-        State("secondary-open-color-modal", "style"),
+        State("primary-color", "data"),
+        State("secondary-color", "data"),
         State("data-store", "data"),
         State("unique-id", "data"),
     ],
     prevent_initial_call=True
 )
 def _download_image(n_clicks, filename, key, replicate_mode, primary_color, secondary_color, rdpmsdata, uid):
-    key = key.split("Protein ")[-1]
-    colors = primary_color['background-color'], secondary_color['background-color']
+    colors = primary_color, secondary_color
     filename = os.path.basename(filename)
     array, _ = rdpmsdata[key]
     i = 0
-    if rdpmsdata.current_kernel_size is not None:
-        i = int(np.floor(rdpmsdata.current_kernel_size / 2))
+    if rdpmsdata.state.kernel_size is not None:
+        i = int(np.floor(rdpmsdata.state.kernel_size / 2))
     if replicate_mode:
         fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
     else:

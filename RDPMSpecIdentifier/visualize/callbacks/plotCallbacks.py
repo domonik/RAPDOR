@@ -318,14 +318,21 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
 @callback(
     Output("test-div", "children"),
     Input("cluster-graph", "hoverData"),
+    Input("cluster-graph", "clickData"),
 )
-def update_plot_with_hover(hover_data):
+def update_plot_with_hover(hover_data, click_data):
     logger.info("Hover Callback triggered")
-    if hover_data is None:
+    if hover_data is None and click_data is None:
         raise PreventUpdate
-    hover_data = hover_data["points"][0]
-    split_l = hover_data["hovertext"].split(": ")
-    p_id, protein = split_l[0], split_l[1]
+    else:
+        logger.info(ctx.triggered_prop_ids)
+        if "cluster-graph.hoverData" in ctx.triggered_prop_ids:
+            hover_data = hover_data["points"][0]
+        else:
+            hover_data = click_data["points"][0]
+
+        split_l = hover_data["hovertext"].split(": ")
+        p_id, protein = split_l[0], split_l[1]
     return p_id
 
 
