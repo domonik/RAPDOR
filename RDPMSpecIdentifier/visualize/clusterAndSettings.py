@@ -7,7 +7,8 @@ from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 from RDPMSpecIdentifier.plots import empty_figure
 
-def _get_cluster_panel():
+
+def _get_cluster_panel(disabled: bool = False):
     panel = html.Div(
         [
             html.Div(
@@ -40,7 +41,8 @@ def _get_cluster_panel():
                                                 ["T-SNE", "UMAP", "PCA"], "T-SNE",
                                                 className="justify-content-center",
                                                 id="dim-red-method",
-                                                clearable=False
+                                                clearable=False,
+                                                disabled=disabled
 
                                             ),
                                             className="col-7 justify-content-center text-align-center"
@@ -62,7 +64,8 @@ def _get_cluster_panel():
                                                 on=False,
                                                 id="3d-plot",
                                                 className="align-self-center px-2",
-                                                persistence=True
+                                                persistence=True,
+                                                disabled=disabled
 
                                             ),
                                             className="col-7 justify-content-center text-align-center"
@@ -81,7 +84,8 @@ def _get_cluster_panel():
                                                 0, 10, step=1,
                                                 value=3,
                                                 className="justify-content-center",
-                                                id="cluster-feature-slider"
+                                                id="cluster-feature-slider",
+                                                disabled=disabled
                                             ),
                                             className="col-10 col-md-7 justify-content-center",
                                         ),
@@ -100,7 +104,8 @@ def _get_cluster_panel():
                                                 ["HDBSCAN", "DBSCAN", "K-Means", "None"], "HDBSCAN",
                                                 className="justify-content-center",
                                                 id="cluster-method",
-                                                clearable=False
+                                                clearable=False,
+                                                disabled=disabled
 
                                             ),
                                             className="col-7 justify-content-center text-align-center"
@@ -110,7 +115,7 @@ def _get_cluster_panel():
                                 ),
                                 html.Div(
                                     html.Div(
-                                        html.Button('Adjust Cluster Settings', id='adj-cluster-settings', n_clicks=0,
+                                        html.Button('Adjust Cluster Settings', id='adj-cluster-settings', n_clicks=0, disabled=disabled,
                                                     className="btn btn-primary", style={"width": "100%"}),
                                         className="col-10 justify-content-center text-align-center"
                                     ),
@@ -141,7 +146,7 @@ def _get_cluster_panel():
     return panel
 
 
-def selector_box():
+def selector_box(disabled: bool = False):
     sel_box = html.Div(
         [
             html.Div(
@@ -164,7 +169,8 @@ def selector_box():
                                     RDPMSpecData.methods, RDPMSpecData.methods[0],
                                     className="justify-content-center",
                                     id="distance-method",
-                                    clearable=False
+                                    clearable=False,
+                                    disabled=disabled
 
                                 ),
                                 className="col-7 justify-content-center text-align-center"
@@ -187,7 +193,8 @@ def selector_box():
                                         5: '5',
                                     }, value=3,
                                     className="justify-content-center",
-                                    id="kernel-slider"
+                                    id="kernel-slider",
+                                    disabled=disabled
                                 ),
                                 className="col-10 col-md-7 justify-content-center",
                             ),
@@ -196,14 +203,14 @@ def selector_box():
                     ),
                     html.Div(
                         html.Div(
-                            html.Button('Get Score', id='score-btn', n_clicks=0, className="btn btn-primary", style={"width": "100%"}),
+                            html.Button('Get Score', id='score-btn', n_clicks=0, className="btn btn-primary", style={"width": "100%"}, disabled=disabled),
                             className="col-10 justify-content-center text-align-center"
                         ),
                         className="row justify-content-center p-2"
                     ),
                     html.Div(
                         html.Div(
-                            html.Button('Rank Table', id='rank-btn', n_clicks=0, className="btn btn-primary",
+                            html.Button('Rank Table', id='rank-btn', n_clicks=0, className="btn btn-primary", disabled=disabled,
                                         style={"width": "100%"}),
                             className="col-10 justify-content-center text-align-center"
                         ),
@@ -220,13 +227,14 @@ def selector_box():
                                     className="text-align-center",
                                     type="number",
                                     min=0,
+                                    disabled=disabled
                                 ),
                                 className="col-3 text-align-center align-items-center"
                             ),
                             html.Div(
                                 html.Button('Peak T-Tests', id='local-t-test-btn', n_clicks=0,
                                             className="btn btn-primary",
-                                            style={"width": "100%"}),
+                                            style={"width": "100%"}, disabled=disabled),
                                 className="col-7 justify-content-center text-align-center"
                             ),
                         ],
@@ -242,14 +250,15 @@ def selector_box():
                                     placeholder="Number of Permutations",
                                     className="text-align-center",
                                     type="number",
-                                    min=1
+                                    min=1,
+                                    disabled=disabled
                                 ),
                                 className="col-3 text-align-center align-items-center"
                             ),
                             html.Div(
                                 html.Button('Run PERMANOVA', id='permanova-btn', n_clicks=0,
                                             className="btn btn-primary",
-                                            style={"width": "100%"}),
+                                            style={"width": "100%"}, disabled=disabled),
                                 className="col-7 justify-content-center text-align-center"
                             ),
                             html.Div(
@@ -270,13 +279,14 @@ def selector_box():
                                     placeholder="Number of Permutations",
                                     className="text-align-center",
                                     type="number",
-                                    min=1
+                                    min=1,
+                                    disabled=disabled
                                 ),
                                 className="col-3 text-align-center align-items-center"
                             ),
                             html.Div(
                                 html.Button('Run ANOSIM', id='anosim-btn', n_clicks=0,
-                                            className="btn btn-primary",
+                                            className="btn btn-primary", disabled=disabled,
                                             style={"width": "100%"}),
                                 className="col-7 justify-content-center text-align-center"
                             ),

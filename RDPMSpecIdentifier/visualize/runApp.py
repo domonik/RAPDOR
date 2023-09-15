@@ -90,8 +90,9 @@ if __name__ == '__main__':
     import os
     import multiprocessing
 
-    file = os.path.abspath("testData/rdeep_counts_normalized.tsv")
+    file = os.path.abspath("testData/testFile.tsv")
     assert os.path.exists(file)
     logger.setLevel(logging.INFO)
-    design = "testData/rdeep_design_normalized.tsv"
-    gui_wrapper(file, design, host="0.0.0.0", port=8080, debug=True)
+    design = "testData/testDesign.tsv"
+    logbase = 2
+    gui_wrapper(file, design, host="0.0.0.0", port=8080, debug=True, logbase=logbase)

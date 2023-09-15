@@ -7,6 +7,7 @@ from RDPMSpecIdentifier.visualize.callbacks.mainCallbacks import *
 from RDPMSpecIdentifier.visualize.callbacks.plotCallbacks import * # Don´t delete that. It is needed.
 from RDPMSpecIdentifier.visualize.callbacks.tableCallbacks import *
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import *
+import os
 from RDPMSpecIdentifier.visualize.modals import (
     _modal_image_download,
     _modal_color_selection,
@@ -15,6 +16,14 @@ from RDPMSpecIdentifier.visualize.modals import (
     _modal_kmeans_cluster_settings,
     _modal_cluster_image_download
 )
+
+mode = os.getenv('RDPMS_DISPLAY_MODE')
+if mode == "True":
+    DISPLAY = True
+else:
+    DISPLAY = False
+DISABLED = DISPLAY
+
 
 dash.register_page(__name__, path='/analysis')
 
@@ -38,7 +47,7 @@ layout = html.Div(
                 ),
                 dcc.Tab(
                     html.Div(
-                        _get_cluster_panel(),
+                        _get_cluster_panel(DISABLED),
                         className="row px-2 justify-content-center align-items-center"
 
                     ), label="Clustering", className="custom-tab", selected_className='custom-tab--selected'
@@ -50,7 +59,7 @@ layout = html.Div(
         ),
 
         html.Div(
-            [distance_heatmap_box(), selector_box()],
+            [distance_heatmap_box(), selector_box(DISABLED)],
             className="row px-2 row-eq-height justify-content-center"
         ),
         _modal_image_download(),

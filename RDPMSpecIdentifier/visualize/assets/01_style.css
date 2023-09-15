@@ -298,8 +298,19 @@ input.current-page, input.current-page::placeholder {
     color: var(--r-text-color);
     box-shadow: inset 0px -5px 0px var(--button-color), 0px -5px 0px var(--databox-color);
     padding-bottom: 10px;
+}
 
-
+.btn-primary:disabled,
+.btn-primary[disabled] {
+    background-color: var(--table-dark);
+    border-color: var(--table-head-color) !important;
+    border-width: 2px !important;
+    border-top: 2px solid var(--databox-color) !important;
+    border-top: 2px solid var(--table-head-color) !important;
+    color: var(--r-text-color) !important;
+    box-shadow: inset 0px 0px 5px 1px var(--button-color) !important;
+    padding-bottom: 6px;
+    padding-top: 10px;
 }
 
 #replicate-mode .daq-booleanswitch--light__background {
