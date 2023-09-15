@@ -307,7 +307,7 @@ input.current-page, input.current-page::placeholder {
     border-width: 2px !important;
     border-top: 2px solid var(--databox-color) !important;
     border-top: 2px solid var(--table-head-color) !important;
-    color: var(--r-text-color) !important;
+    color: var(--table-light) !important;
     box-shadow: inset 0px 0px 5px 1px var(--button-color) !important;
     padding-bottom: 6px;
     padding-top: 10px;
@@ -369,8 +369,22 @@ input.current-page, input.current-page::placeholder {
   border-color: var(--primary-color) !important;
 }
 
-.rc-slider-handle-active:active {
-  border-color: red;
+.rc-slider-disabled .rc-slider-track {
+  background-color: grey !important;
+}
+
+.rc-slider-disabled .rc-slider-dot-active {
+  border-color: grey;
+    background-color: grey;
+}
+
+.rc-slider-disabled  .rc-slider-handle {
+  background-color: grey !important;
+  border-color: grey !important;
+}
+
+.rc-slider-disabled .rc-slider-handle:hover {
+  border-color: grey !important;
 }
 
 
