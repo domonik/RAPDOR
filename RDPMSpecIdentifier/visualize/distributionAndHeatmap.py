@@ -26,7 +26,6 @@ def distribution_panel(name):
                                 [
                                     html.Div(
                                         [
-                                            html.Div(className="col-md-1 col-0"),
                                             html.Div(
                                                 html.Span("Replicate Mode", className="align-self-center"),
                                                 className="col-4 col-md-4 d-flex align-items-bottom justify-content-center"
