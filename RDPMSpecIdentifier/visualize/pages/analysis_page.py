@@ -70,5 +70,6 @@ layout = html.Div(
         _modal_dbscan_cluster_settings(),
         _modal_kmeans_cluster_settings(),
         html.Div(id="recomputation"),
+        html.Button("refresh", className="btn-primary", id="refresh-btn", style={"display": "none"})
     ]
 )

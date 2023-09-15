@@ -59,26 +59,28 @@ def assign_session_identifier(uid, data, initial_data):
     Output("cluster-feature-slider", "value"),
     Output("dim-red-method", "value"),
     Output("cluster-method", "value"),
+    Output("3d-plot", 'on'),
     Input("unique-id", "data"),
+    Input("refresh-btn", "n_clicks"),
     State("data-store", "data"),
-    supress_callback_exceptions=True,
-    prevent_initial_call=True
-
-
 )
-def load_initital_state(uid, rdpmsdata: RDPMSpecData):
+def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData):
+    logger.info(f" {ctx.triggered_id} triggered Setting from state")
     if uid is None:
+        logger.info("user id is None. Not setting from state")
         raise PreventUpdate
     if rdpmsdata is None:
+        logger.info("rdpmsdata is None. Not setting from state")
         raise PreventUpdate
-    logger.info(f" {ctx.triggered_id} triggered Setting from state")
     state = rdpmsdata.state
     logger.info(f"state: {state}")
     kernel_size = state.kernel_size if state.kernel_size is not None else 3
     cluster_kernel_distance = state.cluster_kernel_distance if state.cluster_kernel_distance is not None else dash.no_update
     dimension_reduction = state.dimension_reduction if state.dimension_reduction is not None else dash.no_update
     cluster_method = state.cluster_method if state.cluster_method is not None else dash.no_update
-    return kernel_size, cluster_kernel_distance, dimension_reduction, cluster_method
+    tdplot = rdpmsdata.current_embedding.shape[-1] if rdpmsdata.current_embedding is not None else dash.no_update
+    logger.info(f"dim_red_method: {dimension_reduction}")
+    return kernel_size, cluster_kernel_distance, dimension_reduction, cluster_method, tdplot
 
 
 
@@ -96,10 +98,11 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid):
         raise PreventUpdate
     if uid is None:
         raise PreventUpdate
-    logger.info("Normalization")
+    logger.info(f"Normalization triggered via {ctx.triggered_id}")
     eps = 0 if distance_method == "Jensen-Shannon-Distance" else 10  # Todo: Make this optional
     rdpmsdata: RDPMSpecData
     if rdpmsdata.state.kernel_size != kernel_size or rdpmsdata.state.distance_method != distance_method:
+        logger.info(f"Normalizing using method: {distance_method} and eps: {eps}")
         rdpmsdata.normalize_and_get_distances(method=distance_method, kernel=kernel_size, eps=eps)
         return html.Div(), Serverside(rdpmsdata, key=uid)
     logger.info("Data already Normalized")

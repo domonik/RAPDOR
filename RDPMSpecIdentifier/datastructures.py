@@ -282,7 +282,7 @@ class RDPMSpecData:
             self.distances = self._jensenshannondistance(self.norm_array)
 
         elif method == "KL-Divergence":
-            if self._current_eps is None or self._current_eps <= 0:
+            if self.state.eps is None or self.state.eps <= 0:
                 raise ValueError(
                     "Cannot calculate KL-Divergence for Counts with 0 entries. "
                     "Need to set epsilon which is added to the raw Protein intensities"
@@ -447,7 +447,7 @@ class RDPMSpecData:
 
     @staticmethod
     def _euclidean_distance(array):
-        return np.linalg.norm(array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1), axis=-2)
+        return np.linalg.norm(array[:, :, :, None] - array[:, :, :, None].transpose(0, 3, 2, 1), axis=-2)
 
     def _get_outer_group_distances(self, indices_false, indices_true):
         n_genes = self.distances.shape[0]

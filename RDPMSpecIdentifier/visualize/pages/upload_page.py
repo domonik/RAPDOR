@@ -10,13 +10,21 @@ import dash_bootstrap_components as dbc
 import pandas as pd
 from io import StringIO
 from dash.exceptions import PreventUpdate
+import os
 
 logger = logging.getLogger(__name__)
 
 dash.register_page(__name__, path='/')
 
+mode = os.getenv('RDPMS_DISPLAY_MODE')
+if mode == "True":
+    DISPLAY = True
+else:
+    DISPLAY = False
+DISABLED = DISPLAY
 
-def from_csv():
+
+def from_csv(disabled: bool = False):
     data = dcc.Tab(html.Div([
         html.Div(
             [
@@ -25,9 +33,11 @@ def from_csv():
                     dcc.Upload(
                         id='upload-intensities',
                         children=html.Div(
-                            'Drag and Drop or Select Files', id="intensities-upload-text"
+                            'Drag and Drop or Select Files' if not disabled else "Upload disabled",
+                            id="intensities-upload-text"
                         ),
                         className="text-align-center justify-text-center",
+                        disabled=disabled,
 
                         style={
                             'width': '100%',
@@ -54,9 +64,11 @@ def from_csv():
                     dcc.Upload(
                         id='upload-design',
                         children=html.Div(
-                            'Drag and Drop or Select Files', id="design-upload-text"
+                            'Drag and Drop or Select Files' if not disabled else "Upload disabled",
+                            id="design-upload-text"
                         ),
                         className="text-align-center justify-text-center",
+                        disabled=disabled,
                         style={
                             'width': '100%',
                             'height': "60px",
@@ -87,6 +99,7 @@ def from_csv():
                         value=0,
                         type="number",
                         min=0,
+                        disabled=disabled
                     ),
                     className="col-7 text-align-center align-items-center"
                 ),
@@ -109,7 +122,7 @@ def from_csv():
                         className="d-flex justify-content-between radio-items",
                         labelCheckedClassName="checked-radio-text",
                         inputCheckedClassName="checked-radio-item",
-                        id="seperator-radio"
+                        id="seperator-radio",
                     ),
                     className="col-7"
                 ),
@@ -120,7 +133,7 @@ def from_csv():
         html.Div(
             [
                 html.Div(
-                    html.Button("Upload", id="upload-csv-btn", className="btn btn-primary w-100"),
+                    html.Button("Upload", id="upload-csv-btn", className="btn btn-primary w-100", disabled=disabled),
                          className="col-10 justify-content-center align-self-center"
                 ),
             ],
@@ -130,7 +143,7 @@ def from_csv():
     return data
 
 
-def from_json():
+def from_json(disabled):
     data = dcc.Tab(html.Div([
         html.Div(
             [
@@ -140,9 +153,11 @@ def from_json():
                     dcc.Upload(
                         id='upload-json',
                         children=html.Div(
-                            'Drag and Drop or Select Files', id="json-upload-text"
+                            'Drag and Drop or Select Files' if not disabled else "Upload disabled",
+                            id="json-upload-text"
                         ),
                         className="text-align-center justify-text-center",
+                        disabled=disabled,
                         style={
                             'width': '100%',
                             'height': "60px",
@@ -182,8 +197,8 @@ layout = html.Div(
             [
                 dcc.Tabs(
                     [
-                        from_csv(),
-                        from_json()
+                        from_csv(DISABLED),
+                        from_json(DISABLED)
                     ],
                     parent_className='custom-tabs',
                     className='custom-tabs-container',
@@ -275,7 +290,6 @@ def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase)
     except Exception as e:
         rdpmsdata = dash.no_update
         redirect = dash.no_update
-        print(str(e))
         alert = html.Div(
             dbc.Alert(
                 "Data is not in the expected format.",
