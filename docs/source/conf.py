@@ -8,6 +8,8 @@ import sys
 FPATH = os.path.abspath(__file__)
 __RDPMSPECPATH = os.path.abspath(os.path.join(FPATH, "../../"))
 __RDPMSPECPATH = os.path.abspath("../../")
+assert os.path.exists(__RDPMSPECPATH)
+from unittest.mock import Mock
 sys.path.insert(1, __RDPMSPECPATH)
 from RDPMSpecIdentifier import _version
 
@@ -96,5 +98,8 @@ autosummary_mock_imports = [
     "statsmodels",
     "dash_loading_spinners",
     "dash_daq",
-    "PyQt5"
+    "PyQt5",
+    "umap"
 ]
+
+sys.modules["RDPMSpecIdentifier.visualize.runApp"] = Mock()

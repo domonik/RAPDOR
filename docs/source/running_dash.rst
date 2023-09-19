@@ -8,49 +8,71 @@ Running Dash Interface
 Command Line Executables
 ------------------------
 
-In case you installed RDPMSpecIdentifier via a package manager
 you can run the Dash Interface via the following command:
 
 .. code-block:: bash
 
-    RDPMSpecIdentifier Dash --input /path/to/IntensityTable.csv --design /path/to/DesignTabel.csv
+    RDPMSpecIdentifier Dash
 
 
-Further flags (e.g. if your data is already log transformed) can be found in the :ref:`CLI Documentation<cli-doc>`
+Further flags (e.g. if you want to upload data already) can be found in the :ref:`CLI Documentation<cli-doc>`
 
 Once you executed that command make sure to not close the terminal.
 You can then open the corresponding page in a browser (e.g. Firefox, Chrome).
-Per default the app will be run under the following address. However, this can be changed.
+Per default the app will be run under the following address. However, this can be changed via flags.
 
     `http://127.0.0.1:8080/ <http://127.0.0.1:8080/>`_
 
+You can upload your design and intensities files that you prepared earlier
+(see :ref:`Data Prepatation<data-prep-tutorial>`) via the upload page.
 
-Graphical User Interface Executables
-------------------------------------
 
-If you are using a packed executable you can run the App via double click. This will take some time.
+DISPLAY mode
+------------
 
-.. warning::
-
-    Do not close the terminal that opens after double clicking
-
-Once the App is running you will see the Graphical User Interface which looks like the image below.
-Here you can drag and drop the files that you prepared
-in the :ref:`Data Prepatation<data-prep-tutorial>` step. Further you can select the separator in your file and whether
-the intensities are already log transformed. Then you can click on Run Server. If everything was set up correctly it will
-open a Browser Tab in which you will see the Dashboard. A message below the Run Server and Kill Server Buttons indicates
-whether the Server is still running. If something went wrong (e.g. your prepared files dont have the expected format)
-you will see the message "Server crashed".
-
-.. image:: _static/gui.png
-  :width: 800
+The app can be run in display mode. This will disable most of the buttons and is ment for displaying pre-analyzed data.
+To achieve this you need to set the environment variable :code:`RDPMS_DISPLAY_MODE=True`.
 
 .. note::
 
-    If you installed the package via a package manager you can still use the GUI via running the following command from
-    a terminal:
+    You need to add the pre-analyzed data when you run the dash app e.g. via the :code:`--input` flag.
 
-    .. code-block:: bash
+Server Setup
+############
 
-        RDPMSpecIdentifier GUI
+If you want to setup a server that displays your pre-analyzed data for other users, you need to
+use a WSGI server e.g. gunicorn.
+
+Here is example python code that can be used for server setup:
+
+..  code-block:: python
+
+    import os
+    os.environ["RDPMS_DISPLAY_MODE"] = "True"
+    from RDPMSpecIdentifier.visualize.appDefinition import app
+    from RDPMSpecIdentifier.visualize.runApp import get_app_layout
+    from RDPMSpecIdentifier.datastructures import RDPMSpecData
+
+    input = "preAnalyzedData.json"
+
+    with open(input) as handle:
+        jsons = handle.read()
+    rdpmsdata = RDPMSpecData.from_json(jsons)
+
+    app.layout = get_app_layout(rdpmsdata)
+
+    server = app.server
+
+
+After you set up this startup code in a file called `main.py` you can run the server via:
+
+.. note::
+
+    Make sure to set the environment variable before importing the app. Else, it wont have an effect.
+
+
+.. code-block:: bash
+
+    gunicorn -b 0.0.0.0:8080 main:server
+
 

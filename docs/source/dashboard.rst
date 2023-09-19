@@ -125,3 +125,55 @@ Select Color Scheme
 +++++++++++++++++++
 If you dont like the default colors you can change them here.
 
+
+
+5 Clustering
+------------
+
+The clustering panel is used to cluster proteins based on the shape of the peak shifts.
+Therefore it uses the peak positions as centers. It will then use the position-wise relative entropy
+between the control/RNase and the respective mixture distribution at the peaks as features.
+
+.. note::
+
+    Due to the procedure it might cluster proteins without shifts even if the shape of the peaks look very
+    different.
+
+.. image:: _static/clustering.png
+  :width: 800
+
+
+Dimension Reduction
++++++++++++++++++++
+
+There are multiple options to reduce the dimension of the features. You can select whichever you like.
+
+
+3D
+++
+
+This will display three dimensions on the left side instead of two
+
+Feature Kernel Size
++++++++++++++++++++
+
+Instead of using only the relative entropy at the peak positions it will use up to this number of steps in each direction in addtion.
+
+
+Cluster Method
+++++++++++++++
+
+The Method that is used for clustering.
+
+Adjust Cluster Settings
++++++++++++++++++++++++
+
+Opens a modal where you can adjust some settings of the clustering algorithms.
+
+Download Image
+++++++++++++++
+
+Opens the image download dialog.
+
+
+

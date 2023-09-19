@@ -7,5 +7,4 @@ RDPMSpecIdentifier
 
 .. argparse::
    :ref: RDPMSpecIdentifier.executables.documentation_wrapper
-   :prog: RDPMSpecIdentifier
-
+   :prog: RDPMSpecIdentifier2

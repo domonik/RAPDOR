@@ -28,9 +28,3 @@ Conda
 
 Building a conda package is in planning but not done yet
 
-
-Executables
-****************
-
-We also distribute packaged executables that will run graphical user interfaces.
-You don´t need to install those since you can run them via double click.
