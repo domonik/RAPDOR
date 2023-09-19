@@ -8,6 +8,7 @@ from dash.exceptions import PreventUpdate
 from dash_extensions.enrich import Serverside, State, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import uuid
+import dash_bootstrap_components as dbc
 
 import logging
 
@@ -201,3 +202,29 @@ def toggle_offcanvas(n1, url, is_open):
         if n1:
             return not is_open
     return is_open
+
+
+@callback(
+    Output("display-mode", "data"),
+    Output("display-alert", "children"),
+    Input("unique-id", "data"),
+    State("display-mode", "data"),
+
+)
+def display_mode_alert(uid, display_mode):
+    if display_mode:
+        alert_msg = "The app is run in display mode. Most of the functionality is disabled. You can still " \
+                    "inspect pre-analyzed data"
+        alert_msg = html.Div(
+            dbc.Alert(
+                alert_msg,
+                color="info",
+                dismissable=True,
+            ),
+            className="p-2 align-items-center, alert-msg",
+
+        )
+        return False, alert_msg
+
+    else:
+        raise PreventUpdate

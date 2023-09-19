@@ -16,13 +16,8 @@ from RDPMSpecIdentifier.visualize.modals import (
     _modal_kmeans_cluster_settings,
     _modal_cluster_image_download
 )
+from RDPMSpecIdentifier.visualize import DISABLED
 
-mode = os.getenv('RDPMS_DISPLAY_MODE')
-if mode == "True":
-    DISPLAY = True
-else:
-    DISPLAY = False
-DISABLED = DISPLAY
 
 
 dash.register_page(__name__, path='/analysis')

@@ -8,8 +8,12 @@ import dash_extensions.enrich
 from RDPMSpecIdentifier.visualize.staticContent import _header_layout, _footer
 import logging
 
+from RDPMSpecIdentifier.visualize import DISPLAY
+
 logging.basicConfig()
 logger = logging.getLogger("RDPMSpecIdentifier")
+
+
 
 
 def gui_wrapper(
@@ -55,6 +59,7 @@ def _get_app_layout(rdpmsdata):
                 dcc.Store(id="data-store", storage_type="session"),
                 dcc.Store(id="data-initial-store", data=content),
                 dcc.Store(id="tbl-store"),
+                dcc.Store(id="display-mode", data=DISPLAY, storage_type="local"),
                 dcc.Store(id="backup"),
                 dcc.Store(id="unique-id", storage_type="session"),
                 dcc.Store(id="current-protein-id", data=0),
@@ -62,6 +67,7 @@ def _get_app_layout(rdpmsdata):
                 dcc.Store(id="secondary-color", storage_type="session", data="rgb(255, 138, 221)"),
                 html.Div(id="placeholder2"),
                 html.Div(id="placeholder3"),
+                html.Div(id="display-alert"),
                 html.Div(
                     _header_layout(),
                     className="row px-0 justify-content-center align-items-center sticky-top"

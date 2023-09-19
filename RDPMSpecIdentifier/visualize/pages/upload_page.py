@@ -11,17 +11,13 @@ import pandas as pd
 from io import StringIO
 from dash.exceptions import PreventUpdate
 import os
+from RDPMSpecIdentifier.visualize import DISABLED
 
 logger = logging.getLogger(__name__)
 
 dash.register_page(__name__, path='/')
 
-mode = os.getenv('RDPMS_DISPLAY_MODE')
-if mode == "True":
-    DISPLAY = True
-else:
-    DISPLAY = False
-DISABLED = DISPLAY
+
 
 
 def from_csv(disabled: bool = False):
