@@ -43,6 +43,11 @@ def _header_layout():
                                 dbc.ListGroupItem(page["name"], href=page["path"])
                                 for page in page_registry.values()
                                 if page["module"] != "pages.not_found_404"
+                            ] + [
+                                dbc.ListGroupItem(
+                                    "Help",
+                                    href="https://rdpmspecidentifier.readthedocs.io/en/latest/dashboard.html"
+                                )
                             ]
                         ),
                         id="offcanvas",
@@ -56,7 +61,9 @@ def _header_layout():
                     ),
                     html.Div([
                         dcc.Link("Upload", href="/", className="px-2"),
-                        dcc.Link("Analysis", href="/analysis", className="px-2")
+                        dcc.Link("Analysis", href="/analysis", className="px-2"),
+                        dcc.Link("Help", href="https://rdpmspecidentifier.readthedocs.io/en/latest/dashboard.html",
+                                 className="px-2", target="_blank"),
                         ],
                         className=" col-3 d-md-flex d-none align-items-center"
                     ),
@@ -90,7 +97,6 @@ def _header_layout():
     )
     return header
 
-
 def _footer():
     footer = [
         html.Div(
@@ -101,6 +107,14 @@ def _footer():
                         f"GitHub",
                         className="text-end",
                         href="https://github.com/domonik/RDPMSpecIdentifier",
+                        target="_blank"
+                    ),
+                    className="text-end"),
+                html.P(
+                    html.A(
+                        f"Help",
+                        className="text-end",
+                        href="https://rdpmspecidentifier.readthedocs.io/en/latest/",
                         target="_blank"
                     ),
                     className="text-end")

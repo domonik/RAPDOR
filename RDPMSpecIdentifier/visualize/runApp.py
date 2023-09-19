@@ -40,7 +40,7 @@ def gui_wrapper(
     else:
         rdpmsdata = None
 
-    app.layout = _get_app_layout(rdpmsdata)
+    app.layout = get_app_layout(rdpmsdata)
     app.run(debug=debug, port=port, host=host)
 
 
@@ -50,7 +50,7 @@ def _gui_wrapper(args):
     gui_wrapper(args.input, args.design_matrix, args.sep, args.logbase, args.debug, args.port, args.host)
 
 
-def _get_app_layout(rdpmsdata):
+def get_app_layout(rdpmsdata):
     def return_layout():
         content = rdpmsdata.to_jsons() if rdpmsdata is not None else None
         div = html.Div(
