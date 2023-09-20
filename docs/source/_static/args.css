@@ -21,18 +21,33 @@ html[data-theme="dark"] .bd-content img:not(.only-dark) {
     background: transparent !important;
 }
 
-.sd-card {
-    background: var(--pst-color-on-background) !important;
+html[data-theme="dark"] .sd-card {
+    background: var(--pst-color-surface) !important;
+    border: 2px solid var(--pst-color-border) !important;
 }
 
 .sd-card-header {
     font-size: var(--pst-font-size-h5) !important;
 }
-
+html[data-theme="dark"] .sd-card img[src*=".svg"] {
+  filter: invert(0.3) brightness(1.2) contrast(1.5);
+}
 
 html[data-theme="dark"] {
     --pst-color-primary: rgb(255, 138, 221);
     --pst-color-secondary: rgb(138, 255, 172);
     --sd-color-secondary-highlight: rgb(255, 138, 221);
     --pst-color-inline-code-links: rgb(255, 138, 221);
+    --pst-color-background: #181818;
+    --pst-color-on-background: #0d070b;
+    --pst-color-background: #1a161a;
+    --pst-color-on-background: #2a232a;
+    --pst-color-info:  rgb(138, 255, 172);
+    --pst-color-info-bg: rgb(40, 73, 50);
+
+
+    --pst-color-border: rgb(255, 207, 241);
+    --pst-color-surface: #3a313a;
+    --pst-color-text-muted: #e3e2e2;
+
 }
