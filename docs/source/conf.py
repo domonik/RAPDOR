@@ -71,7 +71,10 @@ html_theme_options = {
             "type": "fontawesome",
         },
 
-    ]
+    ],
+    "pygment_light_style": "tango",
+    "pygment_dark_style": "dracula"
+
 }
 mathjax3_config = {'chtml': {'displayAlign': 'left'}}
 html_static_path = ['_static']

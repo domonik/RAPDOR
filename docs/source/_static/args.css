@@ -28,3 +28,11 @@ html[data-theme="dark"] .bd-content img:not(.only-dark) {
 .sd-card-header {
     font-size: var(--pst-font-size-h5) !important;
 }
+
+
+html[data-theme="dark"] {
+    --pst-color-primary: rgb(255, 138, 221);
+    --pst-color-secondary: rgb(138, 255, 172);
+    --sd-color-secondary-highlight: rgb(255, 138, 221);
+    --pst-color-inline-code-links: rgb(255, 138, 221);
+}
