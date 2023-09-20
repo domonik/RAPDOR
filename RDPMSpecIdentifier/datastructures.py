@@ -759,6 +759,8 @@ class RDPMSpecEncoder(JSONEncoder):
             # ndarray -> list, pretty straightforward.
         if isinstance(obj_to_encode, np.ndarray):
             return obj_to_encode.tolist()
+        if isinstance(obj_to_encode, RDPMSpecData):
+            return obj_to_encode.__dict__
         if hasattr(obj_to_encode, 'to_json'):
             return obj_to_encode.to_json()
         if isinstance(obj_to_encode, np.bool_):
