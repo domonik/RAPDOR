@@ -1,4 +1,5 @@
 .. _data-prep-tutorial:
+
 Prepare Your Data
 #################
 
@@ -16,8 +17,7 @@ Intensity Table
 The first table contains your Mass Spec Intensities of all fractions, conditions and replicates.
 It might also include additional columns with data. For instance it can look like the example below
 
-.. note::
-    The **first** column of this dataframe has to have unique identifiers.
+
 
 .. csv-table::
    :file: _static/example_table.csv
@@ -58,4 +58,3 @@ conditions.
 
 
 If your tabular files look like expected you can use them for the GUI or CLI.
-

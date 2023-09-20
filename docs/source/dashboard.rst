@@ -77,6 +77,7 @@ Calculates the default values that you can use to rank your table. Those values 
      - The fraction from the RNase from which the largest shift in probability mass towards the control samples is detected.
 
 .. _rank-table:
+
 Rank Table
 ++++++++++
 
@@ -174,6 +175,3 @@ Download Image
 ++++++++++++++
 
 Opens the image download dialog.
-
-
-

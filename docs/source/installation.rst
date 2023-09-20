@@ -12,6 +12,7 @@ Linux or Windows
 
         conda create -n rdpmspec_env
         conda activate rdpmspec_env
+        conda install python
 
 
 Pip
