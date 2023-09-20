@@ -1,11 +1,12 @@
 import argparse
 import os
-
+import codecs
 from RDPMSpecIdentifier.datastructures import _analysis_executable_wrapper, RDPMSpecData
 from RDPMSpecIdentifier.visualize.runApp import _gui_wrapper
-from RDPMSpecIdentifier.qtInterface.QtRDPMSpecIdentifier import qt_wrapper
 
 
+def unescaped_str(arg_str):
+    return codecs.decode(str(arg_str), 'unicode_escape')
 
 def _add_common_args(parser, needed: bool = True):
     parser.add_argument(
@@ -17,7 +18,7 @@ def _add_common_args(parser, needed: bool = True):
     )
     parser.add_argument(
         '--sep',
-        type=str,
+        type=unescaped_str,
         help="Seperator of the csv files (must be the same for the data and experimental design)",
         default="\t"
     )
@@ -54,7 +55,7 @@ def _analyze_parser(subparsers, name):
     parser.add_argument(
         '--distance-method',
         type=str,
-        default="jensenshannon",
+        default="Jensen-Shannon-Distance",
         help=f"Distance Method to use for calculation of sample differences. Can be one of {RDPMSpecData.methods}"
     )
     parser.add_argument(
@@ -139,10 +140,8 @@ class RDPMSpecIdentifier:
 
         )
         self.methods = {
-            #"visualize": (visualization_parser, run_visualization),
             "Analyze": (_analyze_parser, _analysis_executable_wrapper),
             "Dash": (_dash_parser, _gui_wrapper),
-            "GUI": (_qtparser, qt_wrapper)
         }
         self.subparsers = self.parser.add_subparsers()
         self.__addparsers()

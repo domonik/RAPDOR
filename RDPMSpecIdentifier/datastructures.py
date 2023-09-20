@@ -708,6 +708,16 @@ class RDPMSpecData:
         s = json.dumps(self, cls=RDPMSpecEncoder)
         return s
 
+    def to_json(self, file: str):
+        """Exports the object to JSON
+
+         Args:
+            file (str): Path to the file where the JSON encoded object should be stored.
+        """
+        s = self.to_jsons()
+        with open(file, "w") as handle:
+            handle.write(s)
+
     @classmethod
     def from_json(cls, json_string):
         json_obj = json.loads(json_string)
@@ -772,7 +782,7 @@ def _analysis_executable_wrapper(args):
                 rdpmspec.calc_permanova_p_value(args.permutations, args.num_threads, mode="global")
             elif args.distance_method.upper() == "ANOSIM":
                 rdpmspec.calc_anosim_p_value(args.permutations, args.num_threads, mode="global")
-    rdpmspec.export_csv(args.output, args.sep)
+    rdpmspec.export_csv(args.output, str(args.sep))
 
 
 if __name__ == '__main__':

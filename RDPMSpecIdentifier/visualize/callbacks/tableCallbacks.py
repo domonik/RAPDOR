@@ -156,9 +156,9 @@ def new_columns(
             if permanova_permutations is None:
                 permanova_permutations = 9999
             if rdpmsdata.permutation_sufficient_samples:
-                rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=os.cpu_count(), mode="local")
+                rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=1, mode="local")
             else:
-                rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=os.cpu_count(), mode="global")
+                rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=1, mode="global")
 
                 alert = True
                 alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
@@ -170,9 +170,9 @@ def new_columns(
             if anosim_permutations is None:
                 anosim_permutations = 9999
             if rdpmsdata.permutation_sufficient_samples:
-                rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=os.cpu_count(), mode="local")
+                rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local")
             else:
-                rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=os.cpu_count(), mode="global")
+                rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global")
                 alert = True
                 alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
                 " This might be unreliable"
