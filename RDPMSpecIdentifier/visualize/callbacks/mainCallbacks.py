@@ -213,12 +213,17 @@ def toggle_offcanvas(n1, url, is_open):
 )
 def display_mode_alert(uid, display_mode):
     if display_mode:
-        alert_msg = "The app is run in display mode. Most of the functionality is disabled. You can still " \
-                    "inspect pre-analyzed data"
+        alert_msg = html.Div(
+            [
+                html.H3("Display mode", style={"color": "white"}),
+                html.Div("Most of the functionality was disabled by the host. You can still inspect pre-analyzed data")
+            ]
+        )
+
         alert_msg = html.Div(
             dbc.Alert(
                 alert_msg,
-                color="info",
+                color="var(--primary-color)",
                 dismissable=True,
             ),
             className="p-2 align-items-center, alert-msg",
