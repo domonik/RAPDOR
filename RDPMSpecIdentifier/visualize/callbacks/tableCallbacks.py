@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
     Output('tbl', 'data'),
     Output('tbl', "page_current"),
     Output("table-selector", "options"),
-
+    Output('tbl', 'active_cell'),
     Input('tbl', "page_current"),
     Input('tbl', "page_size"),
     Input('tbl', 'sort_by'),
@@ -31,9 +31,11 @@ logger = logging.getLogger(__name__)
     prevent_initial_call=True
 )
 def update_table(page_current, page_size, sort_by, filter, selected_columns, key, rdpmspec, uid, options):
-    logger.info(f"{ctx.triggered_id} triggered update of table")
+    logger.info(f"{ctx.triggered_prop_ids} triggered update of table")
     if rdpmspec is None or page_current is None:
         raise PreventUpdate
+    active_cell_out = dash.no_update
+
     new_options = rdpmspec.extra_df.columns
     options = dash.no_update if set(new_options) == set(options) else new_options
     if selected_columns is None:
@@ -75,6 +77,17 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     if "tbl.page_current" in ctx.triggered_prop_ids or "tbl.sort_by" in ctx.triggered_prop_ids:
         page = page_current
         size = page_size
+    elif "tbl.filter_query" in ctx.triggered_prop_ids:
+        logger.info(page_current)
+        page = 0
+        size = page_size
+        if len(data) > 0:
+            loc = data.iloc[0].id
+            active_cell_out = {'row': 1, 'column': 1, 'column_id': 'RDPMSpecID', 'row_id': loc}
+        else:
+            active_cell_out = None
+
+
     elif key in data.index:
         loc = data.index.get_loc(key)
         page = int(np.floor(loc / page_size))
@@ -83,7 +96,7 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
         page = page_current
         size = page_size
     logger.info(f"updated Table: page:{page}, options: {options}")
-    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, options
+    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, options, active_cell_out
 
 
 

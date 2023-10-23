@@ -65,6 +65,7 @@ def get_app_layout(rdpmsdata):
                 dcc.Store(id="secondary-color", storage_type="session", data="rgb(255, 138, 221)"),
                 html.Div(id="placeholder2"),
                 html.Div(id="placeholder3"),
+                html.Div(id="placeholder4"),
                 html.Div(id="display-alert"),
                 html.Div(
                     _header_layout(),

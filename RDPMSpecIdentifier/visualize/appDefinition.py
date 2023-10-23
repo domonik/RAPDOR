@@ -72,3 +72,15 @@ clientside_callback(
         State("black-start", "data")
     ]
 )
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="styleSelectedTableRow",
+
+    ),
+    [Output("placeholder4", "children")],
+    [
+        Input("protein-id", "children"),
+    ],
+)

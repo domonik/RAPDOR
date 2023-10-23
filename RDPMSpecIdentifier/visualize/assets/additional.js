@@ -1,6 +1,30 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
 
+        styleSelectedTableRow: function (proteinKey) {
+            const key = proteinKey.split("Protein ")[1];
+            console.log("Searching for the Protein Key:" + key)
+
+            var tables = document.getElementById("tbl").querySelectorAll("table");
+            var table = tables[[tables.length - 1]];
+            var rows = table.getElementsByTagName("tr");
+            for (let i = 0; i < rows.length; i++) {
+                var cells = rows[i].getElementsByTagName("td");
+                rows[i].classList.remove('selected-row');
+
+                // Check if the first column value (cells[0]) matches the custom key
+                //console.log(cells[1].children[0].textContent)
+                if (cells.length > 0 && cells[1].children[0].textContent === key) {
+                    // You've found a match, you can do something with it
+                    console.log("Found a match at row " + (i + 1));
+                    rows[i].classList.add("selected-row")
+                }
+            }
+            return ""
+
+
+        },
+
         styleFlamingo: function (on, style, fill_start, black_start) {
             const svgImage = document.getElementById('flamingo-svg');
             style = this.rgbToHex(style)
@@ -147,56 +171,41 @@ document.addEventListener('keydown', (event) => {
             break;
     }
 })
-
-document.addEventListener('click', (event) => {
-    const clickedElement = event.target;
-
-    // Check if the clicked element is a <div> inside a <td>
-    if (clickedElement.tagName === 'DIV' && clickedElement.closest('td')) {
-        console.log('Clicked element is a <div> inside a <td>');
-        const parent = clickedElement.parentNode;
-        parent.focus();
-        // Add your code to handle the click on the <div> inside the <td>
-    } else if (clickedElement.tagName === 'INPUT' && clickedElement.closest('td')) {
-        const parent = clickedElement.parentNode.nextElementSibling;
-        console.log("parent", parent)
-        document.activeElement.blur()
-    }
-    console.log(clickedElement);
-})
-
-
-async function styleCell() {
-    await new Promise(resolve => {
-        setTimeout(() => {
-            // Add the code you want to execute after the delay
-            resolve(); // Resolve the promise after the delay
-        }, 300);
-    });
-    console.log("lallala")
-    const currentInput = document.getElementsByClassName("dash-cell focused")[0];
-    const cells = currentInput.parentNode.children;
-    for (let i = 0; i < cells.length; i++) {
-        const cell = cells[i];
-        cell.style.border = '2px solid black'; // Add border styling
-    }
-}
-
-document.addEventListener('focus', function (event) {
-    const focusedElement = event.target;
-    if (focusedElement.tagName === 'TD') {
-        const elements = document.getElementsByClassName('selected-row'); // Replace with your class name
-        for (let i = 0; i < elements.length; i++) {
-            console.log(elements[i])
-            elements[i].classList.remove('selected-row');
-        }
-        const row = focusedElement.parentNode
-        row.classList.add("selected-row")
-
-        // Add your code to run when a table cell gains focus
-    }
-    // Add your code to run when an element gains focus
-}, true);
+//
+// document.addEventListener('click', (event) => {
+//     const clickedElement = event.target;
+//
+//     // Check if the clicked element is a <div> inside a <td>
+//     if (clickedElement.tagName === 'DIV' && clickedElement.closest('td')) {
+//         console.log('Clicked element is a <div> inside a <td>');
+//         const parent = clickedElement.parentNode;
+//         parent.focus();
+//         // Add your code to handle the click on the <div> inside the <td>
+//     } else if (clickedElement.tagName === 'INPUT' && clickedElement.closest('td')) {
+//         const parent = clickedElement.parentNode.nextElementSibling;
+//         console.log("parent", parent)
+//         document.activeElement.blur()
+//     }
+//     console.log(clickedElement);
+// })
+//
+//
+//
+// document.addEventListener('focus', function (event) {
+//     const focusedElement = event.target;
+//     if (focusedElement.tagName === 'TD') {
+//         const elements = document.getElementsByClassName('selected-row'); // Replace with your class name
+//         for (let i = 0; i < elements.length; i++) {
+//             console.log(elements[i])
+//             elements[i].classList.remove('selected-row');
+//         }
+//         const row = focusedElement.parentNode
+//         row.classList.add("selected-row")
+//
+//         // Add your code to run when a table cell gains focus
+//     }
+//     // Add your code to run when an element gains focus
+// }, true);
 
 
 addEventListener("dragover", (event) => {
