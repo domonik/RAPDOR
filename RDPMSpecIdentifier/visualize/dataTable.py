@@ -9,6 +9,14 @@ logger = logging.getLogger(__name__)
 
 
 def _get_table(rdpmsdata):
+    if rdpmsdata is not None:
+        sel_columns = []
+        for name in rdpmsdata.score_columns:
+            if name in rdpmsdata.extra_df:
+                sel_columns.append(name)
+        logger.info(f"Initial Columns: {sel_columns}")
+    else:
+        sel_columns = None
     table = html.Div(
         [
             html.Div(
@@ -30,7 +38,7 @@ def _get_table(rdpmsdata):
                             ),
                             html.Div(
                                 dcc.Dropdown(
-                                    [],
+                                    [sel_columns] if sel_columns is not None else [],
                                     placeholder="Select Table Columns",
                                     className="justify-content-center dropUp",
                                     multi=True,
@@ -67,9 +75,6 @@ def _create_table(rdpmsdata, selected_columns=None):
         )
 
     data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
-    for name in rdpmsdata.score_columns:
-        if name in rdpmsdata.extra_df:
-            data = pd.concat((data, rdpmsdata.extra_df[name]), axis=1)
     columns = []
     num_cols = ["shift direction"]
     for i in data.columns:

@@ -61,6 +61,7 @@ def assign_session_identifier(uid, data, initial_data):
     Output("dim-red-method", "value"),
     Output("cluster-method", "value"),
     Output("3d-plot", 'on'),
+    Output("table-selector", "value", allow_duplicate=True),
     Input("unique-id", "data"),
     Input("refresh-btn", "n_clicks"),
     State("data-store", "data"),
@@ -81,7 +82,12 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData):
     cluster_method = state.cluster_method if state.cluster_method is not None else dash.no_update
     tdplot = rdpmsdata.current_embedding.shape[-1] if rdpmsdata.current_embedding is not None else dash.no_update
     logger.info(f"dim_red_method: {dimension_reduction}")
-    return kernel_size, cluster_kernel_distance, dimension_reduction, cluster_method, tdplot
+    sel_columns = []
+    for name in rdpmsdata.score_columns:
+        if name in rdpmsdata.extra_df:
+            sel_columns.append(name)
+    logger.info(f"Initially Selected Columns: {sel_columns}")
+    return kernel_size, cluster_kernel_distance, dimension_reduction, cluster_method, tdplot, sel_columns
 
 
 

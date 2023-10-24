@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @callback(
     Output('tbl', 'data'),
     Output('tbl', "page_current"),
-    Output("table-selector", "options"),
+    Output("table-selector", "options", allow_duplicate=True),
     Output('tbl', 'active_cell'),
     Input('tbl', "page_current"),
     Input('tbl', "page_size"),
@@ -42,9 +42,6 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
         selected_columns = []
 
     data = rdpmspec.extra_df.loc[:, rdpmspec._id_columns + selected_columns]
-    for name in rdpmspec.score_columns:
-        if name in rdpmspec.extra_df:
-            data = pd.concat((data, rdpmspec.extra_df[name]), axis=1)
 
     if filter is not None:
         filtering_expressions = filter.split(' && ')
@@ -113,6 +110,8 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
         Output('tbl', 'sort_by'),
         Output('data-store', 'data', allow_duplicate=True),
         Output('run-clustering', 'data', allow_duplicate=True),
+        Output('table-selector', 'value'),
+
     ],
     [
         Input('table-selector', 'value'),
@@ -156,12 +155,14 @@ def new_columns(
         raise PreventUpdate
     alert = False
     run_cluster = dash.no_update
+    sel_columns = [] if sel_columns is None else sel_columns
     if ctx.triggered_id == "rank-btn":
         try:
             cols = [col['column_id'] for col in current_sorting if col != "Rank"]
             asc = [col['direction'] == "asc" for col in current_sorting if col != "Rank"]
 
             rdpmsdata.rank_table(cols, asc)
+            sel_columns += ["Rank"]
         except Exception as e:
             alert = True
             alert_msg = f"Ranking Failed:\n{str(e)}"
@@ -171,12 +172,17 @@ def new_columns(
         if permanova_clicks == 0:
             raise PreventUpdate
         else:
+            sel_columns += ["PERMANOVA F"]
+
             if permanova_permutations is None:
                 permanova_permutations = 9999
             if rdpmsdata.permutation_sufficient_samples:
                 rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=1, mode="local")
+                sel_columns += ["local PERMANOVA adj p-Value"]
+
             else:
                 rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=1, mode="global")
+                sel_columns += ["global PERMANOVA adj p-Value"]
 
                 alert = True
                 alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
@@ -187,10 +193,16 @@ def new_columns(
         else:
             if anosim_permutations is None:
                 anosim_permutations = 9999
+            sel_columns += ["ANOSIM R"]
+
             if rdpmsdata.permutation_sufficient_samples:
                 rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local")
+                sel_columns += ["local ANOSIM adj p-Value"]
+
             else:
                 rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global")
+                sel_columns += ["global ANOSIM adj p-Value"]
+
                 alert = True
                 alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
                 " This might be unreliable"
@@ -198,6 +210,7 @@ def new_columns(
         if "RNase True peak pos" not in rdpmsdata.df:
             rdpmsdata.determine_peaks()
         rdpmsdata.calc_welchs_t_test(distance_cutoff=distance_cutoff)
+        sel_columns += ["CTRL Peak adj p-Value", "RNase Peak adj p-Value"]
 
     if ctx.triggered_id == "score-btn":
         if n_clicks == 0:
@@ -205,6 +218,7 @@ def new_columns(
         else:
             rdpmsdata.calc_all_scores()
             run_cluster = True
+            sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "RNase False peak pos", "RNase True peak pos"]
     if alert:
         alert_msg = html.Div(
             dbc.Alert(
@@ -220,7 +234,7 @@ def new_columns(
     tbl = _create_table(rdpmsdata, sel_columns)
     logger.info(f"Created New Table - sorting: {current_sorting}; run_cluster: {run_cluster}")
     current_sorting = dash.no_update if current_sorting is None else current_sorting
-    return tbl, alert_msg, current_sorting, Serverside(rdpmsdata, key=uid), run_cluster
+    return tbl, alert_msg, current_sorting, Serverside(rdpmsdata, key=uid), run_cluster, list(set(sel_columns))
 
 
 def split_filter_part(filter_part):
