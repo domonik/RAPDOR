@@ -77,6 +77,11 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
     if "tbl.page_current" in ctx.triggered_prop_ids or "tbl.sort_by" in ctx.triggered_prop_ids:
         page = page_current
         size = page_size
+        if len(data) > 0:
+            loc = data.iloc[0].id
+            active_cell_out = {'row': 1, 'column': 1, 'column_id': 'RDPMSpecID', 'row_id': loc}
+        else:
+            active_cell_out = None
     elif "tbl.filter_query" in ctx.triggered_prop_ids:
         logger.info(page_current)
         page = 0
