@@ -94,13 +94,15 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData):
 @callback(
     Output("recomputation", "children"),
     Output("data-store", "data"),
+    Output('table-selector', 'value', allow_duplicate=True),
     Input("kernel-slider", "value"),
     Input("distance-method", "value"),
     State("data-store", "data"),
     State("unique-id", "data"),
+    State('table-selector', 'value'),
     prevent_initial_call=True
 )
-def recompute_data(kernel_size, distance_method, rdpmsdata, uid):
+def recompute_data(kernel_size, distance_method, rdpmsdata, uid, selected_columns):
     if rdpmsdata is None:
         raise PreventUpdate
     if uid is None:
@@ -111,7 +113,8 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid):
     if rdpmsdata.state.kernel_size != kernel_size or rdpmsdata.state.distance_method != distance_method:
         logger.info(f"Normalizing using method: {distance_method} and eps: {eps}")
         rdpmsdata.normalize_and_get_distances(method=distance_method, kernel=kernel_size, eps=eps)
-        return html.Div(), Serverside(rdpmsdata, key=uid)
+        selected_columns = list(set(selected_columns) - set(rdpmsdata.score_columns))
+        return html.Div(), Serverside(rdpmsdata, key=uid), selected_columns
     logger.info("Data already Normalized")
     raise PreventUpdate
 

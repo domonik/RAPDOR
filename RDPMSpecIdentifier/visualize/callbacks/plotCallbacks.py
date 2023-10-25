@@ -66,7 +66,7 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
             size=16,
         )
     )
-    fig.update_xaxes(dtick=1)
+    fig.update_xaxes(dtick=1, title="")
     fig.update_xaxes(fixedrange=True)
     return fig
 
@@ -91,9 +91,11 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
         raise PreventUpdate
     else:
         array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
-        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
-        fig.update_yaxes(showticklabels=False, showgrid=False)
-        fig.update_xaxes(showgrid=False, showticklabels=False)
+        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors, vspace=0)
+        fig.update_yaxes(showticklabels=False, showgrid=False, showline=False)
+        fig.update_xaxes(showgrid=False, showticklabels=False, title="", showline=False)
+        fig.update_traces(showscale=False)
+
         if not night_mode:
             fig.update_layout(
                 font=dict(color="black"),
@@ -151,8 +153,8 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
         fig.update_layout(
             margin={"t": 0, "b": 0, "l": 0, "r": 0}
         )
-        fig.update_yaxes(showgrid=False)
-        fig.update_xaxes(showgrid=False)
+        fig.update_yaxes(showline=False)
+        fig.update_xaxes(showline=False)
     return fig, f"Sample {distance_method}"
 
 

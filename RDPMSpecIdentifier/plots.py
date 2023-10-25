@@ -173,7 +173,7 @@ def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 
             marker=dict(color=colors[eidx]),
             name="Mean",
             legend=legend,
-            line=dict(width=3, dash="dash")
+            line=dict(width=3, dash="dot")
         ))
         y = np.concatenate((max_values, np.flip(min_values)), axis=0)
         errors.append(
@@ -205,6 +205,7 @@ def _update_distribution_layout(fig, names, x, offset):
         yaxis_title="Protein Amount [%]",
     )
     fig.update_layout(
+        xaxis=dict(title="Fraction"),
         legend=dict(
             title=names[0],
             orientation="h",
@@ -217,7 +218,7 @@ def _update_distribution_layout(fig, names, x, offset):
             title=names[1],
             orientation="h",
             yanchor="bottom",
-            y=1.2,
+            y=1.15,
             xanchor="left",
             x=0,
         )
@@ -247,10 +248,11 @@ def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
             colorscale=colors[:2]
         )
     )
-
+    fig.update_yaxes(showgrid=False, mirror=True, showline=True, linecolor="black", linewidth=2)
+    fig.update_xaxes(showgrid=False, mirror=True, showline=True, linecolor="black", linewidth=2)
     return fig
 
-def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, colors=None):
+def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, colors=None, vspace: float = 0.025):
     """Creates a Westernblot like plot from the mean of protein intensities
 
 
@@ -260,6 +262,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
         groups (str): which design column to use for grouping.
         offset (int): adds this offset to the fractions at the x-axis range
         colors (Iterable[str]): An iterable of color strings to use for plotting
+        vspace (float): vertical space between westernblots (between 0 and 1)
 
     Returns: go.Figure
 
@@ -269,7 +272,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
     if colors is None:
         colors = DEFAULT_COLORS
     indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
-    fig = make_subplots(cols=1, rows=2, vertical_spacing=0)
+    fig = make_subplots(cols=1, rows=2, vertical_spacing=vspace)
 
     ys = []
     scale = []
@@ -306,7 +309,24 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
     fig.data[0].update(zmin=0, zmax=m_val)
     fig.data[1].update(zmin=0, zmax=m_val)
     fig.update_xaxes(showticklabels=False, row=1, col=1)
-    fig.update_traces(showscale=False)
+    fig.update_yaxes(showgrid=False, mirror=True, showline=True, linecolor="black", linewidth=2)
+    fig.update_xaxes(showgrid=False, mirror=True, showline=True, linecolor="black", linewidth=2)
+    fig.update_xaxes(title="Fraction", row=2, col=1)
+    fig.data[0].colorbar.update(
+        len=0.5,
+        yref="paper",
+        y=1,
+        yanchor="top"
+
+    )
+    fig.data[1].colorbar.update(
+        len=0.5,
+        yref="paper",
+        y=0.5,
+        yanchor="top",
+
+    )
+
 
     return fig
 
