@@ -4,8 +4,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         styleSelectedTableRow: function (proteinKey) {
             const key = proteinKey.split("Protein ")[1];
             console.log("Searching for the Protein Key:" + key)
+            try {
+                var tables = document.getElementById("tbl").querySelectorAll("table");
 
-            var tables = document.getElementById("tbl").querySelectorAll("table");
+            } catch (error) {
+                return ""
+            }
             var table = tables[[tables.length - 1]];
             var rows = table.getElementsByTagName("tr");
             for (let i = 0; i < rows.length; i++) {
@@ -172,22 +176,22 @@ document.addEventListener('keydown', (event) => {
     }
 })
 //
-// document.addEventListener('click', (event) => {
-//     const clickedElement = event.target;
-//
-//     // Check if the clicked element is a <div> inside a <td>
-//     if (clickedElement.tagName === 'DIV' && clickedElement.closest('td')) {
-//         console.log('Clicked element is a <div> inside a <td>');
-//         const parent = clickedElement.parentNode;
-//         parent.focus();
-//         // Add your code to handle the click on the <div> inside the <td>
-//     } else if (clickedElement.tagName === 'INPUT' && clickedElement.closest('td')) {
-//         const parent = clickedElement.parentNode.nextElementSibling;
-//         console.log("parent", parent)
-//         document.activeElement.blur()
-//     }
-//     console.log(clickedElement);
-// })
+document.addEventListener('click', (event) => {
+    const clickedElement = event.target;
+
+    // Check if the clicked element is a <div> inside a <td>
+    if (clickedElement.tagName === 'DIV' && clickedElement.closest('td')) {
+        console.log('Clicked element is a <div> inside a <td>');
+        const parent = clickedElement.parentNode;
+        parent.focus();
+        // Add your code to handle the click on the <div> inside the <td>
+    } else if (clickedElement.tagName === 'INPUT' && clickedElement.closest('td')) {
+        const parent = clickedElement.parentNode.nextElementSibling;
+        console.log("parent", parent)
+        document.activeElement.blur()
+    }
+    console.log(clickedElement);
+})
 //
 //
 //
