@@ -1,7 +1,7 @@
 import dash_bootstrap_components as dbc
 import dash_daq as daq
 from dash import html, dcc
-from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS
+from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS, COLOR_SCHEMES
 from RDPMSpecIdentifier.plots import empty_figure
 
 KMEANS_ARGS = 2
@@ -112,6 +112,30 @@ def _modal_cluster_image_download():
         id="cluster-img-modal",
     )
     return modal
+
+
+def _color_theme_modal():
+    modal = dbc.Modal(
+        [
+            dbc.ModalHeader(f"Select Color Scheme"),
+            dbc.ModalBody(
+                [
+                    dcc.Dropdown(
+                        list(COLOR_SCHEMES.keys()),
+                        "Flamingo",
+                        id="color-scheme-dropdown",
+                        clearable=False
+                    )
+                ]
+            ),
+            dbc.ModalFooter(
+                dbc.Button("Apply", id=f"apply-color-scheme", className="ml-auto",
+                           n_clicks=0)),
+        ],
+        id=f"color-scheme-modal",
+    )
+    return modal
+
 
 
 def _modal_color_selection(number):

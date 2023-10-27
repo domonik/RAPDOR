@@ -14,7 +14,8 @@ from RDPMSpecIdentifier.visualize.modals import (
     _modal_hdbscan_cluster_settings,
     _modal_dbscan_cluster_settings,
     _modal_kmeans_cluster_settings,
-    _modal_cluster_image_download
+    _modal_cluster_image_download,
+    _color_theme_modal
 )
 from RDPMSpecIdentifier.visualize import DISABLED
 
@@ -64,6 +65,8 @@ layout = html.Div(
         _modal_hdbscan_cluster_settings(),
         _modal_dbscan_cluster_settings(),
         _modal_kmeans_cluster_settings(),
+        _color_theme_modal(),
+
         html.Div(id="recomputation"),
         html.Button("refresh", className="btn-primary", id="refresh-btn", style={"display": "none"})
     ]

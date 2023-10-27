@@ -28,7 +28,41 @@ BE = res2.end()
 
 logger = logging.getLogger("RDPMSpecIdentifier")
 DEFAULT_COLORS = {"primary": "rgb(138, 255, 172)", "secondary": "rgb(255, 138, 221)"}
-
+COLOR_SCHEMES = {
+    "Flamingo": (DEFAULT_COLORS["primary"], DEFAULT_COLORS["secondary"]),
+    "Viking": ("rgb(79, 38, 131) ", "rgb(255, 198, 47)"),
+    "Dolphin": ("rgb(0, 142, 151) ", "rgb(252, 76, 2)"),
+    "Cardinal": ("rgb(151,35,63)", "rgb(0,0,0)"),
+    "Falcon": ("rgb(167, 25, 48)", "rgb(0, 0, 0)"),
+    "Raven": ("rgb(26, 25, 95)", "rgb(0, 0, 0)"),
+    "Bill": ("rgb(0, 51, 141)", "rgb(198, 12, 48)"),
+    "Panther": ("rgb(0, 133, 202)", "rgb(200, 56, 3)"),
+    "Bear": ("rgb(100, 60, 0, 80)", "rgb(12, 35, 64)"),
+    "Bengal": ("rgb(251, 79, 20)", "rgb(0, 0, 0)"),
+    "Brown": ("rgb(49, 29, 0)", "rgb(255, 60, 0)"),
+    "Cowboy": ("rgb(0, 34, 68)", "rgb(255, 255, 255)"),
+    "Bronco": ("rgb(251, 79, 20)", "rgb(0, 34, 68)"),
+    "Lion": ("rgb(0, 118, 182)", "rgb(176, 183, 188)"),
+    "Packer": ("rgb(24, 48, 40)", "rgb(255, 184, 28)"),
+    "Texan": ("rgb(3, 32, 47)", "rgb(167, 25, 48)"),
+    "Colt": ("rgb(0, 44, 95)", "rgb(162, 170, 173)"),
+    "Jaguar": ("rgb(215, 162, 42)", "rgb(0, 103, 120)"),
+    "Chief": ("rgb(227, 24, 55)", "rgb(255, 184, 28)"),
+    "Charger": ("rgb(0, 128, 198)", "rgb(255, 194, 14)"),
+    "Ram": ("rgb(0, 53, 148)", "rgb(255, 163, 0)"),
+    "Patriot": ("rgb(0, 34, 68)", "rgb(198, 12, 48)"),
+    "Saint": ("rgb(211, 188, 141)", "rgb(16, 24, 31)"),
+    "Giant": ("rgb(100, 75, 0, 30)", "rgb(163, 13, 45)"),
+    "Jet": ("rgb(18, 87, 64)", "rgb(255, 255, 255)"),
+    "Raider": ("rgb(0, 0, 0)", "rgb(165, 172, 175)"),
+    "Eagle": ("rgb(0, 76, 84)", "rgb(165, 172, 175)"),
+    "Steeler": ("rgb(255, 182, 18)", "rgb(16, 24, 32)"),
+    "49": ("rgb(170, 0, 0)", "rgb(173, 153, 93)"),
+    "Seahawk": ("rgb(0, 34, 68)", "rgb(105, 190, 40)"),
+    "Buccaneer": ("rgb(213, 10, 10)", "rgb(255, 121, 0)"),
+    "Titan": ("rgb(75, 146, 219)", "rgb(200, 16, 46)"),
+    "Commander": ("rgb(90, 20, 20)", "rgb(255, 182, 18)"),
+}
 
 
 def _header_layout():

@@ -321,7 +321,16 @@ def selector_box(disabled: bool = False):
                     html.Div(
                         [
                             html.Div(
-                                html.Span("Select Color Scheme", style={"text-align": "center"}, id="color-scheme"),
+                                html.Button(
+                                    "Select Color Scheme",
+                                    style={
+                                        "text-align": "center",
+                                        "border": "0px solid transparent",
+                                        "background": "transparent",
+                                        "color": "var(--r-text-color"
+                                    },
+                                    id="color-scheme"
+                                ),
                                 className="col-4 col-md-4 justify-content-center align-self-center"
                             ),
                             html.Div(

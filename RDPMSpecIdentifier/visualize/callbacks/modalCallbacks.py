@@ -10,6 +10,7 @@ from dash_extensions.enrich import callback
 from dash.exceptions import PreventUpdate
 import logging
 import plotly.io as pio
+from RDPMSpecIdentifier.visualize.staticContent import COLOR_SCHEMES
 
 logger = logging.getLogger(__name__)
 
@@ -241,6 +242,28 @@ def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
         raise ValueError("")
     return not is_open, color, style
 
+
+@callback(
+    Output("color-scheme-modal", "is_open"),
+    Output("primary-color", "data", allow_duplicate=True),
+    Output("secondary-color", "data", allow_duplicate=True),
+    Input("color-scheme", "n_clicks"),
+    Input("apply-color-scheme", "n_clicks"),
+    State("color-scheme-modal", "is_open"),
+    State("color-scheme-dropdown", "value"),
+    prevent_initital_call=True
+)
+def _open_color_theme_modal(n1, n2, is_open, selected_scheme):
+    logger.info(f"{ctx.triggered_id} - triggerere color schema modal: {n1}, {n2}, {is_open}")
+    if n1 == 0 or n1 is None:
+        raise PreventUpdate
+    if ctx.triggered_id == "color-scheme":
+        return not is_open, dash.no_update, dash.no_update
+    elif ctx.triggered_id == "apply-color-scheme":
+        if selected_scheme is None:
+            raise PreventUpdate
+        primary, secondary = COLOR_SCHEMES[selected_scheme]
+        return not is_open, primary, secondary
 
 
 
