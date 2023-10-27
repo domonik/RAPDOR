@@ -73,6 +73,7 @@ def _create_table(rdpmsdata, selected_columns=None):
             id="tbl",
         ), className="dont-show h-100"
         )
+    selected_columns = list(set(selected_columns))
 
     data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
     columns = []
