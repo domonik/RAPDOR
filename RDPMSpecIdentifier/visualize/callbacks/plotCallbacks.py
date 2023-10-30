@@ -6,11 +6,11 @@ from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
 from plotly.colors import qualitative
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
-    plot_dimension_reduction_result, empty_figure
+    plot_dimension_reduction_result2d, plot_dimension_reduction_result3d, empty_figure
 from dash_extensions.enrich import Serverside, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
-
+import traceback
 logger = logging.getLogger(__name__)
 
 COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + qualitative.G10
@@ -161,10 +161,7 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
 @callback(
     Output("data-store", "data", allow_duplicate=True),
     Output("plot-dim-red", "data"),
-    Input('cluster-feature-slider', 'value'),
-    Input('3d-plot', 'on'),
     Input('cluster-method', 'value'),
-    Input('dim-red-method', 'value'),
     Input("recomputation", "children"),
     Input("run-clustering", "data"),
     Input("HDBSCAN-apply-settings-modal", "n_clicks"),
@@ -181,10 +178,7 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
     prevent_intital_call="initial_duplicate"
 )
 def calc_clusters(
-        kernel_size,
-        td_plot,
         cluster_method,
-        reduction_method,
         recomp,
         run_cluster,
         apply_1,
@@ -203,15 +197,11 @@ def calc_clusters(
     if rdpmsdata is None:
         raise PreventUpdate
     try:
-        dim = 2 if not td_plot else 3
 
-        if ctx.triggered_id == "cluster-feature-slider" or rdpmsdata.cluster_features is None:
-            if rdpmsdata.state.cluster_kernel_distance != kernel_size:
-                rdpmsdata.calc_cluster_features(kernel_range=kernel_size)
-                logger.info("Calculated Cluster Features")
-
-                rdpmsdata.set_embedding(dim, method=reduction_method)
-                logger.info("Running Dimension Reduction - because cluster features changed")
+        if rdpmsdata.cluster_features is None:
+            rdpmsdata.calc_distribution_features()
+            logger.info("Calculated Cluster Features")
+            logger.info("Running Dimension Reduction - because cluster features changed")
         if ctx.triggered_id != "dim-red-method":
             if cluster_method != "None":
                 if cluster_method == "HDBSCAN":
@@ -227,15 +217,10 @@ def calc_clusters(
                     clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
             else:
                 rdpmsdata.remove_clusters()
-        if ctx.triggered_id == "dim-red-method" or rdpmsdata.current_embedding is None or ctx.triggered_id == "3d-plot":
-            if rdpmsdata.current_embedding is None or rdpmsdata.current_embedding.shape[-1] != dim or rdpmsdata.state.dimension_reduction != reduction_method:
-                logger.info("Running Dimension Reduction")
-                rdpmsdata.set_embedding(dim, method=reduction_method)
-
-
         return Serverside(rdpmsdata, key=uid), True
 
-    except ValueError:
+    except ValueError as e:
+        logger.error(traceback.format_exc())
         return dash.no_update, False
 
 
@@ -247,9 +232,13 @@ def calc_clusters(
     Input("secondary-color", "data"),
     Input("plot-dim-red", "data"),
     Input('tbl', 'selected_row_ids'),
+    Input('cluster-marker-slider', 'value'),
+    Input('3d-plot', 'on'),
+
     State('data-store', "data"),
 )
-def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdpmsdata: RDPMSpecData):
+def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, rdpmsdata: RDPMSpecData):
+    dim = 2 if not td_plot else 3
 
     color = color, color2
     colors = COLORS + list(color)
@@ -269,15 +258,26 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
             showarrow=False,
             font=(dict(size=28))
         )
-    else:
-        fig = plot_dimension_reduction_result(
+    elif dim == 2:
+        fig = plot_dimension_reduction_result2d(
             rdpmsdata.current_embedding,
             rdpmsdata,
             name=rdpmsdata.state.dimension_reduction,
             colors=colors,
             highlight=selected_rows,
-            clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None
+            clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
+            marker_max_size=marker_size
         )
+    else:
+        fig = plot_dimension_reduction_result3d(
+            rdpmsdata.current_embedding,
+            rdpmsdata,
+            name=rdpmsdata.state.dimension_reduction,
+            colors=colors,
+            highlight=selected_rows,
+            clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
+        )
+
     fig.layout.template = "plotly_white"
 
     fig.update_layout(
@@ -285,16 +285,16 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, rdp
         font=dict(
             size=16,
         ),
-        xaxis=dict(showline=True, mirror=True, ticks="outside", zeroline=False, ticklen=0, linecolor="black"),
-        yaxis=dict(showline=True, mirror=True, ticks="outside", zeroline=False, ticklen=0, linecolor="black"),
+        xaxis2=dict(showline=True, mirror=True, ticks="outside", zeroline=False, ticklen=0, linecolor="black"),
+        yaxis2=dict(showline=True, mirror=True, ticks="outside", zeroline=False, ticklen=0, linecolor="black"),
         plot_bgcolor='#222023',
 
     )
     if not night_mode:
         fig.update_layout(
             font=dict(color="black"),
-            yaxis=dict(gridcolor="black", zeroline=False, color="black", linecolor="black"),
-            xaxis=dict(gridcolor="black", zeroline=False, color="black", linecolor="black"),
+            yaxis2=dict(gridcolor="black", zeroline=False, color="black", linecolor="black"),
+            xaxis2=dict(gridcolor="black", zeroline=False, color="black", linecolor="black"),
             plot_bgcolor='#e1e1e1',
 
 

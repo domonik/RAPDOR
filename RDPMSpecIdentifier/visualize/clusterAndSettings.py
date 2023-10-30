@@ -16,15 +16,19 @@ def _get_cluster_panel(disabled: bool = False):
                     [
                         dcc.Store(id="run-clustering"),
                         html.Div(
-                            dls.RingChase(
-                                [
-                                    dcc.Store(id="plot-dim-red", data=False),
-                                    dcc.Graph(id="cluster-graph", figure=empty_figure()),
+                            html.Div(
+                                dls.RingChase(
+                                    [
+                                        dcc.Store(id="plot-dim-red", data=False),
+                                        dcc.Graph(id="cluster-graph", figure=empty_figure(),
+                                                  style={"min-width": "1050px"}),
 
-                                ],
-                                color="var(--primary-color)",
-                                width=200,
-                                thickness=20,
+                                    ],
+                                    color="var(--primary-color)",
+                                    width=200,
+                                    thickness=20,
+                                ),
+                                style={"overflow-x": "auto"}, className="m-2"
                             ),
                             className="col-12 col-md-7"
                         ),
@@ -33,22 +37,21 @@ def _get_cluster_panel(disabled: bool = False):
                                 html.Div(
                                     [
                                         html.Div(
-                                            html.Span("Dimension Reduction", style={"text-align": "center"}),
-                                            className="col-3 col-md-3 justify-content-center align-self-center"
+                                            html.Span("Marker Size", style={"text-align": "center"}),
+                                            className="col-10 col-md-3 justify-content-center align-self-center"
                                         ),
                                         html.Div(
-                                            dcc.Dropdown(
-                                                ["T-SNE", "UMAP", "PCA"], "T-SNE",
+                                            dcc.Slider(
+                                                0, 100, step=1, marks=None,
+                                                value=40,
+                                                tooltip={"placement": "bottom", "always_visible": True},
                                                 className="justify-content-center",
-                                                id="dim-red-method",
-                                                clearable=False,
-                                                disabled=disabled
-
+                                                id="cluster-marker-slider",
                                             ),
-                                            className="col-7 justify-content-center text-align-center"
-                                        )
+                                            className="col-10 col-md-7 justify-content-center",
+                                        ),
                                     ],
-                                    className="row justify-content-center p-2 pt-5"
+                                    className="row justify-content-center p-2"
                                 ),
                                 html.Div(
                                     [
@@ -73,26 +76,6 @@ def _get_cluster_panel(disabled: bool = False):
                                     ],
                                     className="row justify-content-center p-2"
                                 ),
-                                html.Div(
-                                    [
-                                        html.Div(
-                                            html.Span("Feature Kernel Size", style={"text-align": "center"}),
-                                            className="col-10 col-md-3 justify-content-center align-self-center"
-                                        ),
-                                        html.Div(
-                                            dcc.Slider(
-                                                0, 10, step=1,
-                                                value=3,
-                                                className="justify-content-center",
-                                                id="cluster-feature-slider",
-                                                disabled=disabled
-                                            ),
-                                            className="col-10 col-md-7 justify-content-center",
-                                        ),
-                                    ],
-                                    className="row justify-content-center p-2"
-                                ),
-
                                 html.Div(
                                     [
                                         html.Div(

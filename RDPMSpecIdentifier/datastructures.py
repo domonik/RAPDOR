@@ -13,7 +13,7 @@ from statsmodels.stats.multitest import multipletests
 from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 from sklearn.cluster import KMeans, HDBSCAN, DBSCAN
-from umap import UMAP
+#from umap import UMAP
 from dataclasses import dataclass
 import json
 from json import JSONEncoder
@@ -27,8 +27,6 @@ class RDPMState:
     distance_method: str = None
     kernel_size: int = None
     eps: float = None
-    dimension_reduction: str = None
-    cluster_kernel_distance: int = None
     permanova: str = None
     permanova_permutations: int = None
     permanova_cutoff: float = None
@@ -330,26 +328,30 @@ class RDPMSpecData:
 
         """
         indices = self.internal_design_matrix.groupby("RNase", group_keys=True).apply(lambda x: list(x.index))
-        rnase_false = self.norm_array[:, indices[False]].mean(axis=-2)
-        rnase_true = self.norm_array[:, indices[True]].mean(axis=-2)
+        rnase_false = np.nanmean(self.norm_array[:, indices[False]], axis=-2)
+        rnase_true = np.nanmean(self.norm_array[:, indices[True]], axis=-2)
         mid = 0.5 * (rnase_true + rnase_false)
+        s = int(np.ceil(self.state.kernel_size / 2))
+        range = np.arange(s, s + mid.shape[-1])
         rel1 = rel_entr(rnase_false, mid)
-        r1 = np.argmax(rel1, axis=-1)
-        r1 = r1 + int(np.ceil(self.state.kernel_size / 2))
+        rel1[rel1 < 0] = 0
+        rel1 = (rel1 / np.sum(rel1, axis=-1, keepdims=True)) * range
+        r1 = np.sum(rel1, axis=-1)
         self.df["RNase False peak pos"] = r1
 
         rel2 = rel_entr(rnase_true, mid)
-        r2 = np.argmax(rel2, axis=-1)
+        rel2[rel2 < 0] = 0
+        rel2 = (rel2 / np.sum(rel2, axis=-1, keepdims=True)) * range
+        r2 = np.sum(rel2, axis=-1)
         jsd = jensenshannon(rnase_true, rnase_false, axis=-1, base=2)
 
-        r2 = r2 + int(np.ceil(self.state.kernel_size / 2))
         self.df["RNase True peak pos"] = r2
         self.df["Mean Distance"] = jsd
         side = r1 - r2
         side[side < 0] = -1
         side[side > 0] = 1
         shift_strings = np.empty(side.shape, dtype='U10')
-        shift_strings = np.where(side == 0, "no shift", shift_strings)
+        shift_strings = np.where(side == 0, "no direction", shift_strings)
         shift_strings = np.where(side == -1, "right", shift_strings)
         shift_strings = np.where(side == 1, "left", shift_strings)
         self.df["shift direction"] = shift_strings
@@ -379,6 +381,25 @@ class RDPMSpecData:
         cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
         self.cluster_features = cluster_values
         self.state.cluster_kernel_distance = kernel_range
+
+    def calc_distribution_features(self):
+        if "shift direction" not in self.df:
+            raise ValueError("Peaks not determined. Determine Peaks first")
+        rnase_false = np.nanmean(self.norm_array[:, self._indices_false], axis=-2)
+        rnase_true = np.nanmean(self.norm_array[:, self._indices_true], axis=-2)
+        mixture = 0.5 * (rnase_true + rnase_false)
+        uni_nonzero = mixture > 0
+        uniform = (np.ones((mixture.shape[0], mixture.shape[1])) / np.count_nonzero(uni_nonzero, axis=-1, keepdims=True)) * uni_nonzero
+
+        false_uni_distance = jensenshannon(rnase_false, uniform, base=2, axis=-1)
+        true_uni_distance = jensenshannon(rnase_true, uniform, base=2, axis=-1)
+        diff = false_uni_distance - true_uni_distance
+        ctrl_peak_pos = (self.df["RNase False peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
+        rnase_peak_pos = (self.df["RNase True peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
+        shift = ctrl_peak_pos - rnase_peak_pos
+        self.cluster_features = np.concatenate((shift[:, np.newaxis], diff[:, np.newaxis]), axis=1)
+        self.current_embedding = self.cluster_features
+        self.state.dimension_reduction = "custom"
 
     def reduce_dim(self, data, embedding_dim: int = 2, method: str = "T-SNE"):
         data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)

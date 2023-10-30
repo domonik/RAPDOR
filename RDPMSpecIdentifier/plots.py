@@ -330,13 +330,14 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
 
     return fig
 
-def plot_dimension_reduction_result(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None):
+
+def plot_dimension_reduction_result(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None, marker_size: int = 40):
     if clusters is None:
         clusters = np.zeros(embedding.shape[0])
     if colors is None:
         colors = qualitative.Alphabet + qualitative.Light24
     if embedding.shape[-1] == 2:
-        return plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors, clusters, highlight)
+        return plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors, clusters, highlight, marker_size)
     elif embedding.shape[-1] == 3:
         return plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors, clusters, highlight)
     else:
@@ -345,9 +346,13 @@ def plot_dimension_reduction_result(embedding, rdpmspecdata, name, colors=None, 
 
 def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None):
     fig = go.Figure()
+    clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
+
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
     hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
+    data = rdpmspecdata.df["Mean Distance"].to_numpy()
+
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
@@ -368,24 +373,22 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
         fig.add_trace(go.Scatter3d(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
-            z=embedding[c_mask, :][:, 2],
+            z=data[c_mask],
             mode="markers",
             hovertext=hovertext[c_mask],
             marker=dict(color=colors[-2], size=4),
             name=f"Not Clustered",
-            visible="legendonly"
         ))
         nmask = ~mask & (clusters == -1)
         fig.add_trace(
             go.Scatter3d(
                 x=embedding[nmask, :][:, 0],
                 y=embedding[nmask, :][:, 1],
-                z=embedding[nmask, :][:, 2],
+                z=data[nmask],
                 mode="markers",
                 hovertext=hovertext[nmask],
                 marker=dict(color=colors[-2], size=8, line=dict(color=colors[-1], width=4)),
                 name="Not Clustered",
-                visible="legendonly",
 
         )
         )
@@ -394,7 +397,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
         fig.add_trace(go.Scatter3d(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
-            z=embedding[c_mask, :][:, 2],
+            z=data[c_mask],
             mode="markers",
             hovertext=hovertext[c_mask],
             marker=dict(color=colors[color_idx], size=4),
@@ -405,7 +408,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
             go.Scatter3d(
                 x=embedding[nmask, :][:, 0],
                 y=embedding[nmask, :][:, 1],
-                z=embedding[nmask, :][:, 2],
+                z=data[nmask],
                 mode="markers",
                 hovertext=hovertext[nmask],
                 marker=dict(color=colors[color_idx], size=8, line=dict(color=colors[-1], width=4)),
@@ -416,9 +419,9 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
 
     fig.update_layout(
         scene=go.layout.Scene(
-            xaxis=go.layout.scene.XAxis(title=f"{name} Dimension 1"),
-            yaxis=go.layout.scene.YAxis(title=f"{name} Dimension 2"),
-            zaxis=go.layout.scene.ZAxis(title=f"{name} Dimension 3"),
+            xaxis=go.layout.scene.XAxis(title=f"relative fraction shift"),
+            yaxis=go.layout.scene.YAxis(title=f"relative distribution change"),
+            zaxis=go.layout.scene.ZAxis(title=f"Mean Distance"),
         )
 
     )
@@ -428,12 +431,81 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
 
 
 
-def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None):
-    fig = go.Figure()
+def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None, marker_max_size: int = 40, second_bg_color: str = "white"):
+    fig = make_subplots(rows=2, cols=1, row_width=[0.8, 0.2], vertical_spacing=0.01)
     hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
-
+    clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
+    data = rdpmspecdata.df["Mean Distance"]
+    desired_min = 1
+    min_data, max_data = np.nanmin(data), np.nanmax(data)
+
+    marker_size = desired_min + (data - min_data) * (marker_max_size - desired_min) / (max_data - min_data)
+    min_x = np.nanmin(embedding[:, 0])
+    min_y = np.nanmin(embedding[:, 1])
+    max_x = np.max(embedding[:, 0])
+    max_y = np.max(embedding[:, 1])
+    fig.add_shape(type="rect",
+                  x0=-2, y0=-2, x1=2, y1=2,
+                  fillcolor=second_bg_color,
+                  layer="below"
+                  )
+    fig.add_annotation(
+        xref="x",
+        yref="y",
+        xanchor="left",
+        yanchor="middle",
+        x=0.23,
+        y=0.5,
+        text=f"{max_data}",
+        showarrow=False,
+        font=(dict(size=18)),
+        row=1,
+        col=1
+    )
+    fig.add_annotation(
+        xref="x",
+        yref="y",
+        xanchor="left",
+        yanchor="middle",
+        x=0.32,
+        y=0.5,
+        text=f"{(max_data - min_data) / 2}",
+        showarrow=False,
+        font=(dict(size=18)),
+        row=1,
+        col=1
+    )
+    fig.add_annotation(
+        xref="x",
+        yref="y",
+        xanchor="left",
+        yanchor="middle",
+        x=0.0,
+        y=0.5,
+        text="Mean Distance",
+        showarrow=False,
+        font=(dict(size=20)),
+        row=1,
+        col=1
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=[0.2, 0.3],
+            y=[0.5, 0.5],
+            mode="markers",
+            marker=dict(color="rgba(0,0,0,0)", line=dict(color="black", width=1), size=[marker_max_size, int(marker_max_size/2)]),
+            name=f"Size 100",
+            showlegend=False,
+            hoverinfo='skip',
+
+        ),
+        row=1,
+        col=1
+
+    )
+
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
@@ -448,7 +520,9 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             y=0.5,
             text="Too Many Clusters<br> Will not show all<br>Please adjust cluster Settings",
             showarrow=False,
-            font=(dict(size=28))
+            font=(dict(size=28)),
+            row=2,
+            col=1
         )
 
     if np.any(clusters == -1):
@@ -458,10 +532,12 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             y=embedding[c_mask, :][:, 1],
             mode="markers",
             hovertext=hovertext[c_mask],
-            marker=dict(color=colors[-2]),
+            marker=dict(color=colors[-2], size=marker_size[c_mask]),
             name=f"Not Clustered",
-            visible="legendonly"
-        ))
+        ),
+            row=2,
+            col=1
+        )
         nmask = ~mask & (clusters == -1)
         fig.add_trace(
             go.Scatter(
@@ -469,11 +545,12 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
                 y=embedding[nmask, :][:, 1],
                 mode="markers",
                 hovertext=hovertext[nmask],
-                marker=dict(color=colors[-2], size=12, line=dict(color=colors[-1], width=4)),
+                marker=dict(color=colors[-2], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
                 name="Not Clustered",
-                visible="legendonly",
 
-        )
+        ),
+            row=2,
+            col=1
         )
     for color_idx, cluster in enumerate(range(min(n_cluster, len(colors)-2))):
         c_mask = mask & (clusters == cluster)
@@ -482,9 +559,12 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             y=embedding[c_mask, :][:, 1],
             mode="markers",
             hovertext=hovertext[c_mask],
-            marker=dict(color=colors[color_idx]),
+            marker=dict(color=colors[color_idx], size=marker_size[c_mask]),
             name=f"Cluster {cluster}"
-        ))
+        ),
+            row=2,
+            col=1
+        )
         nmask = ~mask & (clusters == cluster)
         fig.add_trace(
             go.Scatter(
@@ -492,15 +572,28 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
                 y=embedding[nmask, :][:, 1],
                 mode="markers",
                 hovertext=hovertext[nmask],
-                marker=dict(color=colors[color_idx], size=12, line=dict(color=colors[-1], width=4)),
+                marker=dict(color=colors[color_idx], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
                 name=f"Cluster {cluster}"
-            )
+            ),
+            row=2,
+            col=1
         )
+    fig.update_layout(
+        legend=dict(
+            title="Clusters",
+            yanchor="top",
+            yref="paper",
+            y=0.8
 
+        ),
+    )
 
     fig.update_layout(
-        yaxis_title=f"{name} Dimension 2",
-        xaxis_title=f"{name} Dimension 1",
+        xaxis2=dict(title="relative fraction shift"),
+        yaxis2=dict(title="relative distribution change"),
+        yaxis=dict(range=[0, 1], showgrid=False, showline=False, showticklabels=False, zeroline=False, ticklen=0, fixedrange=True),
+        xaxis=dict(range=[0, 1], showgrid=False, showline=False, showticklabels=False, zeroline=False, ticklen=0, fixedrange=True),
+        legend={'itemsizing': 'constant'},
     )
     return fig
 
