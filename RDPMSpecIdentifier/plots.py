@@ -480,7 +480,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             yanchor="middle",
             x=xloc[idx] + 0.02 + idx * 0.02 / 3,
             y=0.5,
-            text=f"{entry}",
+            text=f"{entry:.1f}",
             showarrow=False,
             font=(dict(size=18)),
             row=1,
