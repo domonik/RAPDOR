@@ -95,6 +95,7 @@ class RDPMSpecData:
         "local PERMANOVA adj p-Value",
         "Mean Distance",
         "shift direction",
+        "relative fraction shift",
         "RNase False peak pos",
         "RNase True peak pos",
         "Permanova p-value",
@@ -347,13 +348,14 @@ class RDPMSpecData:
 
         self.df["RNase True peak pos"] = r2
         self.df["Mean Distance"] = jsd
-        side = r1 - r2
+        side = r2 - r1
+        self.df["relative fraction shift"] = side
         side[side < 0] = -1
         side[side > 0] = 1
         shift_strings = np.empty(side.shape, dtype='U10')
         shift_strings = np.where(side == 0, "no direction", shift_strings)
-        shift_strings = np.where(side == -1, "right", shift_strings)
-        shift_strings = np.where(side == 1, "left", shift_strings)
+        shift_strings = np.where(side == -1, "left", shift_strings)
+        shift_strings = np.where(side == 1, "right", shift_strings)
         self.df["shift direction"] = shift_strings
 
     def calc_cluster_features(self, kernel_range: int = 2):
@@ -394,9 +396,7 @@ class RDPMSpecData:
         false_uni_distance = jensenshannon(rnase_false, uniform, base=2, axis=-1)
         true_uni_distance = jensenshannon(rnase_true, uniform, base=2, axis=-1)
         diff = false_uni_distance - true_uni_distance
-        ctrl_peak_pos = (self.df["RNase False peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
-        rnase_peak_pos = (self.df["RNase True peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
-        shift = ctrl_peak_pos - rnase_peak_pos
+        shift = self.df["relative fraction shift"].to_numpy()
         self.cluster_features = np.concatenate((shift[:, np.newaxis], diff[:, np.newaxis]), axis=1)
         self.current_embedding = self.cluster_features
         self.state.dimension_reduction = "custom"

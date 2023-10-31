@@ -58,7 +58,6 @@ def assign_session_identifier(uid, data, initial_data):
 @callback(
     Output("kernel-slider", "value"),
     Output("cluster-method", "value"),
-    Output("3d-plot", 'on'),
     Output("table-selector", "value", allow_duplicate=True),
     Input("unique-id", "data"),
     Input("refresh-btn", "n_clicks"),
@@ -76,13 +75,12 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData):
     logger.info(f"state: {state}")
     kernel_size = state.kernel_size if state.kernel_size is not None else 3
     cluster_method = state.cluster_method if state.cluster_method is not None else dash.no_update
-    tdplot = rdpmsdata.current_embedding.shape[-1] if rdpmsdata.current_embedding is not None else dash.no_update
     sel_columns = []
     for name in rdpmsdata.score_columns:
         if name in rdpmsdata.extra_df:
             sel_columns.append(name)
     logger.info(f"Initially Selected Columns: {sel_columns}")
-    return kernel_size, cluster_method, tdplot, sel_columns
+    return kernel_size, cluster_method, sel_columns
 
 
 

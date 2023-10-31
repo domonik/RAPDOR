@@ -266,7 +266,9 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
             colors=colors,
             highlight=selected_rows,
             clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
-            marker_max_size=marker_size
+            marker_max_size=marker_size,
+            second_bg_color="white" if not night_mode else "#181818",
+            bubble_legend_color="black" if not night_mode else "white"
         )
     else:
         fig = plot_dimension_reduction_result3d(

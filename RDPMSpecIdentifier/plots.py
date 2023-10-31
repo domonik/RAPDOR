@@ -431,7 +431,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
 
 
 
-def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None, marker_max_size: int = 40, second_bg_color: str = "white"):
+def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None, marker_max_size: int = 40, second_bg_color: str = "white", bubble_legend_color: str = "black"):
     fig = make_subplots(rows=2, cols=1, row_width=[0.8, 0.2], vertical_spacing=0.01)
     hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
@@ -442,6 +442,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
     min_data, max_data = np.nanmin(data), np.nanmax(data)
 
     marker_size = desired_min + (data - min_data) * (marker_max_size - desired_min) / (max_data - min_data)
+    marker_size[np.isnan(marker_size)] = 1
     min_x = np.nanmin(embedding[:, 0])
     min_y = np.nanmin(embedding[:, 1])
     max_x = np.max(embedding[:, 0])
@@ -451,32 +452,40 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
                   fillcolor=second_bg_color,
                   layer="below"
                   )
-    fig.add_annotation(
-        xref="x",
-        yref="y",
-        xanchor="left",
-        yanchor="middle",
-        x=0.23,
-        y=0.5,
-        text=f"{max_data}",
-        showarrow=False,
-        font=(dict(size=18)),
+    circles = np.asarray([0.3, 0.6, 1.]) * max_data
+    legend_marker_sizes = desired_min + (circles - min_data) * (marker_max_size - desired_min) / (max_data - min_data)
+    xloc = [0.2, 0.3, 0.4]
+    fig.add_trace(
+        go.Scatter(
+            x=xloc,
+            y=np.full(len(xloc), 0.5),
+            mode="markers",
+            marker=dict(color="rgba(0,0,0,0)", line=dict(color=bubble_legend_color, width=1),
+                        size=legend_marker_sizes),
+            name=f"Size 100",
+            showlegend=False,
+            hoverinfo='skip',
+
+        ),
         row=1,
         col=1
+
     )
-    fig.add_annotation(
-        xref="x",
-        yref="y",
-        xanchor="left",
-        yanchor="middle",
-        x=0.32,
-        y=0.5,
-        text=f"{(max_data - min_data) / 2}",
-        showarrow=False,
-        font=(dict(size=18)),
-        row=1,
-        col=1
-    )
+    for idx, entry in enumerate(circles):
+
+        fig.add_annotation(
+            xref="x",
+            yref="y",
+            xanchor="left",
+            yanchor="middle",
+            x=xloc[idx] + 0.02 + idx * 0.02 / 3,
+            y=0.5,
+            text=f"{entry}",
+            showarrow=False,
+            font=(dict(size=18)),
+            row=1,
+            col=1
+        )
     fig.add_annotation(
         xref="x",
         yref="y",
@@ -490,21 +499,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
         row=1,
         col=1
     )
-    fig.add_trace(
-        go.Scatter(
-            x=[0.2, 0.3],
-            y=[0.5, 0.5],
-            mode="markers",
-            marker=dict(color="rgba(0,0,0,0)", line=dict(color="black", width=1), size=[marker_max_size, int(marker_max_size/2)]),
-            name=f"Size 100",
-            showlegend=False,
-            hoverinfo='skip',
 
-        ),
-        row=1,
-        col=1
-
-    )
 
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])

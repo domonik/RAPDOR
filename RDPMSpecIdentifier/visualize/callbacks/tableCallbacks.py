@@ -218,7 +218,7 @@ def new_columns(
         else:
             rdpmsdata.calc_all_scores()
             run_cluster = True
-            sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "RNase False peak pos", "RNase True peak pos"]
+            sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "RNase False peak pos", "RNase True peak pos", "relative fraction shift"]
     if alert:
         alert_msg = html.Div(
             dbc.Alert(
