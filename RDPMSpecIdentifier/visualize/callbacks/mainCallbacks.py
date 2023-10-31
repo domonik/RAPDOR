@@ -1,6 +1,7 @@
 
 
 import dash
+import pandas as pd
 from dash import Output, Input, html, ctx, dcc
 
 from dash.exceptions import PreventUpdate
@@ -59,6 +60,8 @@ def assign_session_identifier(uid, data, initial_data):
     Output("kernel-slider", "value"),
     Output("cluster-method", "value"),
     Output("table-selector", "value", allow_duplicate=True),
+    Output("additional-header-dd", "options"),
+    Output("additional-header-dd", "value"),
     Input("unique-id", "data"),
     Input("refresh-btn", "n_clicks"),
     State("data-store", "data"),
@@ -80,8 +83,9 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData):
         if name in rdpmsdata.extra_df:
             sel_columns.append(name)
     logger.info(f"Initially Selected Columns: {sel_columns}")
-    return kernel_size, cluster_method, sel_columns
-
+    options = list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns))
+    value = list(rdpmsdata.extra_df)[0] if "Gene" not in rdpmsdata.extra_df else "Gene"
+    return kernel_size, cluster_method, sel_columns, options, value
 
 
 @callback(
@@ -130,18 +134,22 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid, selected_column
 @callback(
         Output("protein-id", "children"),
         Output("current-protein-id", "data"),
+        Output("additional-header", "children"),
 
     [
         Input('tbl', 'active_cell'),
-        Input("test-div", "children")
+        Input("test-div", "children"),
+        Input("additional-header-dd", "value"),
+
     ],
-    State("data-store", "data")
+    State("data-store", "data"),
+
 )
-def update_selected_id(active_cell, test_div, rdpmsdata):
+def update_selected_id(active_cell, test_div, additional_header, rdpmsdata):
     logger.info(f"{ctx.triggered_id} -- triggered update of selected Protein")
     if rdpmsdata is None:
         raise PreventUpdate
-    if ctx.triggered_id == "tbl":
+    if ctx.triggered_id == "tbl" or ctx.triggered_id == "additional-header-dd":
         if active_cell is None:
             active_row_id = 0
         else:
@@ -154,12 +162,16 @@ def update_selected_id(active_cell, test_div, rdpmsdata):
             raise PreventUpdate
         active_row_id = int(test_div)
         protein = rdpmsdata.df.loc[active_row_id, "RDPMSpecID"]
-
     else:
         raise PreventUpdate
     protein = f"Protein {protein}"
-
-    return protein, active_row_id
+    if additional_header:
+        additional_display = rdpmsdata.df.loc[active_row_id, additional_header]
+        if pd.isna(additional_display):
+            additional_display = "Na"
+    else:
+        additional_display = ""
+    return protein, active_row_id, additional_display
 
 
 @callback(

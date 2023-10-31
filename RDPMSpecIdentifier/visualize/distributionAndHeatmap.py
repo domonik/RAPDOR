@@ -16,11 +16,29 @@ def distribution_panel(name):
                         [
                             html.Div(
 
-                                className="col-0 col-md-4", id="placeholder"
+                                className="", id="placeholder"
                             ),
                             html.Div(
-                                html.H4(f"Protein {name}", style={"text-align": "center"}, id="protein-id"),
-                                className="col-12 col-md-4 justify-content-center align-self-center",
+                                [
+                                    html.Div(
+                                        [
+                                            html.Div(html.H4(f"Protein {name}", style={"text-align": "center", "width": "100%"}, id="protein-id", className="align-self-center"), className="col-lg-4 col-12 d-flex py-2"),
+                                            html.Div(
+                                                dcc.Dropdown(
+                                                    id="additional-header-dd",
+                                                    style={"font-size": "1.5rem"},
+                                                ),
+                                                className="col-md-4 col-7"
+                                            ),
+                                            html.Div(html.H4("", id="additional-header", className="align-self-center", style={"text-align": "center"}), className="col-lg-4 col-4 d-flex"),
+
+                                        ],
+                                        className="row justify-content-center py-1 py-lg-0"
+                                    )
+
+
+                                ],
+                                className="col-12 col-lg-6 justify-content-center align-self-center",
                             ),
                             html.Div(
                                 [
@@ -28,7 +46,7 @@ def distribution_panel(name):
                                         [
                                             html.Div(
                                                 html.Span("Replicate Mode", className="align-self-center"),
-                                                className="col-4 col-md-4 d-flex align-items-bottom justify-content-center"
+                                                className="col-4 co-lg-4 d-flex align-items-bottom justify-content-center"
                                             ),
                                             html.Div(
 
@@ -41,12 +59,12 @@ def distribution_panel(name):
                                                     className="align-self-center",
 
                                                 ),
-                                                className="col-2 col-md-2 d-flex align-items-center justify-content-center"
+                                                className="col-2 col-lg-2 d-flex align-items-center justify-content-center"
                                             ),
                                             html.Div(
                                                 html.Button("Download Image", style={"text-align": "center"},
                                                             id="open-modal", className="btn btn-primary"),
-                                                className="col-6 col-md-5 justify-content-right align-self-center text-end",
+                                                className="col-6 col-lg-5 justify-content-right align-self-center text-end",
                                             ),
 
                                         ],
@@ -54,14 +72,14 @@ def distribution_panel(name):
                                     ),
 
                                 ],
-                                className="col-12 col-md-4"
+                                className="col-12 col-lg-4"
                             ),
 
                             dcc.Download(id="download-image"),
 
 
                         ],
-                        className="row justify-content-center p-2 pt-3"
+                        className="row justify-content-around p-2 pt-3"
                     ),
                     html.Div(
                         [

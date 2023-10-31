@@ -37,6 +37,7 @@ body {
 h4 {
     text-align: center;
     color: var(--r-text-color);
+    margin: 0;
 }
 
 a {
@@ -87,6 +88,7 @@ a:hover {
     background-color: transparent !important;
     border-radius: 15px;
     text-align: center;
+    display: flex;
 
 }
 
@@ -97,6 +99,7 @@ a:hover {
 
 .Select-value-label {
     color: var(--r-text-color) !important;
+    align-self: center;
 
 }
 
@@ -105,6 +108,7 @@ a:hover {
     border: 0;
     color: var(--r-text-color);
 }
+
 
 .dropUp .Select-menu-outer {
     top: 0;
@@ -150,6 +154,9 @@ a:hover {
 .VirtualizedSelectOption {
     color: var(--r-text-color);
     background-color: var(--table-dark) !important;
+    font-size: var(--bs-body-font-size);
+    white-space: nowrap;
+    text-overflow: ellipsis;
  }
 
 
