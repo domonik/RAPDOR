@@ -84,7 +84,7 @@ def _get_cluster_panel(disabled: bool = False):
                                         ),
                                         html.Div(
                                             dcc.Dropdown(
-                                                ["HDBSCAN", "DBSCAN", "K-Means", "None"], "HDBSCAN",
+                                                ["HDBSCAN", "DBSCAN", "K-Means", "None"], "None",
                                                 className="justify-content-center",
                                                 id="cluster-method",
                                                 clearable=False,

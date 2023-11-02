@@ -339,7 +339,7 @@ def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename, uid):
         if filetype not in ["svg", "pdf", "png"]:
             filetype = "svg"
         with NamedTemporaryFile(suffix=f".{filetype}") as tmpfile:
-            fig.write_image(tmpfile.name)
+            fig.write_image(tmpfile.name, width=1300, height=1300)
             assert os.path.exists(tmpfile.name)
             ret_val = dcc.send_file(tmpfile.name)
             ret_val["filename"] = filename

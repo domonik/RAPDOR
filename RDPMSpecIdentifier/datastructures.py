@@ -432,6 +432,8 @@ class RDPMSpecData:
         if "Cluster" in self.df:
             self.df = self.df.drop("Cluster", axis=1)
         self.cluster_features = None
+        self.state.cluster_method = None
+        self.state.cluster_args = None
 
     def cluster_data(self, method: str = "HDBSCAN", **kwargs):
         if self.cluster_features is None:

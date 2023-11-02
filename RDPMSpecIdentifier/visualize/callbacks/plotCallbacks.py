@@ -202,21 +202,20 @@ def calc_clusters(
             rdpmsdata.calc_distribution_features()
             logger.info("Calculated Cluster Features")
             logger.info("Running Dimension Reduction - because cluster features changed")
-        if ctx.triggered_id != "dim-red-method":
-            if cluster_method != "None":
-                if cluster_method == "HDBSCAN":
-                    kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
-                elif cluster_method == "DBSCAN":
-                    kwargs = dict(eps=db_eps, min_samples=db_min_samples)
-                elif cluster_method == "K-Means":
-                    kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
-                else:
-                    raise NotImplementedError("Method Not Implemented")
-                if rdpmsdata.state.cluster_method != cluster_method or rdpmsdata.state.cluster_args != kwargs:
-                    logger.info("Running Clustering")
-                    clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
+        if cluster_method != "None":
+            if cluster_method == "HDBSCAN":
+                kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
+            elif cluster_method == "DBSCAN":
+                kwargs = dict(eps=db_eps, min_samples=db_min_samples)
+            elif cluster_method == "K-Means":
+                kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
             else:
-                rdpmsdata.remove_clusters()
+                raise NotImplementedError("Method Not Implemented")
+            if rdpmsdata.state.cluster_method != cluster_method or rdpmsdata.state.cluster_args != kwargs:
+                logger.info("Running Clustering")
+                clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
+        else:
+            rdpmsdata.remove_clusters()
         return Serverside(rdpmsdata, key=uid), True
 
     except ValueError as e:
