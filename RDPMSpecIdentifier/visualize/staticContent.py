@@ -91,15 +91,16 @@ def _header_layout():
                     dcc.Store(id="black-start", data=BS),
                     html.Div(
                         html.Button("Pages", id="open-offcanvas", n_clicks=0, className="align-self-start pages-btn"),
-                        className="col-2 d-md-none d-flex align-items-center"
+                        className="col-2 d-lg-none d-flex align-items-center"
                     ),
                     html.Div([
                         dcc.Link("Upload", href="/", className="px-2"),
                         dcc.Link("Analysis", href="/analysis", className="px-2"),
+                        dcc.Link("Figure Factory", href="/figure_factory", className="px-2", style={"white-space": "nowrap"}),
                         dcc.Link("Help", href="https://rdpmspecidentifier.readthedocs.io/en/latest/dashboard.html",
                                  className="px-2", target="_blank"),
                         ],
-                        className=" col-3 d-md-flex d-none align-items-center"
+                        className=" col-3 d-lg-flex d-none align-items-center"
                     ),
                     html.Div(
                         html.Img(src=svg, style={"width": "20%", "min-width": "300px"}, className="p-1",

@@ -213,6 +213,8 @@ def _update_distribution_layout(fig, names, x, offset):
             y=1.05,
             xanchor="left",
             x=0,
+            itemsizing="constant"
+
         ),
         legend2=dict(
             title=names[1],
@@ -221,7 +223,9 @@ def _update_distribution_layout(fig, names, x, offset):
             y=1.15,
             xanchor="left",
             x=0,
+            itemsizing="constant"
         )
+
     )
     return fig
 

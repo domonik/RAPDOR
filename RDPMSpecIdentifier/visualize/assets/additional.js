@@ -218,3 +218,18 @@ addEventListener("dragover", (event) => {
         dragOverElement.click()
     }
 });
+
+function checkForElements() {
+  var formCheckElements = document.getElementsByClassName("form-check");
+  console.log("Ruunnning")
+  if (formCheckElements.length > 0) {
+    // Elements found, you can now manipulate them
+    clearInterval(intervalId); // Stop the interval
+    for (var i = 0; i < formCheckElements.length; i++) {
+      formCheckElements[i].classList.add("col-4");
+      formCheckElements[i].classList.add("col-md-3");
+    }
+  }
+}
+
+var intervalId = setInterval(checkForElements, 500);

@@ -52,7 +52,7 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
             fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
         else:
             fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
-        fig.layout.template = "plotly_white"
+        fig.layout.template = "rdpmspec_default"
         if not night_mode:
             fig.update_layout(
                 font=dict(color="black"),
@@ -112,7 +112,7 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
         )
         fig.update_xaxes(fixedrange=True)
 
-        fig.layout.template = "plotly_white"
+        fig.layout.template = "rdpmspec_default"
     return fig
 
 
@@ -142,7 +142,7 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
     else:
         _, distances = rdpmsdata[key]
         fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
-        fig.layout.template = "plotly_white"
+        fig.layout.template = "rdpmspec_default"
         if not night_mode:
             fig.update_layout(
                 font=dict(color="black"),
@@ -279,7 +279,7 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
             clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
         )
 
-    fig.layout.template = "plotly_white"
+    fig.layout.template = "rdpmspec_default"
 
     fig.update_layout(
         margin={"t": 30, "b": 30, "r": 50},
