@@ -61,6 +61,7 @@ def get_app_layout(rdpmsdata):
                 dcc.Store(id="display-mode", data=DISPLAY, storage_type="session"),
                 dcc.Store(id="unique-id", storage_type="session"),
                 dcc.Store(id="current-protein-id", data=0),
+                dcc.Store(id="ff-ids", storage_type="session"),
                 dcc.Store(id="primary-color", storage_type="session", data="rgb(138, 255, 172)"),
                 dcc.Store(id="secondary-color", storage_type="session", data="rgb(255, 138, 221)"),
                 html.Div(id="placeholder2"),

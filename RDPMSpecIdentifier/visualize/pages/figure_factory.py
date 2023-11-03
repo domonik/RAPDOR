@@ -209,14 +209,29 @@ layout = figure_factory_layout()
 
 @callback(
     Output("protein-selector-ff", "options"),
+    Output("protein-selector-ff", "value"),
     Input("data-store", "data"),
+    State("current-protein-id", "data"),
+    State("ff-ids", "data"),
+
 )
-def update_selected_proteins(rdpmsdata: RDPMSpecData):
+def update_selected_proteins(rdpmsdata: RDPMSpecData, current_protein_id, selected_values):
     if rdpmsdata is None:
         raise PreventUpdate
     else:
-        return list(rdpmsdata.df["RDPMSpecID"])
+        if selected_values is None:
+            value = [rdpmsdata.df.loc[current_protein_id, "RDPMSpecID"]]
+        else:
+            value = selected_values
+        return list(rdpmsdata.df["RDPMSpecID"]), value
 
+
+@callback(
+    Output("ff-ids", "data"),
+    Input("protein-selector-ff", "value"),
+)
+def update_ff_ids(values):
+    return values
 
 @callback(
     Output("current-image", "data"),
@@ -225,8 +240,9 @@ def update_selected_proteins(rdpmsdata: RDPMSpecData):
     State("data-store", "data"),
     State("primary-color", "data"),
     State("secondary-color", "data"),
+    State("unique-id", "data"),
 )
-def update_download_state(keys, filetype, rdpmsdata, primary_color, secondary_color):
+def update_download_state(keys, filetype, rdpmsdata, primary_color, secondary_color, uid):
     logger.info(f"selected keys: {keys}")
     if not keys:
         raise PreventUpdate
@@ -243,6 +259,7 @@ def update_download_state(keys, filetype, rdpmsdata, primary_color, secondary_co
     encoded_image = pio.to_json(fig)
     filename = "foo"
     ret_val2 = {}
+    encoded_image = Serverside(fig, key=uid + "_figure_factory")
     return encoded_image
 
 
@@ -283,7 +300,7 @@ def update_ff_download_preview(
     if currnet_image is None:
         raise PreventUpdate
     logger.info(f"Rendering file with width: {img_width} and height {img_height}")
-    fig = pio.from_json(currnet_image)
+    fig = currnet_image
     if template:
         fig.update_layout(template=template)
     fig.update_layout(
@@ -292,8 +309,8 @@ def update_ff_download_preview(
 
     )
     fig.update_layout(
-        xaxis=dict(zeroline=True if zeroline_x > 0 else False, zerolinewidth=zeroline_x, zerolinecolor="black",),
-        yaxis=dict(zeroline=True if zeroline_y > 0 else False, zerolinewidth=zeroline_y, zerolinecolor="black",),
+        xaxis=dict(zeroline=True if zeroline_x > 0 else False, zerolinewidth=zeroline_x,),
+        yaxis=dict(zeroline=True if zeroline_y > 0 else False, zerolinewidth=zeroline_y,),
     )
     fig.update_traces(
         marker=dict(size=marker_size,
