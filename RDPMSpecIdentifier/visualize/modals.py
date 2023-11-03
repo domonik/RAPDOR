@@ -139,7 +139,7 @@ def _color_theme_modal(nr: int = 1):
 
 
 def _modal_color_selection(number):
-    color = DEFAULT_COLORS[number]
+    color = DEFAULT_COLORS[number.split("-")[0]]
     color = color.split("(")[-1].split(")")[0]
     r, g, b = (int(v) for v in color.split(","))
     modal = dbc.Modal(

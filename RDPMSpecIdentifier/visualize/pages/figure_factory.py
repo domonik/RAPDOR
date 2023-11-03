@@ -17,8 +17,7 @@ from tempfile import NamedTemporaryFile
 from RDPMSpecIdentifier.plots import plot_distribution
 import numpy as np
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
-from RDPMSpecIdentifier.visualize.modals import _color_theme_modal
-from RDPMSpecIdentifier.visualize.modals import _get_download_input
+from RDPMSpecIdentifier.visualize.modals import _color_theme_modal, _modal_color_selection
 from io import BytesIO
 import plotly.io as pio
 dash.register_page(__name__, path='/figure_factory')
@@ -92,6 +91,8 @@ def figure_factory_layout():
         [
             dcc.Store("current-image"),
             _color_theme_modal(2),
+            _modal_color_selection("primary-2"),
+            _modal_color_selection("secondary-2"),
             html.Div(
                 html.Div(
                     [
@@ -186,14 +187,14 @@ def figure_factory_layout():
                                 ),
                                 html.Div(
                                     html.Button(
-                                        '', id='primary-open-color-modal2', n_clicks=0, className="btn primary-color-btn",
+                                        '', id='primary-2-open-color-modal', n_clicks=0, className="btn primary-color-btn",
                                         style={"width": "100%", "height": "40px"}
                                     ),
                                     className="col-3 justify-content-center text-align-center primary-color-div primary-open-color-btn"
                                 ),
                                 html.Div(
                                     html.Button(
-                                        '', id='secondary-open-color-modal2', n_clicks=0,
+                                        '', id='secondary-2-open-color-modal', n_clicks=0,
                                         className="btn secondary-color-btn",
                                         style={"width": "100%", "height": "40px"}
                                     ),
@@ -382,3 +383,71 @@ def _open_color_theme_modal(n1, n2, is_open, selected_scheme):
             raise PreventUpdate
         primary, secondary = COLOR_SCHEMES[selected_scheme]
         return not is_open, primary, secondary
+
+
+
+@callback(
+    [
+        Output("secondary-2-color-modal", "is_open"),
+        Output("secondary-color", "data", allow_duplicate=True),
+
+    ],
+    [
+        Input("secondary-2-open-color-modal", "n_clicks"),
+        Input("secondary-2-apply-color-modal", "n_clicks"),
+    ],
+    [
+        State("secondary-2-color-modal", "is_open"),
+        State("secondary-2-color-picker", "value"),
+        State("secondary-2-open-color-modal", "style"),
+
+    ],
+    prevent_initial_call=True
+)
+def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
+    logger.info(f"{ctx.triggered_id} - triggered secondary color modal")
+    tid = ctx.triggered_id
+    if n1 == 0:
+        raise PreventUpdate
+    if tid == "secondary-2-open-color-modal":
+        return not is_open, dash.no_update
+    elif tid == "secondary-2-apply-color-modal":
+        rgb = color_value["rgb"]
+        r, g, b = rgb["r"], rgb["g"], rgb["b"]
+        color = f"rgb({r}, {g}, {b})"
+    else:
+        raise ValueError("")
+    return not is_open, color
+
+@callback(
+    [
+        Output("primary-2-color-modal", "is_open"),
+        Output("primary-color", "data", allow_duplicate=True),
+
+    ],
+    [
+        Input("primary-2-open-color-modal", "n_clicks"),
+        Input("primary-2-apply-color-modal", "n_clicks"),
+    ],
+    [
+        State("primary-2-color-modal", "is_open"),
+        State("primary-2-color-picker", "value"),
+        State("primary-2-open-color-modal", "style"),
+
+    ],
+    prevent_initial_call=True
+)
+def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
+    logger.info(f"{ctx.triggered_id} - triggered secondary color modal")
+    tid = ctx.triggered_id
+    if n1 == 0:
+        raise PreventUpdate
+    if tid == "primary-2-open-color-modal":
+        return not is_open, dash.no_update
+    elif tid == "primary-2-apply-color-modal":
+        rgb = color_value["rgb"]
+        r, g, b = rgb["r"], rgb["g"], rgb["b"]
+        color = f"rgb({r}, {g}, {b})"
+    else:
+        raise ValueError("")
+    return not is_open, color
