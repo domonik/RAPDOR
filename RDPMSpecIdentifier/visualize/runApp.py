@@ -4,7 +4,7 @@ import pandas as pd
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 from RDPMSpecIdentifier.visualize.appDefinition import app
 import dash_extensions.enrich
-
+from RDPMSpecIdentifier.visualize.modals import _color_theme_modal
 from RDPMSpecIdentifier.visualize.staticContent import _header_layout, _footer
 import logging
 
@@ -68,6 +68,7 @@ def get_app_layout(rdpmsdata):
                 html.Div(id="placeholder3"),
                 html.Div(id="placeholder4"),
                 html.Div(id="display-alert"),
+
                 html.Div(
                     _header_layout(),
                     className="row px-0 justify-content-center align-items-center sticky-top"

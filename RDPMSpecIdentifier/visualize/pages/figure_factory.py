@@ -3,7 +3,8 @@ import dash
 from dash import html
 import base64
 from dash import dcc
-from dash_extensions.enrich import callback, Input, Output, Serverside, State
+from dash_extensions.enrich import callback, Input, Output, Serverside, State, ctx
+from RDPMSpecIdentifier.visualize.staticContent import COLOR_SCHEMES
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
 import dash_bootstrap_components as dbc
@@ -16,6 +17,7 @@ from tempfile import NamedTemporaryFile
 from RDPMSpecIdentifier.plots import plot_distribution
 import numpy as np
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
+from RDPMSpecIdentifier.visualize.modals import _color_theme_modal
 from RDPMSpecIdentifier.visualize.modals import _get_download_input
 from io import BytesIO
 import plotly.io as pio
@@ -70,7 +72,7 @@ def _distribution_settings():
 
             *_args_and_name("download-width", "Width [px]", "number", 800),
             *_args_and_name("download-height", "Height [px]", "number", 500),
-            *_args_and_name("download-marker-size", "Marker Size", "number", 10),
+            *_args_and_name("download-marker-size", "Marker Size", "number", 8),
             *_args_and_name("download-line-width", "Line Width", "number", 3),
             *_args_and_name("download-grid-width", "Grid Width", "number", 1),
             *_args_and_name("zeroline-x-width", "Zeroline X", "number", 1),
@@ -89,6 +91,7 @@ def figure_factory_layout():
     layout = html.Div(
         [
             dcc.Store("current-image"),
+            _color_theme_modal(2),
             html.Div(
                 html.Div(
                     [
@@ -166,6 +169,41 @@ def figure_factory_layout():
                             ),
                             className="row justify-content-center"
                         ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    html.Button(
+                                        "Select Color Scheme",
+                                        style={
+                                            "text-align": "center",
+                                            "border": "0px solid transparent",
+                                            "background": "transparent",
+                                            "color": "var(--r-text-color)"
+                                        },
+                                        id="color-scheme2"
+                                    ),
+                                    className="col-4 col-md-4 justify-content-center align-self-center"
+                                ),
+                                html.Div(
+                                    html.Button(
+                                        '', id='primary-open-color-modal2', n_clicks=0, className="btn primary-color-btn",
+                                        style={"width": "100%", "height": "40px"}
+                                    ),
+                                    className="col-3 justify-content-center text-align-center primary-color-div primary-open-color-btn"
+                                ),
+                                html.Div(
+                                    html.Button(
+                                        '', id='secondary-open-color-modal2', n_clicks=0,
+                                        className="btn secondary-color-btn",
+                                        style={"width": "100%", "height": "40px"}
+                                    ),
+                                    className="col-3 justify-content-center text-align-center primary-color-div secondary-open-color-btn"
+                                ),
+
+                            ],
+
+                            className="row justify-content-center p-2"
+                        ),
                     ],
                     className="databox p-2"
                 ),
@@ -237,12 +275,12 @@ def update_ff_ids(values):
     Output("current-image", "data"),
     Input("protein-selector-ff", "value"),
     Input("filetype-selector-ff", "value"),
+    Input("primary-color", "data"),
+    Input("secondary-color", "data"),
     State("data-store", "data"),
-    State("primary-color", "data"),
-    State("secondary-color", "data"),
     State("unique-id", "data"),
 )
-def update_download_state(keys, filetype, rdpmsdata, primary_color, secondary_color, uid):
+def update_download_state(keys, filetype, primary_color, secondary_color, rdpmsdata, uid):
     logger.info(f"selected keys: {keys}")
     if not keys:
         raise PreventUpdate
@@ -323,3 +361,24 @@ def update_ff_download_preview(
     )
     return fig
 
+@callback(
+    Output("color-scheme-modal-2", "is_open", allow_duplicate=True),
+    Output("primary-color", "data", allow_duplicate=True),
+    Output("secondary-color", "data", allow_duplicate=True),
+    Input("color-scheme2", "n_clicks"),
+    Input("apply-color-scheme-2", "n_clicks"),
+    State("color-scheme-modal-2", "is_open"),
+    State("color-scheme-dropdown-2", "value"),
+    prevent_initital_call=True
+)
+def _open_color_theme_modal(n1, n2, is_open, selected_scheme):
+    logger.info(f"{ctx.triggered_id} - triggerere color schema modal: {n1}, {n2}, {is_open}")
+    if n1 == 0 or n1 is None:
+        raise PreventUpdate
+    if ctx.triggered_id == "color-scheme2":
+        return not is_open, dash.no_update, dash.no_update
+    elif ctx.triggered_id == "apply-color-scheme-2":
+        if selected_scheme is None:
+            raise PreventUpdate
+        primary, secondary = COLOR_SCHEMES[selected_scheme]
+        return not is_open, primary, secondary

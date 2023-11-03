@@ -114,7 +114,7 @@ def _modal_cluster_image_download():
     return modal
 
 
-def _color_theme_modal():
+def _color_theme_modal(nr: int = 1):
     modal = dbc.Modal(
         [
             dbc.ModalHeader(f"Select Color Scheme"),
@@ -123,16 +123,16 @@ def _color_theme_modal():
                     dcc.Dropdown(
                         list(COLOR_SCHEMES.keys()),
                         "Flamingo",
-                        id="color-scheme-dropdown",
+                        id=f"color-scheme-dropdown-{nr}",
                         clearable=False
                     )
                 ]
             ),
             dbc.ModalFooter(
-                dbc.Button("Apply", id=f"apply-color-scheme", className="ml-auto",
+                dbc.Button("Apply", id=f"apply-color-scheme-{nr}", className="ml-auto",
                            n_clicks=0)),
         ],
-        id=f"color-scheme-modal",
+        id=f"color-scheme-modal-{nr}",
     )
     return modal
 

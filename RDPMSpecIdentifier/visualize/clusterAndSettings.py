@@ -318,7 +318,7 @@ def selector_box(disabled: bool = False):
                             ),
                             html.Div(
                                 html.Button(
-                                    '', id='primary-open-color-modal', n_clicks=0, className="btn",
+                                    '', id='primary-open-color-modal', n_clicks=0, className="btn primary-color-btn",
                                     style={"width": "100%", "height": "40px"}
                                 ),
                                 className="col-3 justify-content-center text-align-center primary-color-div"
@@ -326,7 +326,7 @@ def selector_box(disabled: bool = False):
                             html.Div(
                                 html.Button(
                                     '', id='secondary-open-color-modal', n_clicks=0,
-                                    className="btn",
+                                    className="btn secondary-color-btn",
                                     style={"width": "100%", "height": "40px"}
                                 ),
                                 className="col-3 justify-content-center text-align-center primary-color-div"

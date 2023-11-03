@@ -632,11 +632,11 @@ input[type="radio"]:checked {
     color: var(--primary-color) !important;
 }
 
-#primary-open-color-modal{
+.primary-color-btn{
     background-color: var(--secondary-color) !important;
 }
 
-#secondary-open-color-modal{
+.secondary-color-btn{
     background-color: var(--primary-color) !important;
 }
 

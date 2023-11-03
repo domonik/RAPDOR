@@ -244,13 +244,13 @@ def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
 
 
 @callback(
-    Output("color-scheme-modal", "is_open"),
+    Output("color-scheme-modal-1", "is_open", allow_duplicate=True),
     Output("primary-color", "data", allow_duplicate=True),
     Output("secondary-color", "data", allow_duplicate=True),
     Input("color-scheme", "n_clicks"),
-    Input("apply-color-scheme", "n_clicks"),
-    State("color-scheme-modal", "is_open"),
-    State("color-scheme-dropdown", "value"),
+    Input("apply-color-scheme-1", "n_clicks"),
+    State("color-scheme-modal-1", "is_open"),
+    State("color-scheme-dropdown-1", "value"),
     prevent_initital_call=True
 )
 def _open_color_theme_modal(n1, n2, is_open, selected_scheme):
@@ -259,7 +259,7 @@ def _open_color_theme_modal(n1, n2, is_open, selected_scheme):
         raise PreventUpdate
     if ctx.triggered_id == "color-scheme":
         return not is_open, dash.no_update, dash.no_update
-    elif ctx.triggered_id == "apply-color-scheme":
+    elif ctx.triggered_id == "apply-color-scheme-1":
         if selected_scheme is None:
             raise PreventUpdate
         primary, secondary = COLOR_SCHEMES[selected_scheme]
