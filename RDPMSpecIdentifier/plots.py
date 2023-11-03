@@ -36,6 +36,7 @@ def _plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
         )
     return fig
 
+
 def empty_figure(annotation: str = None, font_color: str = None):
     fig = go.Figure()
     fig.update_yaxes(showticklabels=False, showgrid=False)
@@ -120,6 +121,37 @@ def plot_replicate_distribution(
     fig.add_traces(values)
     fig = _update_distribution_layout(fig, names, x, offset)
     return fig
+
+
+def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, vspace: float = 0.1, title_col: str = "RDPMSpecID"):
+    if rdpmsdata.state.kernel_size is not None:
+        i = int(rdpmsdata.state.kernel_size // 2)
+    else:
+        i = 0
+    proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(rdpmspecids)].index
+    annotation = rdpmsdata.df[title_col][proteins]
+
+    fig_subplots = make_subplots(rows=len(proteins), cols=1, shared_xaxes=True, x_title="Fraction", y_title="Protein Amount [%]", row_titles=list(annotation))
+    for idx, protein in enumerate(proteins, 1):
+        array, _ = rdpmsdata[protein]
+        fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
+        for trace in fig["data"]:
+            if idx > 1:
+                trace['showlegend'] = False
+            fig_subplots.add_trace(trace, row=idx, col=1)
+
+    fig_subplots.update_layout(
+        legend=fig["layout"]["legend"],
+        legend2=fig["layout"]["legend2"],
+
+    )
+    fig_subplots.update_layout(
+        legend2=dict(
+            y=1.05 + vspace,
+        )
+    )
+
+    return fig_subplots
 
 
 def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):

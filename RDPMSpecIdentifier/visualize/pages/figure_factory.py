@@ -14,7 +14,7 @@ from dash.exceptions import PreventUpdate
 import os
 from RDPMSpecIdentifier.visualize import DISABLED
 from tempfile import NamedTemporaryFile
-from RDPMSpecIdentifier.plots import plot_distribution
+from RDPMSpecIdentifier.plots import plot_protein_distributions
 import numpy as np
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
 from RDPMSpecIdentifier.visualize.modals import _color_theme_modal, _modal_color_selection
@@ -26,6 +26,12 @@ logger = logging.getLogger(__name__)
 
 
 def _args_and_name(input_id, arg, d_type, default):
+    if isinstance(default, int):
+        step = 1
+    elif isinstance(default, float):
+        step = 0.01
+    else:
+        step = None
     div = [
             html.Div(
                 html.Span(arg, style={"text-align": "center"}),
@@ -39,6 +45,9 @@ def _args_and_name(input_id, arg, d_type, default):
                     className="text-align-center",
                     value=default,
                     type=d_type,
+                    step=step,
+                    persistence=True,
+                    persistence_type="session"
                 ),
                 className="col-8 col-md-4 justify-content-center text-align-center py-1"
             )
@@ -57,6 +66,8 @@ def _arg_and_dropdown(arg, dd_list, default, input_id):
                 className="justify-content-center",
                 id=input_id,
                 clearable=False,
+                persistence=True,
+                persistence_type="session"
 
             ),
             className="col-8 col-md-4 justify-content-center text-align-center py-1"
@@ -76,7 +87,11 @@ def _distribution_settings():
             *_args_and_name("download-grid-width", "Grid Width", "number", 1),
             *_args_and_name("zeroline-x-width", "Zeroline X", "number", 1),
             *_args_and_name("zeroline-y-width", "Zeroline Y", "number", 1),
-            *_arg_and_dropdown("Template", list(pio.templates), "plotly_white", "template-dd")
+            *_args_and_name("d-x-tick", "X Axis dtick", "number", 1),
+            *_arg_and_dropdown("Template", list(pio.templates), "plotly_white", "template-dd"),
+            *_arg_and_dropdown("Name Col", [], None, "displayed-column-dd"),
+
+            * _args_and_name("legend-vspace", "Legend Space", "number", 0.1),
 
         ],
         className="row p-1",
@@ -117,6 +132,8 @@ def figure_factory_layout():
                                         labelCheckedClassName="checked-radio-text",
                                         inputCheckedClassName="checked-radio-item",
                                         id="plot-type-radio-ff",
+                                        persistence_type="session",
+                                        persistence=True
                                     ),
                                 ],
                                 className="col-10 my-2"
@@ -164,6 +181,8 @@ def figure_factory_layout():
                                         labelCheckedClassName="checked-radio-text",
                                         inputCheckedClassName="checked-radio-item",
                                         id="filetype-selector-ff",
+                                        persistence_type="session",
+                                        persistence=True
                                     ),
                                 ],
                                 className="col-10 my-2"
@@ -179,7 +198,7 @@ def figure_factory_layout():
                                             "text-align": "center",
                                             "border": "0px solid transparent",
                                             "background": "transparent",
-                                            "color": "var(--r-text-color)"
+                                            "color": "var(--r-text-color)",
                                         },
                                         id="color-scheme2"
                                     ),
@@ -222,11 +241,14 @@ def figure_factory_layout():
                             [
                                 html.Div(
                                     [],
-                                    className="col-12 col-md-11 m-2", id="figure-factory-download-preview",
+                                    className="col-12 col-md-11 m-2 py-2", id="figure-factory-download-preview",
                                     style={
                                         "overflow-x": "auto",
                                         "background-color": "white",
-                                        "border-radius": "10px"
+                                        "border-radius": "10px",
+                                        "box-shadow": "inset black 0px 0px 10px",
+                                        "border": "1px solid black"
+
                                     }
                                 ),
                             ],
@@ -273,15 +295,25 @@ def update_ff_ids(values):
     return values
 
 @callback(
+    Output("displayed-column-dd", "options"),
+    Input("data-store", "data"),
+
+)
+def update_selectable_columns(rdpmsdata):
+    return list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns))
+
+@callback(
     Output("current-image", "data"),
     Input("protein-selector-ff", "value"),
-    Input("filetype-selector-ff", "value"),
     Input("primary-color", "data"),
     Input("secondary-color", "data"),
+    Input("plot-type-radio-ff", "value"),
+    Input("legend-vspace", "value"),
+    Input("displayed-column-dd", "value"),
     State("data-store", "data"),
     State("unique-id", "data"),
 )
-def update_download_state(keys, filetype, primary_color, secondary_color, rdpmsdata, uid):
+def update_download_state(keys, primary_color, secondary_color, plot_type, vspace, displayed_col, rdpmsdata, uid):
     logger.info(f"selected keys: {keys}")
     if not keys:
         raise PreventUpdate
@@ -289,12 +321,8 @@ def update_download_state(keys, filetype, primary_color, secondary_color, rdpmsd
     logger.info(f"selected proteins: {proteins}")
 
     colors = primary_color, secondary_color
-    array, _ = rdpmsdata[proteins[0]]
-    if rdpmsdata.state.kernel_size is not None:
-        i = int(rdpmsdata.state.kernel_size // 2)
-    else:
-        i = 0
-    fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
+
+    fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, vspace=vspace, title_col=displayed_col)
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
     return encoded_image
 
@@ -311,6 +339,7 @@ def update_download_state(keys, filetype, primary_color, secondary_color, rdpmsd
     Input("download-grid-width", "value"),
     Input("zeroline-x-width", "value"),
     Input("zeroline-y-width", "value"),
+    Input("d-x-tick", "value"),
     Input("template-dd", "value"),
 
 )
@@ -324,6 +353,7 @@ def update_ff_download_preview(
         grid_width,
         zeroline_x,
         zeroline_y,
+        d_x_tick,
         template
 ):
     try:
@@ -339,6 +369,7 @@ def update_ff_download_preview(
     fig = currnet_image
     if template:
         fig.update_layout(template=template)
+    fig.update_xaxes(dtick=d_x_tick)
     fig.update_layout(
         yaxis=dict(gridwidth=grid_width, showgrid=True if grid_width else False),
         xaxis=dict(gridwidth=grid_width, showgrid=True if grid_width else False),
