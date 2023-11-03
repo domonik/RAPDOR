@@ -227,7 +227,7 @@ def update_selected_proteins(rdpmsdata: RDPMSpecData, current_protein_id, select
 
 
 @callback(
-    Output("ff-ids", "data"),
+    Output("ff-ids", "data", allow_duplicate=True),
     Input("protein-selector-ff", "value"),
 )
 def update_ff_ids(values):
@@ -256,9 +256,6 @@ def update_download_state(keys, filetype, rdpmsdata, primary_color, secondary_co
     else:
         i = 0
     fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
-    encoded_image = pio.to_json(fig)
-    filename = "foo"
-    ret_val2 = {}
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
     return encoded_image
 

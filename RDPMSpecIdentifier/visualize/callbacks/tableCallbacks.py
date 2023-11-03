@@ -13,6 +13,18 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+@callback(
+    Output("ff-ids", "data", allow_duplicate=True),
+    Input('tbl', 'selected_row_ids'),
+    State('data-store', 'data'),
+
+)
+def update_ff_ids(selected_columns, rdpmsdata):
+    if selected_columns is None or selected_columns == []:
+        raise PreventUpdate
+    proteins = rdpmsdata.df.iloc[list(selected_columns)]["RDPMSpecID"]
+
+    return proteins
 
 @callback(
     Output('tbl', 'data'),
