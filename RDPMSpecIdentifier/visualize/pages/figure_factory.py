@@ -89,7 +89,7 @@ def _distribution_settings():
             *_args_and_name("zeroline-y-width", "Zeroline Y", "number", 1),
             *_args_and_name("d-x-tick", "X Axis dtick", "number", 1),
             *_arg_and_dropdown("Template", list(pio.templates), "plotly_white", "template-dd"),
-            *_arg_and_dropdown("Name Col", [], None, "displayed-column-dd"),
+            *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
 
             * _args_and_name("legend-vspace", "Legend Space", "number", 0.1),
 
@@ -272,26 +272,29 @@ layout = figure_factory_layout()
     Output("protein-selector-ff", "options"),
     Output("protein-selector-ff", "value"),
     Input("data-store", "data"),
-    State("current-protein-id", "data"),
-    State("ff-ids", "data"),
+    State("current-row-ids", "data"),
 
 )
-def update_selected_proteins(rdpmsdata: RDPMSpecData, current_protein_id, selected_values):
+def update_selected_proteins(rdpmsdata: RDPMSpecData, current_row_ids):
     if rdpmsdata is None:
         raise PreventUpdate
     else:
-        if selected_values is None:
-            value = [rdpmsdata.df.loc[current_protein_id, "RDPMSpecID"]]
+        if current_row_ids is not None:
+            value = list(rdpmsdata.df.loc[current_row_ids, "RDPMSpecID"])
         else:
-            value = selected_values
+            value = dash.no_update
+
         return list(rdpmsdata.df["RDPMSpecID"]), value
 
 
 @callback(
-    Output("ff-ids", "data", allow_duplicate=True),
+    Output("current-row-ids", "data", allow_duplicate=True),
     Input("protein-selector-ff", "value"),
+    State("data-store", "data"),
+
 )
-def update_ff_ids(values):
+def update_row_ids(values, rdpmsdata):
+    values = list(rdpmsdata.df[rdpmsdata.df["RDPMSpecID"].isin(values)].index)
     return values
 
 @callback(

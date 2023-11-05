@@ -230,7 +230,7 @@ def calc_clusters(
     Input("primary-color", "data"),
     Input("secondary-color", "data"),
     Input("plot-dim-red", "data"),
-    Input('tbl', 'selected_row_ids'),
+    Input('current-row-ids', 'data'),
     Input('cluster-marker-slider', 'value'),
     Input('3d-plot', 'on'),
 

@@ -13,6 +13,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @callback(
     Output("ff-ids", "data", allow_duplicate=True),
     Input('tbl', 'selected_row_ids'),
@@ -26,11 +27,52 @@ def update_ff_ids(selected_columns, rdpmsdata):
 
     return proteins
 
+
+@callback(
+    Output("tbl", "selected_rows"),
+    Output("current-row-ids", "data", allow_duplicate=True),
+    Output("tbl", "selected_row_ids", allow_duplicate=True),
+    Input("tbl", "data"),
+    State("tbl", "selected_row_ids"),
+    State("tbl", "derived_viewport_row_ids"),
+    State("current-row-ids", "data"),
+
+)
+def update_selection_on_page_switch(table_data, selected_ids, vpids, current_ids):
+    if selected_ids is None or vpids is None:
+        raise PreventUpdate
+    vpids = np.asarray(vpids)
+    selected_ids = list(set(selected_ids + current_ids)) if current_ids is not None else selected_ids
+    selected_ids = np.asarray(selected_ids)
+    rows = np.where(np.isin(vpids, selected_ids))[0]
+    return rows, selected_ids, selected_ids
+
+
+@callback(
+    Output("current-row-ids", "data", allow_duplicate=True),
+    Input("tbl", "selected_row_ids"),
+    State("current-row-ids", "data"),
+    State("tbl", "derived_viewport_row_ids"),
+
+)
+def update_current_rows(sel_rows, current_selction, vpids):
+    if sel_rows is None:
+        raise PreventUpdate
+    if current_selction is None:
+        current_selction = []
+    logger.info(f"selected-row-ids on page {sel_rows}")
+    current_selction = list(set(current_selction) - set(vpids))
+    sel_rows = list(set(sel_rows + current_selction))
+    logger.info(f"current-row-ids {sel_rows}")
+    return sel_rows
+
+
 @callback(
     Output('tbl', 'data'),
     Output('tbl', "page_current"),
     Output("table-selector", "options", allow_duplicate=True),
     Output('tbl', 'active_cell'),
+    Output("tbl", "selected_row_ids"),
     Input('tbl', "page_current"),
     Input('tbl', "page_size"),
     Input('tbl', 'sort_by'),
@@ -40,10 +82,13 @@ def update_ff_ids(selected_columns, rdpmsdata):
     State("data-store", "data"),
     State("unique-id", "data"),
     State("table-selector", "options"),
+    State('tbl', 'selected_row_ids'),
+
     prevent_initial_call=True
 )
-def update_table(page_current, page_size, sort_by, filter, selected_columns, key, rdpmspec, uid, options):
+def update_table(page_current, page_size, sort_by, filter, selected_columns, key, rdpmspec, uid, options, selected_rows):
     logger.info(f"{ctx.triggered_prop_ids} triggered update of table")
+    logger.info(f"selected rows are: {selected_rows}")
     if rdpmspec is None or page_current is None:
         raise PreventUpdate
     active_cell_out = dash.no_update
@@ -110,7 +155,7 @@ def update_table(page_current, page_size, sort_by, filter, selected_columns, key
         page = page_current
         size = page_size
     logger.info(f"updated Table: page:{page}, options: {options}")
-    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, options, active_cell_out
+    return data.iloc[page * size: (page + 1) * size].to_dict('records'), page, options, active_cell_out, selected_rows
 
 
 
