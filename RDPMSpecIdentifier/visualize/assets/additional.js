@@ -1,6 +1,18 @@
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
 
+        restyleRadio: function(url) {
+            var formCheckElements = document.getElementsByClassName("form-check");
+            if (formCheckElements.length > 0) {
+                for (var i = 0; i < formCheckElements.length; i++) {
+                  formCheckElements[i].classList.add("col-4");
+                  formCheckElements[i].classList.add("col-md-3");
+                }
+              }
+            return ""
+
+        },
+
         styleSelectedTableRow: function (proteinKey) {
             const key = proteinKey.split("Protein ")[1];
             console.log("Searching for the Protein Key:" + key)
@@ -218,18 +230,3 @@ addEventListener("dragover", (event) => {
         dragOverElement.click()
     }
 });
-
-function checkForElements() {
-  var formCheckElements = document.getElementsByClassName("form-check");
-  console.log("Ruunnning")
-  if (formCheckElements.length > 0) {
-    // Elements found, you can now manipulate them
-    clearInterval(intervalId); // Stop the interval
-    for (var i = 0; i < formCheckElements.length; i++) {
-      formCheckElements[i].classList.add("col-4");
-      formCheckElements[i].classList.add("col-md-3");
-    }
-  }
-}
-
-var intervalId = setInterval(checkForElements, 500);

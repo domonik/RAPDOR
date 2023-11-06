@@ -14,7 +14,7 @@ from dash.exceptions import PreventUpdate
 import os
 from RDPMSpecIdentifier.visualize import DISABLED
 from tempfile import NamedTemporaryFile
-from RDPMSpecIdentifier.plots import plot_protein_distributions
+from RDPMSpecIdentifier.plots import plot_protein_distributions, plot_protein_westernblots
 import numpy as np
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
 from RDPMSpecIdentifier.visualize.modals import _color_theme_modal, _modal_color_selection
@@ -184,12 +184,10 @@ def figure_factory_layout():
                                     dbc.RadioItems(
                                         options=[
                                             {'label': 'Distribution', 'value': 0},
-                                            {'label': 'Heatmap', 'value': 1},
                                             {'label': 'Westernblot', 'value': 2},
-                                            {'label': 'Foooooooooo', 'value': 3},
                                         ],
                                         value=0,
-                                        className="d-flex justify-content-between radio-items row",
+                                        className="d-flex justify-content-around radio-items row",
                                         labelCheckedClassName="checked-radio-text",
                                         inputCheckedClassName="checked-radio-item",
                                         id="plot-type-radio-ff",
@@ -368,6 +366,10 @@ def update_selectable_columns(rdpmsdata):
 
 @callback(
     Output("current-image", "data"),
+    Output("download-marker-size", "value"),
+    Output("download-marker-size", "disabled"),
+    Output("download-line-width", "value"),
+    Output("download-line-width", "disabled"),
     Input("protein-selector-ff", "value"),
     Input("primary-color", "data"),
     Input("secondary-color", "data"),
@@ -384,10 +386,15 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
     logger.info(f"selected proteins: {proteins}")
 
     colors = primary_color, secondary_color
-
-    fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col)
+    if plot_type == 2:
+        fig = plot_protein_westernblots(keys, rdpmsdata, colors=colors, title_col=displayed_col)
+        marker_size = line_width = None
+        marker_disabled = line_disabled = True
+    else:
+        fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col)
+        marker_size = marker_disabled = line_width = line_disabled = dash.no_update
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
-    return encoded_image
+    return encoded_image, marker_size, marker_disabled, line_width, line_disabled
 
 
 
@@ -429,9 +436,6 @@ def update_ff_download_preview(
         l2y,
         template
 ):
-    line_width = line_width if line_width is not None else 0
-    marker_size = marker_size if marker_size is not None else 0
-    grid_width = grid_width if grid_width is not None else 0
     try:
         img_width = max(min(img_width, 2000), 100)
         img_height = max(min(img_height, 2000), 100)
@@ -461,16 +465,18 @@ def update_ff_download_preview(
             y=ly
         )
     )
-    if marker_size > 0:
+    if marker_size is not None:
+        if marker_size > 0:
+            fig.update_traces(
+                marker=dict(size=marker_size)
+            )
+        else:
+            fig.update_traces(mode="lines")
+    if line_width is not None:
         fig.update_traces(
-            marker=dict(size=marker_size)
+            line=dict(width=max(line_width, 0)
+                      )
         )
-    else:
-        fig.update_traces(mode="lines")
-    fig.update_traces(
-        line=dict(width=max(line_width, 0)
-    )
-)
 
     encoded_image = base64.b64encode(fig.to_image(format=filetype, width=img_width, height=img_height)).decode()
     fig = html.Img(

@@ -84,3 +84,15 @@ clientside_callback(
         Input("protein-id", "children"),
     ],
 )
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="restyleRadio",
+
+    ),
+    [Output("placeholder5", "children")],
+    [
+        Input("plot-type-radio-ff", "options"),
+    ],
+)

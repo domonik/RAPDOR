@@ -4,6 +4,7 @@ import numpy as np
 from plotly.subplots import make_subplots
 from typing import Iterable
 from plotly.colors import qualitative
+from RDPMSpecIdentifier.datastructures import RDPMSpecData
 
 DEFAULT_COLORS = [
     'rgb(138, 255, 172)', 'rgb(255, 138, 221)',
@@ -145,8 +146,6 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, title_col: str = 
         legend2=fig["layout"]["legend2"],
 
     )
-
-
     return fig_subplots
 
 
@@ -284,7 +283,82 @@ def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
     fig.update_xaxes(showgrid=False, mirror=True, showline=True, linecolor="black", linewidth=2)
     return fig
 
-def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, colors=None, vspace: float = 0.025):
+
+def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID"):
+
+    proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(rdpmspecids)].index
+    annotation = rdpmsdata.df[title_col][proteins].repeat(2)
+    fig_subplots = make_subplots(rows=len(proteins) * 2, cols=1, shared_xaxes=True, x_title="Fraction",
+                                 row_titles=list(annotation), vertical_spacing=0.0,
+                                 specs=[
+                                     [
+                                         {
+                                             "t": 0.005 if not idx % 2 else 0.000,
+                                             "b": 0.005 if idx % 2 else 0.000
+                                         }
+                                     ] for idx in range(len(proteins) * 2)
+                                 ]
+
+                                 )
+    for idx, protein in enumerate(proteins, 1):
+        array = rdpmsdata.array[protein]
+        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
+        for i_idx, trace in enumerate(fig["data"]):
+            fig_subplots.add_trace(trace, row=(idx * 2) + i_idx - 1, col=1)
+    fig = fig_subplots
+    fig.add_trace(go.Scatter(
+        x=[None],
+        y=[None],
+        marker=dict(color=colors[0], symbol="square"),
+        showlegend=True,
+        mode="markers",
+        name=fig.data[0].name
+
+    )),
+    fig.add_trace(go.Scatter(
+        x=[None],
+        y=[None],
+        marker=dict(color=colors[1],  symbol="square"),
+        showlegend=True,
+        mode="markers",
+        name=fig.data[1].name,
+    ))
+    fig.update_layout(
+        legend=dict(
+            itemsizing="constant"
+        )
+    )
+    fig.update_xaxes(showticklabels=False)
+    fig.update_yaxes(showticklabels=False)
+    fig.update_yaxes(showgrid=False,  showline=True, linecolor="black", linewidth=2, mirror=True )
+    fig.update_xaxes(showticklabels=True, row=len(proteins) * 2, col=1)
+    v = 1 / len(proteins)
+    for idx in range(len(proteins) * 2):
+        fig.update_xaxes(showgrid=False, showline=True, linecolor="black", linewidth=2, side="top" if not idx % 2 else "bottom", row=idx + 1, col=1)
+        fig.data[idx].colorbar.update(
+            len=v,
+            yref="paper",
+            y=1 - v * (idx // 2),
+            yanchor="top",
+            nticks=3,
+            x=1.1 if idx % 2 else fig.data[idx].colorbar.x,
+            showticklabels=True if idx % 2 else False
+
+
+        )
+        y_domain = f"y{idx + 1} domain" if idx != 0 else "y domain"
+        if not idx % 2:
+            fig["layout"]["annotations"][idx].update(y=0, yref=y_domain, x=-0.05, textangle=270)
+        else:
+            fig["layout"]["annotations"][idx].update(text="")
+
+
+
+    return fig_subplots
+
+
+
+def plot_barcode_plot(subdata, design: pd.DataFrame, groups, colors=None, vspace: float = 0.025):
     """Creates a Westernblot like plot from the mean of protein intensities
 
 
@@ -319,7 +393,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, offset: int = 0, co
         name = f"{groups}: {name}"
         mean_values = np.mean(subdata[idx, ], axis=0)
         ys.append([name for _ in range(len(mean_values))])
-        xs.append([str(p) for p in list(range(offset+1, subdata.shape[1] + offset+1))])
+        xs.append(list(range(1, subdata.shape[1]+1)))
         names.append(name)
         means.append(mean_values)
 

@@ -68,6 +68,7 @@ def get_app_layout(rdpmsdata):
                 html.Div(id="placeholder2"),
                 html.Div(id="placeholder3"),
                 html.Div(id="placeholder4"),
+                html.Div(id="placeholder5"),
                 html.Div(id="display-alert"),
 
                 html.Div(

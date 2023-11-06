@@ -90,6 +90,10 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
     if rdpmsdata is None:
         raise PreventUpdate
     else:
+        if rdpmsdata.state.kernel_size is not None:
+            i = int(rdpmsdata.state.kernel_size // 2)
+        else:
+            i = 0
         array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
         fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors, vspace=0)
         fig.update_yaxes(showticklabels=False, showgrid=False, showline=False)
