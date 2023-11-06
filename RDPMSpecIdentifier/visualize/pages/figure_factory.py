@@ -25,6 +25,68 @@ dash.register_page(__name__, path='/figure_factory')
 logger = logging.getLogger(__name__)
 
 
+def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
+    if isinstance(default_x, int):
+        step = 1
+    elif isinstance(default_x, float):
+        step = 0.01
+    else:
+        step = None
+    div = [
+        html.Div(
+            html.Span(arg, style={"text-align": "center"}),
+            className="col-4 col-md-2 justify-content-center align-self-center py-1"
+        ),
+        html.Div(
+            html.Div(
+            [
+                html.Div(
+                    html.Span("X", style={"text-align": "center"}),
+
+                    className="col-1 p-0 align-self-center"
+                ),
+                html.Div(
+                    dcc.Input(
+                        style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white",
+                               "text-align": "center"},
+                        id=input_id_x,
+                        className="text-align-center",
+                        value=default_x,
+                        type=d_type,
+                        step=step,
+                        persistence=True,
+                        persistence_type="session"
+                    ),
+                    className="col-4 p-0"
+                ),
+                html.Div(
+                    html.Span("Y", style={"text-align": "center"}),
+
+                    className="col-1 p-0 align-self-center"
+                ),
+                html.Div(
+                    dcc.Input(
+                        style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white",
+                               "text-align": "center"},
+                        id=input_id_y,
+                        className="text-align-center",
+                        value=default_y,
+                        type=d_type,
+                        step=step,
+                        persistence=True,
+                        persistence_type="session"
+                    ),
+                    className="col-4 p-0"
+                )
+
+            ],
+                className="row m-0 p-0 justify-content-between"
+            ),
+            className="col-8 col-md-4 justify-content-center text-align-center align-self-center py-1"
+        ),
+    ]
+    return div
+
 def _args_and_name(input_id, arg, d_type, default):
     if isinstance(default, int):
         step = 1
@@ -35,7 +97,7 @@ def _args_and_name(input_id, arg, d_type, default):
     div = [
             html.Div(
                 html.Span(arg, style={"text-align": "center"}),
-                className="col-2 justify-content-center align-self-center py-1"
+                className="col-4 col-md-2 justify-content-center align-self-center py-1"
             ),
             html.Div(
                 dcc.Input(
@@ -47,7 +109,7 @@ def _args_and_name(input_id, arg, d_type, default):
                     type=d_type,
                     step=step,
                     persistence=True,
-                    persistence_type="session"
+                    persistence_type="session",
                 ),
                 className="col-8 col-md-4 justify-content-center text-align-center py-1"
             )
@@ -58,7 +120,7 @@ def _arg_and_dropdown(arg, dd_list, default, input_id):
     div = [
         html.Div(
             html.Span(arg, style={"text-align": "center"}),
-            className="col-2 justify-content-center align-self-center py-1"
+            className="col-4 col-md-2 justify-content-center align-self-center py-1"
         ),
         html.Div(
             dcc.Dropdown(
@@ -80,21 +142,20 @@ def _distribution_settings():
     data = html.Div(
         [
 
+            *_arg_and_dropdown("Template", list(pio.templates), "plotly_white", "template-dd"),
+            *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
             *_args_and_name("download-width", "Width [px]", "number", 800),
             *_args_and_name("download-height", "Height [px]", "number", 500),
             *_args_and_name("download-marker-size", "Marker Size", "number", 8),
             *_args_and_name("download-line-width", "Line Width", "number", 3),
             *_args_and_name("download-grid-width", "Grid Width", "number", 1),
-            *_args_and_name("zeroline-x-width", "Zeroline X", "number", 1),
-            *_args_and_name("zeroline-y-width", "Zeroline Y", "number", 1),
-            *_args_and_name("d-x-tick", "X Axis dtick", "number", 1),
-            *_arg_and_dropdown("Template", list(pio.templates), "plotly_white", "template-dd"),
-            *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
-
-            * _args_and_name("legend-vspace", "Legend Space", "number", 0.1),
+            *_arg_x_and_y("zeroline-x-width", "zeroline-y-width", "Zeroline", "number", 1, 0),
+            *_arg_x_and_y("legend1-x", "legend1-y", "Legend Pos", "number", 0., 1.),
+            *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.),
+            *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1, 1),
 
         ],
-        className="row p-1",
+        className="row p-5 p-md-1",
         id="distribution-settings"
     )
     return data
@@ -311,12 +372,11 @@ def update_selectable_columns(rdpmsdata):
     Input("primary-color", "data"),
     Input("secondary-color", "data"),
     Input("plot-type-radio-ff", "value"),
-    Input("legend-vspace", "value"),
     Input("displayed-column-dd", "value"),
     State("data-store", "data"),
     State("unique-id", "data"),
 )
-def update_download_state(keys, primary_color, secondary_color, plot_type, vspace, displayed_col, rdpmsdata, uid):
+def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, rdpmsdata, uid):
     logger.info(f"selected keys: {keys}")
     if not keys:
         raise PreventUpdate
@@ -325,7 +385,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, vspac
 
     colors = primary_color, secondary_color
 
-    fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, vspace=vspace, title_col=displayed_col)
+    fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col)
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
     return encoded_image
 
@@ -343,6 +403,11 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, vspac
     Input("zeroline-x-width", "value"),
     Input("zeroline-y-width", "value"),
     Input("d-x-tick", "value"),
+    Input("d-y-tick", "value"),
+    Input("legend1-x", "value"),
+    Input("legend1-y", "value"),
+    Input("legend2-x", "value"),
+    Input("legend2-y", "value"),
     Input("template-dd", "value"),
 
 )
@@ -357,8 +422,16 @@ def update_ff_download_preview(
         zeroline_x,
         zeroline_y,
         d_x_tick,
+        d_y_tick,
+        lx,
+        ly,
+        l2x,
+        l2y,
         template
 ):
+    line_width = line_width if line_width is not None else 0
+    marker_size = marker_size if marker_size is not None else 0
+    grid_width = grid_width if grid_width is not None else 0
     try:
         img_width = max(min(img_width, 2000), 100)
         img_height = max(min(img_height, 2000), 100)
@@ -373,22 +446,32 @@ def update_ff_download_preview(
     if template:
         fig.update_layout(template=template)
     fig.update_xaxes(dtick=d_x_tick)
+    fig.update_yaxes(dtick=d_y_tick)
+    fig.update_xaxes(zeroline=True if zeroline_x > 0 else False, zerolinewidth=zeroline_x,)
+    fig.update_yaxes(zeroline=True if zeroline_y > 0 else False, zerolinewidth=zeroline_y,)
+    fig.update_yaxes(gridwidth=grid_width, showgrid=True if grid_width else False)
+    fig.update_xaxes(gridwidth=grid_width, showgrid=True if grid_width else False)
     fig.update_layout(
-        yaxis=dict(gridwidth=grid_width, showgrid=True if grid_width else False),
-        xaxis=dict(gridwidth=grid_width, showgrid=True if grid_width else False),
-
-    )
-    fig.update_layout(
-        xaxis=dict(zeroline=True if zeroline_x > 0 else False, zerolinewidth=zeroline_x,),
-        yaxis=dict(zeroline=True if zeroline_y > 0 else False, zerolinewidth=zeroline_y,),
-    )
-    fig.update_traces(
-        marker=dict(size=marker_size,
-                    ),
-        line=dict(
-            width=line_width
+        legend2=dict(
+            y=l2y,
+            x=l2x
+        ),
+        legend=dict(
+            x=lx,
+            y=ly
         )
     )
+    if marker_size > 0:
+        fig.update_traces(
+            marker=dict(size=marker_size)
+        )
+    else:
+        fig.update_traces(mode="lines")
+    fig.update_traces(
+        line=dict(width=max(line_width, 0)
+    )
+)
+
     encoded_image = base64.b64encode(fig.to_image(format=filetype, width=img_width, height=img_height)).decode()
     fig = html.Img(
         src=f'{FILEEXT[filetype]},{encoded_image}',

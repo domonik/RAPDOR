@@ -123,7 +123,7 @@ def plot_replicate_distribution(
     return fig
 
 
-def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, vspace: float = 0.1, title_col: str = "RDPMSpecID"):
+def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, title_col: str = "RDPMSpecID"):
     if rdpmsdata.state.kernel_size is not None:
         i = int(rdpmsdata.state.kernel_size // 2)
     else:
@@ -145,11 +145,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, vspace: float = 0
         legend2=fig["layout"]["legend2"],
 
     )
-    fig_subplots.update_layout(
-        legend2=dict(
-            y=1.05 + vspace,
-        )
-    )
+
 
     return fig_subplots
 
