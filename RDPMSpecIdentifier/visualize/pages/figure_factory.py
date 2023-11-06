@@ -20,9 +20,27 @@ from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
 from RDPMSpecIdentifier.visualize.modals import _color_theme_modal, _modal_color_selection
 from io import BytesIO
 import plotly.io as pio
+import copy
+
 dash.register_page(__name__, path='/figure_factory')
 
 logger = logging.getLogger(__name__)
+
+pio.templates["FFDefault"] = copy.deepcopy(pio.templates["plotly_white"])
+
+pio.templates["FFDefault"].update(
+    {
+        "layout": {
+            # e.g. you want to change the background to transparent
+            "paper_bgcolor": "rgba(0,0,0,0)",
+            "plot_bgcolor": " rgba(0,0,0,0)",
+            "font": dict(color="black"),
+            "xaxis": dict(linecolor="black", showline=True),
+            "yaxis": dict(linecolor="black", showline=True)
+        }
+    }
+)
+
 
 
 def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
@@ -142,17 +160,36 @@ def _distribution_settings():
     data = html.Div(
         [
 
-            *_arg_and_dropdown("Template", list(pio.templates), "plotly_white", "template-dd"),
+            *_arg_and_dropdown(
+                "Template",
+                ["FFDefault"] + [template for template in list(pio.templates) if template != "FFDefault"],
+                "FFDefault", "template-dd"
+            ),
             *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
             *_args_and_name("download-width", "Width [px]", "number", 800),
             *_args_and_name("download-height", "Height [px]", "number", 500),
             *_args_and_name("download-marker-size", "Marker Size", "number", 8),
             *_args_and_name("download-line-width", "Line Width", "number", 3),
             *_args_and_name("download-grid-width", "Grid Width", "number", 1),
-            *_arg_x_and_y("zeroline-x-width", "zeroline-y-width", "Zeroline", "number", 1, 0),
+            *_args_and_name("v-space", "Vertical Space", "number", 0.01),
             *_arg_x_and_y("legend1-x", "legend1-y", "Legend Pos", "number", 0., 1.),
             *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.),
             *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1, 1),
+            *_arg_x_and_y("zeroline-x-width", "zeroline-y-width", "Zeroline", "number", 1, 0),
+
+        ],
+        className="row p-5 p-md-1",
+        id="distribution-settings"
+    )
+    return data
+
+def _font_settings():
+    data = html.Div(
+        [
+
+            html.Div(html.H5("Fonts"), className="col-12 justify-content-center "),
+            *_args_and_name("legend-font-size", "Legend", "number", 12),
+            *_args_and_name("axis-font-size", "Axis", "number", 18),
 
         ],
         className="row p-5 p-md-1",
@@ -220,6 +257,7 @@ def figure_factory_layout():
                             html.Div(
                                 [
                                     _distribution_settings(),
+                                    _font_settings()
 
                                 ], className="col-12 col-md-10"
                             ),
@@ -375,10 +413,11 @@ def update_selectable_columns(rdpmsdata):
     Input("secondary-color", "data"),
     Input("plot-type-radio-ff", "value"),
     Input("displayed-column-dd", "value"),
+    Input("v-space", "value"),
     State("data-store", "data"),
     State("unique-id", "data"),
 )
-def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, rdpmsdata, uid):
+def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, rdpmsdata, uid):
     logger.info(f"selected keys: {keys}")
     if not keys:
         raise PreventUpdate
@@ -387,15 +426,16 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
 
     colors = primary_color, secondary_color
     if plot_type == 2:
-        fig = plot_protein_westernblots(keys, rdpmsdata, colors=colors, title_col=displayed_col)
-        marker_size = line_width = None
-        marker_disabled = line_disabled = True
+        fig = plot_protein_westernblots(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
+        settings = DEFAULT_WESTERNBLOT_SETTINGS
     else:
-        fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col)
-        marker_size = marker_disabled = line_width = line_disabled = dash.no_update
+        fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
+        settings = DEFAULT_DISTRIBUTION_SETTINGS
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
-    return encoded_image, marker_size, marker_disabled, line_width, line_disabled
+    return encoded_image, *settings
 
+DEFAULT_DISTRIBUTION_SETTINGS = (8, False, 3, False)
+DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True)
 
 
 @callback(
@@ -416,6 +456,8 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
     Input("legend2-x", "value"),
     Input("legend2-y", "value"),
     Input("template-dd", "value"),
+    Input("legend-font-size", "value"),
+    Input("axis-font-size", "value"),
 
 )
 def update_ff_download_preview(
@@ -434,7 +476,9 @@ def update_ff_download_preview(
         ly,
         l2x,
         l2y,
-        template
+        template,
+        legend_font_size,
+        axis_font_size
 ):
     try:
         img_width = max(min(img_width, 2000), 100)
@@ -451,6 +495,11 @@ def update_ff_download_preview(
         fig.update_layout(template=template)
     fig.update_xaxes(dtick=d_x_tick)
     fig.update_yaxes(dtick=d_y_tick)
+    fig.update_xaxes(titlefont=dict(size=axis_font_size))
+    fig.update_yaxes(titlefont=dict(size=axis_font_size))
+    fig.update_annotations(
+        font=dict(size=axis_font_size)
+    )
     fig.update_xaxes(zeroline=True if zeroline_x > 0 else False, zerolinewidth=zeroline_x,)
     fig.update_yaxes(zeroline=True if zeroline_y > 0 else False, zerolinewidth=zeroline_y,)
     fig.update_yaxes(gridwidth=grid_width, showgrid=True if grid_width else False)
@@ -477,7 +526,15 @@ def update_ff_download_preview(
             line=dict(width=max(line_width, 0)
                       )
         )
+    fig.update_layout(
+        legend=dict(
+            font=dict(size=legend_font_size)
+        ),
+        legend2=dict(
+            font=dict(size=legend_font_size)
+        )
 
+    )
     encoded_image = base64.b64encode(fig.to_image(format=filetype, width=img_width, height=img_height)).decode()
     fig = html.Img(
         src=f'{FILEEXT[filetype]},{encoded_image}',

@@ -2,7 +2,7 @@
   --primary-color: rgb(255, 138, 221);
     --primary-hover-color: #945080;
     --secondary-hover-color: #945080;
-    --table-head-color: #1a141a;
+    --table-head-color: #3b3a3a;
     --databox-color: #181818;
     --r-text-color: #ffffff;
     --input-background-color: #1a1a1a;
@@ -305,6 +305,10 @@ input.current-page, input.current-page::placeholder {
     color: var(--r-text-color);
     box-shadow: inset 0px -5px 0px var(--button-color), 0px -5px 0px var(--databox-color);
     padding-bottom: 10px;
+}
+
+input:disabled {
+    background-color: var(--table-dark) !important;
 }
 
 .btn-primary:disabled,

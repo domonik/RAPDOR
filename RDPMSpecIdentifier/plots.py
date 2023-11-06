@@ -124,7 +124,7 @@ def plot_replicate_distribution(
     return fig
 
 
-def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, title_col: str = "RDPMSpecID"):
+def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, title_col: str = "RDPMSpecID", vspace: float = 0.):
     if rdpmsdata.state.kernel_size is not None:
         i = int(rdpmsdata.state.kernel_size // 2)
     else:
@@ -132,7 +132,10 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, title_col: str = 
     proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(rdpmspecids)].index
     annotation = rdpmsdata.df[title_col][proteins]
 
-    fig_subplots = make_subplots(rows=len(proteins), cols=1, shared_xaxes=True, x_title="Fraction", y_title="Protein Amount [%]", row_titles=list(annotation))
+    fig_subplots = make_subplots(
+        rows=len(proteins), cols=1, shared_xaxes=True, x_title="Fraction", y_title="Protein Amount [%]", row_titles=list(annotation),
+        vertical_spacing=vspace
+    )
     for idx, protein in enumerate(proteins, 1):
         array, _ = rdpmsdata[protein]
         fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
@@ -284,7 +287,7 @@ def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
     return fig
 
 
-def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID"):
+def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", vspace: float = 0.01):
 
     proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(rdpmspecids)].index
     annotation = rdpmsdata.df[title_col][proteins].repeat(2)
@@ -293,8 +296,8 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
                                  specs=[
                                      [
                                          {
-                                             "t": 0.005 if not idx % 2 else 0.000,
-                                             "b": 0.005 if idx % 2 else 0.000
+                                             "t": vspace/2 if not idx % 2 else 0.000,
+                                             "b": vspace/2 if idx % 2 else 0.000
                                          }
                                      ] for idx in range(len(proteins) * 2)
                                  ]
@@ -330,11 +333,11 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
     )
     fig.update_xaxes(showticklabels=False)
     fig.update_yaxes(showticklabels=False)
-    fig.update_yaxes(showgrid=False,  showline=True, linecolor="black", linewidth=2, mirror=True )
+    fig.update_yaxes(showgrid=False,  showline=True, linewidth=2, mirror=True )
     fig.update_xaxes(showticklabels=True, row=len(proteins) * 2, col=1)
     v = 1 / len(proteins)
     for idx in range(len(proteins) * 2):
-        fig.update_xaxes(showgrid=False, showline=True, linecolor="black", linewidth=2, side="top" if not idx % 2 else "bottom", row=idx + 1, col=1)
+        fig.update_xaxes(showgrid=False, showline=True, linewidth=2, side="top" if not idx % 2 else "bottom", row=idx + 1, col=1)
         fig.data[idx].colorbar.update(
             len=v,
             yref="paper",
