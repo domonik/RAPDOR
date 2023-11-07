@@ -19,7 +19,7 @@ another_backend = FileSystemBackend("file_system_backend", threshold=200)
 app = DashProxy(
     "RDPMSpecIdentifier Dashboard",
     title="RDPMSpec Visualizer",
-    external_stylesheets=[dbc.themes.DARKLY],
+    external_stylesheets=[dbc.themes.DARKLY, "https://use.fontawesome.com/releases/v5.10.2/css/all.css"],
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
     prevent_initial_callbacks="initial_duplicate",

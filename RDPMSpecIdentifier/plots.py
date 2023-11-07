@@ -328,7 +328,10 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
     ))
     fig.update_layout(
         legend=dict(
-            itemsizing="constant"
+            itemsizing="constant",
+            x=0,
+            y=1,
+            yanchor="bottom"
         )
     )
     fig.update_xaxes(showticklabels=False)

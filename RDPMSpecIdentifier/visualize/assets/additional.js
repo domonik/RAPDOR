@@ -134,9 +134,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--table-light', "#3a363d")
                 r.style.setProperty('--table-dark', "#222023")
                 r.style.setProperty('--button-color', "#222023")
-                r.style.setProperty('--input-background-color', "#1a1a1a")
-                r.style.setProperty('--input-background-color', "#1a1a1a")
+                r.style.setProperty('--input-background-color', "#2f2f2f")
                 r.style.setProperty('--background-color', "#3a3a3a")
+                r.style.setProperty('--disabled-input', "#181818")
                 var darker = this.function2(primaryColor, 0.5);
                 var darker2 = this.function2(secondaryColor, 0.5);
                 r.style.setProperty('--primary-hover-color', darker);
@@ -152,13 +152,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--table-light', "#e1e1e1")
                 r.style.setProperty('--table-dark', "#c0c0c0")
                 r.style.setProperty('--button-color', "#8f8f8f")
-                r.style.setProperty('--input-background-color', "#9a9a9a")
+                r.style.setProperty('--input-background-color', "#e0e0e0")
                 r.style.setProperty('--background-color', "#ffffff")
                 var lighter = this.makebrighter(primaryColor, 50);
                 var lighter2 = this.makebrighter(secondaryColor, 50);
                 r.style.setProperty('--table-head-color', "#181818");
                 r.style.setProperty('--primary-hover-color', lighter);
                 r.style.setProperty('--secondary-hover-color', lighter2);
+                r.style.setProperty('--disabled-input', "#a6a6a6")
+
                 console.log("Setup Day Mode")
 
 

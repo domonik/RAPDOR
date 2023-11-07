@@ -11,6 +11,7 @@
     --button-color: #3a363d;
     --background-color: #3a3a3a;
     --secondary-color: red;
+    --disabled-input: red;
 }
 
 
@@ -84,13 +85,18 @@ a:hover {
 }
 
 
-.Select-value {
-    background-color: transparent !important;
-    border-radius: 15px;
-    text-align: center;
-    display: flex;
+.Select--multi .Select-value-icon{
+    border-right: 1px solid var(--primary-color) !important;
 
 }
+.Select--multi .Select-value {
+    background-color: var(--primary-hover-color) !important;
+    border: 1px solid var(--primary-color) !important;
+    color: black;
+
+
+}
+
 
 .Select-input input {
     width: 0 !important;
@@ -102,6 +108,8 @@ a:hover {
     align-self: center;
 
 }
+
+
 
 .Select-menu-outer {
     background-color: var(--input-background-color);
@@ -308,7 +316,8 @@ input.current-page, input.current-page::placeholder {
 }
 
 input:disabled {
-    background-color: var(--table-dark) !important;
+    background-color: var(--disabled-input) !important;
+    border-color: var(--table-dark);
 }
 
 .btn-primary:disabled,

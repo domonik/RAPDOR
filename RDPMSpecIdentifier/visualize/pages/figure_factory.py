@@ -14,7 +14,7 @@ from dash.exceptions import PreventUpdate
 import os
 from RDPMSpecIdentifier.visualize import DISABLED
 from tempfile import NamedTemporaryFile
-from RDPMSpecIdentifier.plots import plot_protein_distributions, plot_protein_westernblots
+from RDPMSpecIdentifier.plots import plot_protein_distributions, plot_protein_westernblots, empty_figure
 import numpy as np
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
 from RDPMSpecIdentifier.visualize.modals import _color_theme_modal, _modal_color_selection
@@ -159,13 +159,14 @@ def _arg_and_dropdown(arg, dd_list, default, input_id):
 def _distribution_settings():
     data = html.Div(
         [
-
+            html.Div(html.H5("General"), className="col-12 justify-content-center "),
             *_arg_and_dropdown(
                 "Template",
                 ["FFDefault"] + [template for template in list(pio.templates) if template != "FFDefault"],
                 "FFDefault", "template-dd"
             ),
             *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
+            html.Div(html.H5("Plot style"), className="col-12 justify-content-center "),
             *_args_and_name("download-width", "Width [px]", "number", 800),
             *_args_and_name("download-height", "Height [px]", "number", 500),
             *_args_and_name("download-marker-size", "Marker Size", "number", 8),
@@ -173,8 +174,9 @@ def _distribution_settings():
             *_args_and_name("download-grid-width", "Grid Width", "number", 1),
             *_args_and_name("v-space", "Vertical Space", "number", 0.01),
             *_arg_x_and_y("legend1-x", "legend1-y", "Legend Pos", "number", 0., 1.),
-            *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.),
-            *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1, 1),
+            *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.15),
+            *_arg_x_and_y("x-axis-width", "y-axis-width", "Axis width", "number", 1, 1),
+            *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1, 1.),
             *_arg_x_and_y("zeroline-x-width", "zeroline-y-width", "Zeroline", "number", 1, 0),
 
         ],
@@ -211,7 +213,7 @@ def figure_factory_layout():
                     [
                         html.Div(
                             html.Div(
-                                html.H4("Figure Settings"),
+                                html.H4("Figure Export"),
                                 className="col-12"),
                             className="row justify-content-center"
                         ),
@@ -239,6 +241,19 @@ def figure_factory_layout():
                         html.Div(
                             [
                                 html.Div(
+                                    [
+                                        html.H5(
+                                            [
+                                                "RDPMSpecIDs",
+                                                html.I(className="fas fa-question-circle fa px-2", id="ff-select-tip"),
+                                                dbc.Tooltip("You can also select IDS via checkboxes in the table on the analysis page",
+                                                            target="ff-select-tip"),
+                                            ]
+                                        ),
+
+                                    ],
+                                    className="col-10 justify-content-center "),
+                                html.Div(
                                     dcc.Dropdown(
                                         [],
                                         className="justify-content-center",
@@ -264,9 +279,14 @@ def figure_factory_layout():
 
                             className="row justify-content-center"
                         ),
+
                         html.Div(
                             html.Div(
                                 [
+                                    html.Div(
+                                        html.H5("File Format"),
+                                        className="col-10"
+                                    ),
                                     dbc.RadioItems(
                                         options=[
                                             {'label': 'SVG', 'value': "svg"},
@@ -274,7 +294,7 @@ def figure_factory_layout():
                                         ],
                                         value="svg",
                                         inline=True,
-                                        className="d-flex justify-content-between radio-items",
+                                        className="d-flex justify-content-around radio-items",
                                         labelCheckedClassName="checked-radio-text",
                                         inputCheckedClassName="checked-radio-item",
                                         id="filetype-selector-ff",
@@ -417,7 +437,7 @@ def update_selectable_columns(rdpmsdata):
     State("data-store", "data"),
     State("unique-id", "data"),
 )
-def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, rdpmsdata, uid):
+def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, rdpmsdata: RDPMSpecData, uid):
     logger.info(f"selected keys: {keys}")
     if not keys:
         raise PreventUpdate
@@ -425,12 +445,16 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
     logger.info(f"selected proteins: {proteins}")
 
     colors = primary_color, secondary_color
-    if plot_type == 2:
-        fig = plot_protein_westernblots(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
-        settings = DEFAULT_WESTERNBLOT_SETTINGS
+    if rdpmsdata.norm_array is None:
+        fig = empty_figure(annotation="Data not normalized yet.<br> Visit Analysis Page first.")
+        settings = (dash.no_update for _ in DEFAULT_WESTERNBLOT_SETTINGS)
     else:
-        fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
-        settings = DEFAULT_DISTRIBUTION_SETTINGS
+        if plot_type == 2:
+            fig = plot_protein_westernblots(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
+            settings = DEFAULT_WESTERNBLOT_SETTINGS
+        else:
+            fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
+            settings = DEFAULT_DISTRIBUTION_SETTINGS
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
     return encoded_image, *settings
 
@@ -455,6 +479,8 @@ DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True)
     Input("legend1-y", "value"),
     Input("legend2-x", "value"),
     Input("legend2-y", "value"),
+    Input("x-axis-width", "value"),
+    Input("y-axis-width", "value"),
     Input("template-dd", "value"),
     Input("legend-font-size", "value"),
     Input("axis-font-size", "value"),
@@ -476,6 +502,8 @@ def update_ff_download_preview(
         ly,
         l2x,
         l2y,
+        xaxis_width,
+        yaxis_width,
         template,
         legend_font_size,
         axis_font_size
@@ -497,6 +525,8 @@ def update_ff_download_preview(
     fig.update_yaxes(dtick=d_y_tick)
     fig.update_xaxes(titlefont=dict(size=axis_font_size))
     fig.update_yaxes(titlefont=dict(size=axis_font_size))
+    fig.update_xaxes(showline=True if xaxis_width > 0 else False, linewidth=xaxis_width)
+    fig.update_yaxes(showline=True if yaxis_width > 0 else False, linewidth=yaxis_width)
     fig.update_annotations(
         font=dict(size=axis_font_size)
     )
