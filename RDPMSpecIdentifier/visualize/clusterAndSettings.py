@@ -153,7 +153,9 @@ def selector_box(disabled: bool = False):
                                     className="justify-content-center",
                                     id="distance-method",
                                     clearable=False,
-                                    disabled=disabled
+                                    disabled=disabled,
+                                    persistence=True,
+                                    persistence_type="session"
 
                                 ),
                                 className="col-7 justify-content-center text-align-center"
