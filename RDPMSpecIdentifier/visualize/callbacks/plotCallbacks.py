@@ -61,12 +61,14 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
 
             )
     fig.update_layout(
-        margin={"t": 0, "b": 30, "r": 50, "l": 100},
+        margin={"t": 0, "b": 0, "r": 50, "l": 100},
         font=dict(
             size=16,
-        )
+        ),
+        legend=dict(font=dict(size=14)),
+        legend2=dict(font=dict(size=14))
     )
-    fig.update_xaxes(dtick=1, title="")
+    fig.update_xaxes(dtick=1, title=None)
     fig.update_xaxes(fixedrange=True)
     return fig
 
@@ -286,7 +288,7 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
     fig.layout.template = "rdpmspec_default"
 
     fig.update_layout(
-        margin={"t": 30, "b": 30, "r": 50},
+        margin={"t": 0, "b": 30, "r": 50},
         font=dict(
             size=16,
         ),

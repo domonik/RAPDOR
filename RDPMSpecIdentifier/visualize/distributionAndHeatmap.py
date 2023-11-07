@@ -22,15 +22,15 @@ def distribution_panel(name):
                                 [
                                     html.Div(
                                         [
-                                            html.Div(html.H4(f"Protein {name}", style={"text-align": "center", "width": "100%"}, id="protein-id", className="align-self-center"), className="col-lg-4 col-12 d-flex py-2"),
+                                            html.Div(html.H5(f"Protein {name}", style={"text-align": "center", "width": "100%", "margin-bottom": "0"}, id="protein-id", className="align-self-center"), className="col-lg-4 col-12 d-flex py-2"),
                                             html.Div(
                                                 dcc.Dropdown(
                                                     id="additional-header-dd",
-                                                    style={"font-size": "1.5rem"},
+                                                    style={"font-size": "1.25rem"},
                                                 ),
                                                 className="col-md-4 col-7"
                                             ),
-                                            html.Div(html.H4("", id="additional-header", className="align-self-center", style={"text-align": "center"}), className="col-lg-4 col-4 d-flex"),
+                                            html.Div(html.H5("", id="additional-header", className="align-self-center", style={"text-align": "center"}), className="col-lg-4 col-4 d-flex"),
 
                                         ],
                                         className="row justify-content-center py-1 py-lg-0"
@@ -79,12 +79,12 @@ def distribution_panel(name):
 
 
                         ],
-                        className="row justify-content-around p-2 pt-3"
+                        className="row justify-content-around p-0 pt-1"
                     ),
                     html.Div(
                         [
                             html.Div(
-                                dcc.Graph(id="distribution-graph", style={"height": "360px"}, figure=empty_figure()),
+                                dcc.Graph(id="distribution-graph", style={"height": "320px"}, figure=empty_figure()),
                                 className="col-12"
                             ),
                         ],
@@ -96,9 +96,9 @@ def distribution_panel(name):
                                 dcc.Graph(id="westernblot-graph", style={"height": "70px"}, figure=empty_figure()),
                                 className="col-12"
                             ),
-                            html.Div("Fraction", className="col-12 pt-2", style={"text-align": "center", "font-size": "20px"})
+                            html.Div("Fraction", className="col-12 pt-0", style={"text-align": "center", "font-size": "20px"})
                         ],
-                        className="row justify-content-center pb-3"
+                        className="row justify-content-center pb-2"
                     ),
 
                 ],

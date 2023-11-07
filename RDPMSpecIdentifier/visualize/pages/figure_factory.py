@@ -36,7 +36,8 @@ pio.templates["FFDefault"].update(
             "plot_bgcolor": " rgba(0,0,0,0)",
             "font": dict(color="black"),
             "xaxis": dict(linecolor="black", showline=True),
-            "yaxis": dict(linecolor="black", showline=True)
+            "yaxis": dict(linecolor="black", showline=True),
+            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black"))
         }
     }
 )
@@ -521,6 +522,9 @@ def update_ff_download_preview(
     fig = currnet_image
     if template:
         fig.update_layout(template=template)
+        for data in fig.data:
+            if "colorbar" in data:
+                data.colorbar.update(pio.templates["FFDefault"]["layout"]["coloraxis"]["colorbar"])
     fig.update_xaxes(dtick=d_x_tick)
     fig.update_yaxes(dtick=d_y_tick)
     fig.update_xaxes(titlefont=dict(size=axis_font_size))

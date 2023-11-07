@@ -347,8 +347,10 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
             y=1 - v * (idx // 2),
             yanchor="top",
             nticks=3,
-            x=1.1 if idx % 2 else fig.data[idx].colorbar.x,
-            showticklabels=True if idx % 2 else False
+            x=1. + 0.05 if idx % 2 else 1.,
+            showticklabels=True if idx % 2 else False,
+            thickness=0.05,
+            thicknessmode="fraction"
 
 
         )
@@ -544,7 +546,7 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
 
 
 def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None, marker_max_size: int = 40, second_bg_color: str = "white", bubble_legend_color: str = "black"):
-    fig = make_subplots(rows=2, cols=1, row_width=[0.8, 0.2], vertical_spacing=0.01)
+    fig = make_subplots(rows=2, cols=1, row_width=[0.85, 0.15], vertical_spacing=0.0)
     hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
     n_cluster = int(np.nanmax(clusters)) + 1
@@ -594,7 +596,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             y=0.5,
             text=f"{entry:.1f}",
             showarrow=False,
-            font=(dict(size=18)),
+            font=(dict(size=16)),
             row=1,
             col=1
         )
@@ -607,7 +609,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
         y=0.5,
         text="Mean Distance",
         showarrow=False,
-        font=(dict(size=20)),
+        font=(dict(size=18)),
         row=1,
         col=1
     )
@@ -690,7 +692,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             title="Clusters",
             yanchor="top",
             yref="paper",
-            y=0.8
+            y=0.85
 
         ),
     )
