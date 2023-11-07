@@ -42,7 +42,7 @@ def _get_cluster_panel(disabled: bool = False):
                                         ),
                                         html.Div(
                                             dcc.Slider(
-                                                0, 100, step=1, marks=None,
+                                                10, 50, step=1, marks=None,
                                                 value=40,
                                                 tooltip={"placement": "bottom", "always_visible": True},
                                                 className="justify-content-center",

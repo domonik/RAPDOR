@@ -14,7 +14,7 @@ from dash.exceptions import PreventUpdate
 import os
 from RDPMSpecIdentifier.visualize import DISABLED
 from tempfile import NamedTemporaryFile
-from RDPMSpecIdentifier.plots import plot_protein_distributions, plot_protein_westernblots, empty_figure
+from RDPMSpecIdentifier.plots import plot_protein_distributions, plot_protein_westernblots, empty_figure, plot_dimension_reduction_result2d, update_bubble_legend
 import numpy as np
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
 from RDPMSpecIdentifier.visualize.modals import _color_theme_modal, _modal_color_selection
@@ -42,7 +42,8 @@ pio.templates["FFDefault"].update(
     }
 )
 
-
+BOOTSH5 = "col-12 justify-content-center px-0"
+BOOTSROW = "row  px-4 px-md-4 py-1"
 
 def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
     if isinstance(default_x, int):
@@ -95,7 +96,7 @@ def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
                         persistence=True,
                         persistence_type="session"
                     ),
-                    className="col-4 p-0"
+                    className="col-4 p-0 "
                 )
 
             ],
@@ -139,7 +140,7 @@ def _arg_and_dropdown(arg, dd_list, default, input_id):
     div = [
         html.Div(
             html.Span(arg, style={"text-align": "center"}),
-            className="col-4 col-md-2 justify-content-center align-self-center py-1"
+            className="col-4 col-md-2 justify-content-center align-self-center py-1 "
         ),
         html.Div(
             dcc.Dropdown(
@@ -160,14 +161,14 @@ def _arg_and_dropdown(arg, dd_list, default, input_id):
 def _distribution_settings():
     data = html.Div(
         [
-            html.Div(html.H5("General"), className="col-12 justify-content-center "),
+            html.Div(html.H5("General", className="align-text-center"), className="col-12 justify-content-center px-0 align-items-center"),
             *_arg_and_dropdown(
                 "Template",
                 ["FFDefault"] + [template for template in list(pio.templates) if template != "FFDefault"],
                 "FFDefault", "template-dd"
             ),
             *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
-            html.Div(html.H5("Plot style"), className="col-12 justify-content-center "),
+            html.Div(html.H5("Plot style"), className=BOOTSH5),
             *_args_and_name("download-width", "Width [px]", "number", 800),
             *_args_and_name("download-height", "Height [px]", "number", 500),
             *_args_and_name("download-marker-size", "Marker Size", "number", 8),
@@ -177,11 +178,11 @@ def _distribution_settings():
             *_arg_x_and_y("legend1-x", "legend1-y", "Legend Pos", "number", 0., 1.),
             *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.15),
             *_arg_x_and_y("x-axis-width", "y-axis-width", "Axis width", "number", 1, 1),
-            *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1, 1.),
+            *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1., 0.1),
             *_arg_x_and_y("zeroline-x-width", "zeroline-y-width", "Zeroline", "number", 1, 0),
 
         ],
-        className="row p-5 p-md-1",
+        className=BOOTSROW,
         id="distribution-settings"
     )
     return data
@@ -190,17 +191,125 @@ def _font_settings():
     data = html.Div(
         [
 
-            html.Div(html.H5("Fonts"), className="col-12 justify-content-center "),
-            *_args_and_name("legend-font-size", "Legend", "number", 12),
+            html.Div(html.H5("Fonts"), className=BOOTSH5),
+            *_args_and_name("legend-font-size", "Legend", "number", 14),
             *_args_and_name("axis-font-size", "Axis", "number", 18),
 
         ],
-        className="row p-5 p-md-1",
+        className=BOOTSROW,
         id="distribution-settings"
     )
     return data
 
+def _bubble_legend_settings():
+    data = html.Div(
+        [
 
+            html.Div(html.H5("Bubble Legend"), className=BOOTSH5),
+            *_args_and_name("legend-start", "Legend Start", "number", 0.25),
+            *_args_and_name("legend-spread", "Legend Spread", "number", 0.12),
+
+        ],
+        className=BOOTSROW,
+        id="bubble-legend-settings"
+    )
+    return data
+
+
+def _figure_type():
+    div = html.Div(
+        [
+            html.Div(html.H5("Figure Type"), className=BOOTSH5),
+            html.Div(
+                [
+                    dbc.RadioItems(
+                        options=[
+                            {'label': 'Distribution', 'value': 0},
+                            {'label': 'Westernblot', 'value': 2},
+                            {'label': 'Dimension Reduction', 'value': 3},
+                        ],
+                        value=0,
+                        className="d-flex justify-content-around radio-items row",
+                        labelCheckedClassName="checked-radio-text",
+                        inputCheckedClassName="checked-radio-item",
+                        id="plot-type-radio-ff",
+                        persistence_type="session",
+                        persistence=True
+                    ),
+                ],
+                className="col-12 my-2"
+            ),
+        ],
+
+        className=BOOTSROW
+    )
+    return div
+
+def _id_selector():
+    div = html.Div(
+        [
+            html.Div(
+                [
+                    html.H5(
+                        [
+                            "RDPMSpecIDs",
+                            html.I(className="fas fa-question-circle fa px-2", id="ff-select-tip"),
+                            dbc.Tooltip("You can also select IDS via checkboxes in the table on the analysis page",
+                                        target="ff-select-tip"),
+                        ]
+                    ),
+
+                ],
+                className="col-12 justify-content-center px-0"),
+            html.Div(
+                dcc.Dropdown(
+                    [],
+                    className="justify-content-center",
+                    id="protein-selector-ff",
+                    clearable=False,
+                    multi=True
+
+                ),
+                className="col-12"
+            )
+        ],
+
+        className=BOOTSROW
+    )
+    return div
+
+
+def _file_format():
+    div = html.Div(
+        [
+            html.Div(
+                html.H5("File Format"),
+                className="col-12 px-0"
+            ),
+            html.Div(
+                [
+
+                    dbc.RadioItems(
+                        options=[
+                            {'label': 'SVG', 'value': "svg"},
+                            {'label': 'PNG', 'value': "png"},
+                        ],
+                        value="svg",
+                        inline=True,
+                        className="d-flex justify-content-around radio-items",
+                        labelCheckedClassName="checked-radio-text",
+                        inputCheckedClassName="checked-radio-item",
+                        id="filetype-selector-ff",
+                        persistence_type="session",
+                        persistence=True
+                    ),
+                ],
+                className="col-10 my-2"
+            ),
+        ],
+        className="row justify-content-center px-4 px-md-4"
+    )
+    return div
 
 def figure_factory_layout():
     layout = html.Div(
@@ -218,64 +327,37 @@ def figure_factory_layout():
                                 className="col-12"),
                             className="row justify-content-center"
                         ),
+
+
                         html.Div(
                             html.Div(
                                 [
-                                    dbc.RadioItems(
-                                        options=[
-                                            {'label': 'Distribution', 'value': 0},
-                                            {'label': 'Westernblot', 'value': 2},
-                                        ],
-                                        value=0,
-                                        className="d-flex justify-content-around radio-items row",
-                                        labelCheckedClassName="checked-radio-text",
-                                        inputCheckedClassName="checked-radio-item",
-                                        id="plot-type-radio-ff",
-                                        persistence_type="session",
-                                        persistence=True
-                                    ),
-                                ],
-                                className="col-10 my-2"
+                                    _id_selector()
+
+                                ], className="col-12"
                             ),
+
                             className="row justify-content-center"
                         ),
                         html.Div(
-                            [
-                                html.Div(
-                                    [
-                                        html.H5(
-                                            [
-                                                "RDPMSpecIDs",
-                                                html.I(className="fas fa-question-circle fa px-2", id="ff-select-tip"),
-                                                dbc.Tooltip("You can also select IDS via checkboxes in the table on the analysis page",
-                                                            target="ff-select-tip"),
-                                            ]
-                                        ),
+                            html.Div(
+                                [
+                                    _figure_type()
 
-                                    ],
-                                    className="col-10 justify-content-center "),
-                                html.Div(
-                                    dcc.Dropdown(
-                                        [],
-                                        className="justify-content-center",
-                                        id="protein-selector-ff",
-                                        clearable=False,
-                                        multi=True
+                                ], className="col-12"
+                            ),
 
-                                    ),
-                                    className="col-10"
-                                )
-                            ],
-
-                            className="row justify-content-center p-1"
+                            className="row justify-content-center"
                         ),
+
                         html.Div(
                             html.Div(
                                 [
                                     _distribution_settings(),
-                                    _font_settings()
+                                    _font_settings(),
+                                    _bubble_legend_settings()
 
-                                ], className="col-12 col-md-10"
+                                ], className="col-12"
                             ),
 
                             className="row justify-content-center"
@@ -284,27 +366,11 @@ def figure_factory_layout():
                         html.Div(
                             html.Div(
                                 [
-                                    html.Div(
-                                        html.H5("File Format"),
-                                        className="col-10"
-                                    ),
-                                    dbc.RadioItems(
-                                        options=[
-                                            {'label': 'SVG', 'value': "svg"},
-                                            {'label': 'PNG', 'value': "png"},
-                                        ],
-                                        value="svg",
-                                        inline=True,
-                                        className="d-flex justify-content-around radio-items",
-                                        labelCheckedClassName="checked-radio-text",
-                                        inputCheckedClassName="checked-radio-item",
-                                        id="filetype-selector-ff",
-                                        persistence_type="session",
-                                        persistence=True
-                                    ),
-                                ],
-                                className="col-10 my-2"
+                                    _file_format()
+
+                                ], className="col-12"
                             ),
+
                             className="row justify-content-center"
                         ),
                         html.Div(
@@ -370,12 +436,12 @@ def figure_factory_layout():
                                     }
                                 ),
                             ],
-                            className="row justify-content-around",
+                            className="row justify-content-center px-4 px-md-4",
                         ),
                     ],
                     className="databox"
                 ),
-                className="col-12 col-lg-6"
+                className="col-12 col-lg-6 px-1"
             )
         ],
 
@@ -412,6 +478,8 @@ def update_selected_proteins(rdpmsdata: RDPMSpecData, current_row_ids):
 
 )
 def update_row_ids(values, rdpmsdata):
+    if rdpmsdata is None:
+        raise PreventUpdate
     values = list(rdpmsdata.df[rdpmsdata.df["RDPMSpecID"].isin(values)].index)
     return values
 
@@ -421,6 +489,8 @@ def update_row_ids(values, rdpmsdata):
 
 )
 def update_selectable_columns(rdpmsdata):
+    if rdpmsdata is None:
+        raise PreventUpdate
     return list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns))
 
 @callback(
@@ -429,6 +499,9 @@ def update_selectable_columns(rdpmsdata):
     Output("download-marker-size", "disabled"),
     Output("download-line-width", "value"),
     Output("download-line-width", "disabled"),
+    Output("legend1-x", "value"),
+    Output("legend1-y", "value"),
+    Output("bubble-legend-settings", "style"),
     Input("protein-selector-ff", "value"),
     Input("primary-color", "data"),
     Input("secondary-color", "data"),
@@ -437,14 +510,18 @@ def update_selectable_columns(rdpmsdata):
     Input("v-space", "value"),
     State("data-store", "data"),
     State("unique-id", "data"),
+    State("bubble-legend-settings", "style"),
+
 )
-def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, rdpmsdata: RDPMSpecData, uid):
+def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, rdpmsdata: RDPMSpecData, uid, bubble_style):
     logger.info(f"selected keys: {keys}")
-    if not keys:
-        raise PreventUpdate
+    if plot_type != 3:
+        if not keys:
+            raise PreventUpdate
     proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(keys)].index
     logger.info(f"selected proteins: {proteins}")
-
+    bubble_style = bubble_style if bubble_style is not None else {}
+    bubble_style["display"] = "none"
     colors = primary_color, secondary_color
     if rdpmsdata.norm_array is None:
         fig = empty_figure(annotation="Data not normalized yet.<br> Visit Analysis Page first.")
@@ -453,14 +530,38 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
         if plot_type == 2:
             fig = plot_protein_westernblots(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
             settings = DEFAULT_WESTERNBLOT_SETTINGS
+        elif plot_type == 3:
+            if rdpmsdata.current_embedding is not None:
+                keys = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(keys)].index
+                fig = plot_dimension_reduction_result2d(
+                    rdpmsdata,
+                    colors=colors,
+                    highlight=keys,
+                    clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
+                    marker_max_size=40,
+                    second_bg_color="white",
+                    bubble_legend_color="black"
+                )
+
+                fig.update_xaxes(side="top", row=1)
+                fig.update_yaxes(mirror=True)
+            else:
+                fig = empty_figure("Distances not Calculated.<br>Go to Analysis Page and click the Get Score Button.")
+            settings = DEFAULT_DIMRED_SETTINGS
+            bubble_style["display"] = "flex"
+
         else:
             fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
             settings = DEFAULT_DISTRIBUTION_SETTINGS
+    fig.update_layout(
+        margin=dict(b=5, t=5)
+    )
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
-    return encoded_image, *settings
+    return encoded_image, *settings, bubble_style
 
-DEFAULT_DISTRIBUTION_SETTINGS = (8, False, 3, False)
-DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True)
+DEFAULT_DISTRIBUTION_SETTINGS = (8, False, 3, False, 0., 1.)
+DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True, 0., 1.)
+DEFAULT_DIMRED_SETTINGS = (None, True, None, True, 1.01, 1.0)
 
 
 @callback(
@@ -485,6 +586,9 @@ DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True)
     Input("template-dd", "value"),
     Input("legend-font-size", "value"),
     Input("axis-font-size", "value"),
+    Input("legend-start", "value"),
+    Input("legend-spread", "value"),
+    State("plot-type-radio-ff", "value"),
 
 )
 def update_ff_download_preview(
@@ -507,7 +611,10 @@ def update_ff_download_preview(
         yaxis_width,
         template,
         legend_font_size,
-        axis_font_size
+        axis_font_size,
+        legend_start,
+        legend_spread,
+        plot_type
 ):
     try:
         img_width = max(min(img_width, 2000), 100)
@@ -524,7 +631,7 @@ def update_ff_download_preview(
         fig.update_layout(template=template)
         for data in fig.data:
             if "colorbar" in data:
-                data.colorbar.update(pio.templates["FFDefault"]["layout"]["coloraxis"]["colorbar"])
+                data.colorbar.update(pio.templates[template]["layout"]["coloraxis"]["colorbar"])
     fig.update_xaxes(dtick=d_x_tick)
     fig.update_yaxes(dtick=d_y_tick)
     fig.update_xaxes(titlefont=dict(size=axis_font_size))
@@ -569,6 +676,24 @@ def update_ff_download_preview(
         )
 
     )
+    if plot_type == 3:
+        legend_start = legend_start if legend_start is not None else 0.25
+        legend_spread = legend_spread if legend_spread is not None else 0.125
+        try:
+            fig = update_bubble_legend(
+                fig,
+                legend_start=legend_start,
+                legend_spread=legend_spread,
+                second_bg_color=pio.templates[template]["layout"]["plot_bgcolor"],
+                bubble_legend_color=pio.templates[template]["layout"]["font"]["color"]
+            )
+            fig.update_annotations(
+                font=dict(size=legend_font_size)
+            )
+        except IndexError:
+            pass
+        fig.update_xaxes(title=dict(font=dict(size=axis_font_size)))
+        fig.update_yaxes(title=dict(font=dict(size=axis_font_size)))
     encoded_image = base64.b64encode(fig.to_image(format=filetype, width=img_width, height=img_height)).decode()
     fig = html.Img(
         src=f'{FILEEXT[filetype]},{encoded_image}',

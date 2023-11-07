@@ -265,9 +265,7 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
         )
     elif dim == 2:
         fig = plot_dimension_reduction_result2d(
-            rdpmsdata.current_embedding,
             rdpmsdata,
-            name=rdpmsdata.state.dimension_reduction,
             colors=colors,
             highlight=selected_rows,
             clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
@@ -306,14 +304,14 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
 
 
         )
-        if plotting and rdpmsdata.current_embedding.shape[-1] == 3:
+        if plotting and dim == 3:
             fig.update_scenes(
                 xaxis_backgroundcolor="#e1e1e1",
                 yaxis_backgroundcolor="#e1e1e1",
                 zaxis_backgroundcolor="#e1e1e1",
             )
     else:
-        if plotting and rdpmsdata.current_embedding.shape[-1] == 3:
+        if plotting and dim == 3:
             fig.update_scenes(
                 xaxis_backgroundcolor="#222023",
                 yaxis_backgroundcolor="#222023",

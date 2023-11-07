@@ -542,10 +542,25 @@ def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None
     return fig
 
 
+def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 0.1, second_bg_color: str = None, bubble_legend_color: str = None):
+    xloc = [legend_start + idx * legend_spread for idx in range(3)]
+    fig.data[0].x = xloc
+    annos = [annotation for annotation in fig.layout.annotations if annotation.text != "Mean Distance"]
+    if second_bg_color is not None:
+        fig.update_shapes(fillcolor=second_bg_color)
+    for idx, annotation in enumerate(annos):
+        annotation.update(
+            x=xloc[idx] + 0.02 + idx * 0.02 / 3,
+        )
+    if bubble_legend_color is not None:
+        fig.data[0].update(marker=dict(line=dict(color=bubble_legend_color)))
+    return fig
 
-
-
-def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None, marker_max_size: int = 40, second_bg_color: str = "white", bubble_legend_color: str = "black"):
+def plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, clusters=None,
+                                      highlight=None, marker_max_size: int = 40, second_bg_color: str = "white",
+                                      bubble_legend_color: str = "black", legend_start: float = 0.2, legend_spread: float = 0.1
+                                      ):
+    embedding = rdpmspecdata.current_embedding
     fig = make_subplots(rows=2, cols=1, row_width=[0.85, 0.15], vertical_spacing=0.0)
     hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
@@ -568,7 +583,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
                   )
     circles = np.asarray([0.3, 0.6, 1.]) * max_data
     legend_marker_sizes = desired_min + (circles - min_data) * (marker_max_size - desired_min) / (max_data - min_data)
-    xloc = [0.2, 0.3, 0.4]
+    xloc = [legend_start + idx * legend_spread for idx in range(3)]
     fig.add_trace(
         go.Scatter(
             x=xloc,
@@ -605,7 +620,7 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
         yref="y",
         xanchor="left",
         yanchor="middle",
-        x=0.0,
+        x=0.01,
         y=0.5,
         text="Mean Distance",
         showarrow=False,
@@ -692,9 +707,10 @@ def plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors=None
             title="Clusters",
             yanchor="top",
             yref="paper",
-            y=0.85
+            y=0.85,
 
         ),
+        margin=dict(r=0, l=0)
     )
 
     fig.update_layout(
