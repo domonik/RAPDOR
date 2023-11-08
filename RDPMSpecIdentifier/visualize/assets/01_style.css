@@ -245,10 +245,18 @@ tr:last-of-type td:last-of-type {
 input {
     color: var(--r-text-color) !important;
     background-color: var(--input-background-color) !important;
+    border-color: var(--input-background-color) !important;
+    box-shadow: 0px 3px 0px var(--databox-color), inset 0px 3px 0px var(--button-color);
+    padding-top: 3px;
+    padding-right: 5px
+
 }
 
 th input{
     background-color: transparent !important;
+    box-shadow: none;
+    padding-top: 0;
+    padding-right: 0;
 }
 
 .column-header-name {
@@ -276,6 +284,9 @@ th input{
 
 .dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner input:not([type=radio]):not([type=checkbox]):hover{
     color: var(--primary-color) !important;
+    box-shadow: none;
+    padding-top: 0;
+    padding-right: 0;
 }
 th span{
     color: white !important;
@@ -304,6 +315,9 @@ th input{
 
 input.current-page, input.current-page::placeholder {
     color: var(--r-text-color) !important;
+    box-shadow: none;
+    padding-top: 0;
+    padding-right: 0;
 }
 
 .Select-control {
@@ -581,7 +595,7 @@ input:disabled {
     border: 1px solid rgb(100, 100, 100);
     color: var(--bs-body-color);
     font-weight: bold;
-    background-color: inherit;
+    background-color: var(--databox-color) !important;
     width: 1em;
     height: 1em;
     outline: 0;
@@ -590,6 +604,8 @@ input:disabled {
     -webkit-appearance: none;
     -moz-appearance: none;
     margin-right: 5px;
+    box-shadow: none;
+
 }
 
 .dbc-row-selectable input[type=radio] {
