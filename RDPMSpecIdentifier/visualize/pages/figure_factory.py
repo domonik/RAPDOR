@@ -541,17 +541,17 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
         grid_width = 1
         dtickx = 1
         dticky = None
-        height = 100 * len(selected_proteins)
+        height = max(100 * len(selected_proteins), 400)
         vspace = 0.01
         xaxisw = yaxisw = 1
         l1x = l2x = 0
-        ly1 = 1
-        l2y = 1.05
+        l1y = 1.01
+        l2y = 1.1
     elif plot_type == 2:
         grid_width = 0
         dtickx = 1
         vspace = 0.01
-        height = 100 * len(selected_proteins)
+        height = max(100 * len(selected_proteins), 400)
         xaxisw = yaxisw = 1
         l1x = 0
         l1y = 1
@@ -658,13 +658,13 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
             fig.update_yaxes(mirror=True)
             settings = DEFAULT_DISTRIBUTION_SETTINGS
     fig.update_layout(
-        margin=dict(b=70, t=5)
+        margin=dict(b=70, t=20)
     )
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
     return encoded_image, *settings, bubble_style
 
-DEFAULT_DISTRIBUTION_SETTINGS = (5, False, 3, False, 0., 1.)
-DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True, 0., 1.)
+DEFAULT_DISTRIBUTION_SETTINGS = (5, False, 3, False, 0., 1.01)
+DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True, 0., 1.01)
 DEFAULT_DIMRED_SETTINGS = (None, True, None, True, 1.01, 0.85)
 
 @callback(
