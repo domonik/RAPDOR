@@ -96,3 +96,15 @@ clientside_callback(
         Input("plot-type-radio-ff", "options"),
     ],
 )
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="moveBtn",
+
+    ),
+    [Output("placeholder6", "children")],
+    [
+        Input("tbl", "data"),
+    ],
+)

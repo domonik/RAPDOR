@@ -48,6 +48,20 @@ def update_selection_on_page_switch(table_data, selected_ids, vpids, current_ids
     return rows, selected_ids, selected_ids
 
 
+
+
+@callback(
+    Output("tbl", "selected_rows", allow_duplicate=True),
+    Output("current-row-ids", "data", allow_duplicate=True),
+    Output("tbl", "selected_row_ids", allow_duplicate=True),
+    Input("reset-rows-btn", "n_clicks"),
+    prevent_initial_call=True
+)
+def reset_selected_rows(n_clicks):
+    if n_clicks is not None:
+        return [], [], []
+    else: raise PreventUpdate
+
 @callback(
     Output("current-row-ids", "data", allow_duplicate=True),
     Input("tbl", "selected_row_ids"),

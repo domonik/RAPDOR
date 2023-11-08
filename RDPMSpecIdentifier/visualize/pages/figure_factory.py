@@ -266,7 +266,7 @@ def _id_selector():
                     [],
                     className="justify-content-center",
                     id="protein-selector-ff",
-                    clearable=False,
+                    clearable=True,
                     multi=True
 
                 ),

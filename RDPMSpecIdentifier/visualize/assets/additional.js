@@ -5,12 +5,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             var formCheckElements = document.getElementsByClassName("form-check");
             if (formCheckElements.length > 0) {
                 for (var i = 0; i < formCheckElements.length; i++) {
-                  formCheckElements[i].classList.add("col-4");
-                  formCheckElements[i].classList.add("col-md-3");
+                    formCheckElements[i].classList.add("col-4");
+                    formCheckElements[i].classList.add("col-md-3");
                 }
-              }
+            }
             return ""
 
+
+        },
+
+        moveBtn: function (tbl) {
+            var btn = document.getElementById("reset-rows-btn")
+            var container = document.getElementsByClassName("previous-next-container")[0];
+            container.insertBefore(btn, container.firstChild);
+            return ""
         },
 
         styleSelectedTableRow: function (proteinKey) {
@@ -232,3 +240,7 @@ addEventListener("dragover", (event) => {
         dragOverElement.click()
     }
 });
+
+var btn = document.getElementById("reset-rows-btn")
+var container = document.getElementsByClassName("previous-next-container")[0];
+container.insertBefore(btn, container.firstChild);

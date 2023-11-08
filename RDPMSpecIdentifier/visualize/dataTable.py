@@ -24,16 +24,24 @@ def _get_table(rdpmsdata):
                         [
 
                             dls.RingChase(
-                                html.Div(
-                                    _create_table(rdpmsdata),
-                                    className="col-12 justify-content-center h-100 dbc-row-selectable",
-                                    id="data-table"
+                                [
+                                    html.Div(
+                                        _create_table(rdpmsdata),
+                                        className="col-12 justify-content-center h-100 dbc-row-selectable",
+                                        id="data-table"
 
-                                ),
+                                    ),
+                                    html.Button("Reset Selected Rows", id="reset-rows-btn", className="reset-col-btn first-page",
+                                                style=dict(position="absolute", left="0")),
+
+
+                                ],
+
                                 color="var(--primary-color)",
                                 width=200,
                                 thickness=20,
                                 id="ring-chase-tbl"
+
 
                             ),
                             html.Div(
