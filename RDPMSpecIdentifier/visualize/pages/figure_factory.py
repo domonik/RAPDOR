@@ -32,7 +32,7 @@ pio.templates["FFDefault"].update(
     {
         "layout": {
             # e.g. you want to change the background to transparent
-            "paper_bgcolor": "rgba(0,0,0,0)",
+            "paper_bgcolor": "rgba(255,255,255,1)",
             "plot_bgcolor": " rgba(0,0,0,0)",
             "font": dict(color="black"),
             "xaxis": dict(linecolor="black", showline=True),
@@ -176,7 +176,7 @@ def _distribution_settings():
             *_args_and_name("download-grid-width", "Grid Width", "number", 1),
             *_args_and_name("v-space", "Vertical Space", "number", 0.01),
             *_arg_x_and_y("legend1-x", "legend1-y", "Legend Pos", "number", 0., 1.),
-            *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.15),
+            *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.05),
             *_arg_x_and_y("x-axis-width", "y-axis-width", "Axis width", "number", 1, 1),
             *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1., 0.1),
             *_arg_x_and_y("zeroline-x-width", "zeroline-y-width", "Zeroline", "number", 1, 0),
@@ -386,14 +386,14 @@ def figure_factory_layout():
                                         },
                                         id="color-scheme2"
                                     ),
-                                    className="col-4 col-md-4 justify-content-center align-self-center"
+                                    className="col-6 col-md-4 justify-content-center align-self-center"
                                 ),
                                 html.Div(
                                     html.Button(
                                         '', id='primary-2-open-color-modal', n_clicks=0, className="btn primary-color-btn",
                                         style={"width": "100%", "height": "40px"}
                                     ),
-                                    className="col-3 justify-content-center text-align-center primary-color-div primary-open-color-btn"
+                                    className="col-3 col-md-4 justify-content-center text-align-center primary-color-div primary-open-color-btn"
                                 ),
                                 html.Div(
                                     html.Button(
@@ -401,17 +401,52 @@ def figure_factory_layout():
                                         className="btn secondary-color-btn",
                                         style={"width": "100%", "height": "40px"}
                                     ),
-                                    className="col-3 justify-content-center text-align-center primary-color-div secondary-open-color-btn"
+                                    className="col-3 col-md-4 justify-content-center text-align-center primary-color-div secondary-open-color-btn"
                                 ),
 
                             ],
 
-                            className="row justify-content-center p-2"
+                            className=BOOTSROW
                         ),
+                        html.Div(
+                            [
+                                html.Div(
+                                    html.Button(
+                                        'Default Settings', id='ff-default', n_clicks=0,
+                                        className="btn btn-primary",
+                                    ),
+                                    className="col-6 col-lg-3 justify-content-center text-align-center",
+                                ),
+                                html.Div(
+                                    [
+                                        html.Span("Filename", className="align-self-center"),
+                                        dcc.Input(
+                                            style={"width": "100%", "height": "70%", "border-radius": "5px",
+                                                   "color": "white",
+                                                   "text-align": "center"},
+                                            id="download-filename",
+                                            className="text-align-center align-self-center mx-2",
+                                            value="Image.svg",
+                                            type="text",
+                                            persistence=True,
+                                            persistence_type="session",
+                                        ),
+                                        html.Button(
+                                            'Download', id='ff-download', n_clicks=0,
+                                            className="btn btn-primary",
+                                        ),
+                                    ],
+
+
+                                    className="col-12 col-lg-9 d-flex"
+                                ),
+                            ],
+                            className=BOOTSROW + " justify-content-between"
+                        )
                     ],
                     className="databox p-2"
                 ),
-                className="col-12 col-lg-6"
+                className="col-12 col-lg-6 py-2 px-1"
 
             ),
             html.Div(
@@ -441,8 +476,10 @@ def figure_factory_layout():
                     ],
                     className="databox"
                 ),
-                className="col-12 col-lg-6 px-1"
-            )
+                className="col-12 col-lg-6 px-1 py-2"
+            ),
+            dcc.Download(id="download-ff-image"),
+
         ],
 
         className="row"
@@ -469,6 +506,71 @@ def update_selected_proteins(rdpmsdata: RDPMSpecData, current_row_ids):
             value = dash.no_update
 
         return list(rdpmsdata.df["RDPMSpecID"]), value
+
+
+@callback(
+    Output("download-marker-size", "value", allow_duplicate=True),
+    Output("download-line-width", "value", allow_duplicate=True),
+    Output("download-grid-width", "value"),
+    Output("d-x-tick", "value"),
+    Output("d-y-tick", "value"),
+    Output("download-height", "value"),
+    Output("v-space", "value"),
+    Output("x-axis-width", "value"),
+    Output("y-axis-width", "value"),
+    Output("template-dd", "value"),
+    Output("zeroline-x-width", "value"),
+    Output("zeroline-y-width", "value"),
+    Output("legend1-x", "value", allow_duplicate=True),
+    Output("legend1-y", "value", allow_duplicate=True),
+    Output("legend2-x", "value", allow_duplicate=True),
+    Output("legend2-y", "value", allow_duplicate=True),
+    Input("ff-default", "n_clicks"),
+    State("plot-type-radio-ff", "value"),
+    State("current-row-ids", "data"),
+    prevent_initial_call=True
+)
+def apply_default_settings(clicks, plot_type, selected_proteins):
+    if clicks is None:
+        raise PreventUpdate
+    m_size = line_width = grid_width = dtickx = dticky = height = vspace = xaxisw = yaxisw = dash.no_update
+    l1x = l2x = l1y = l2y = None
+    if plot_type == 0:
+        m_size = 5
+        line_width = 3
+        grid_width = 1
+        dtickx = 1
+        dticky = None
+        height = 100 * len(selected_proteins)
+        vspace = 0.01
+        xaxisw = yaxisw = 1
+        l1x = l2x = 0
+        ly1 = 1
+        l2y = 1.05
+    elif plot_type == 2:
+        grid_width = 0
+        dtickx = 1
+        vspace = 0.01
+        height = 100 * len(selected_proteins)
+        xaxisw = yaxisw = 1
+        l1x = 0
+        l1y = 1
+
+    elif plot_type == 3:
+        grid_width = 0
+        l1x = 1.01
+        l1y = 0.85
+
+        dtickx = 2
+        dticky = None
+        height = 500
+        xaxisw = yaxisw = 1
+
+    else:
+        pass
+
+    return m_size, line_width, grid_width, dtickx, dticky, height, vspace, xaxisw, yaxisw, "FFDefault", 0, 0, l1x, l1y, l2x, l2y
+
 
 
 @callback(
@@ -543,8 +645,8 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
                     bubble_legend_color="black"
                 )
 
-                fig.update_xaxes(side="top", row=1)
-                fig.update_yaxes(mirror=True)
+                fig.update_xaxes(mirror=True, row=2)
+                fig.update_yaxes(mirror=True, row=2)
             else:
                 fig = empty_figure("Distances not Calculated.<br>Go to Analysis Page and click the Get Score Button.")
             settings = DEFAULT_DIMRED_SETTINGS
@@ -552,17 +654,48 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
 
         else:
             fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
+            fig.update_xaxes(mirror=True)
+            fig.update_yaxes(mirror=True)
             settings = DEFAULT_DISTRIBUTION_SETTINGS
     fig.update_layout(
-        margin=dict(b=5, t=5)
+        margin=dict(b=70, t=5)
     )
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
     return encoded_image, *settings, bubble_style
 
-DEFAULT_DISTRIBUTION_SETTINGS = (8, False, 3, False, 0., 1.)
+DEFAULT_DISTRIBUTION_SETTINGS = (5, False, 3, False, 0., 1.)
 DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True, 0., 1.)
-DEFAULT_DIMRED_SETTINGS = (None, True, None, True, 1.01, 1.0)
+DEFAULT_DIMRED_SETTINGS = (None, True, None, True, 1.01, 0.85)
 
+@callback(
+    Output("download-filename", "value"),
+    Input("filetype-selector-ff", "value"),
+    State("download-filename", "value")
+)
+def update_filename(filetype, filename):
+    if filename is None:
+        filename = "Image.svg"
+    filename = filename.split(".")[0]
+    filename = f"{filename}.{filetype}"
+    return filename
+
+
+@callback(
+    Output("download-ff-image", "data"),
+    Input('ff-download', "n_clicks"),
+    State("figure-factory-download-preview", "children"),
+    State("download-filename", "value"),
+    prevent_initial_call=True
+)
+def download_image(n_clicks, figure, filename):
+    if n_clicks is None:
+        raise PreventUpdate
+    fig = figure["props"]["src"]
+    ret_val = {}
+    ret_val["filename"] = filename
+    ret_val["content"] = fig.split(",")[-1]
+    ret_val["base64"] = True
+    return ret_val
 
 @callback(
     Output("figure-factory-download-preview", "children"),
@@ -684,9 +817,11 @@ def update_ff_download_preview(
                 fig,
                 legend_start=legend_start,
                 legend_spread=legend_spread,
-                second_bg_color=pio.templates[template]["layout"]["plot_bgcolor"],
+                second_bg_color=pio.templates[template]["layout"]["paper_bgcolor"],
                 bubble_legend_color=pio.templates[template]["layout"]["font"]["color"]
             )
+            fig.update_xaxes(showgrid=False, row=1, showline=False, zeroline=False)
+            fig.update_yaxes(showgrid=False, row=1, showline=False, zeroline=False)
             fig.update_annotations(
                 font=dict(size=legend_font_size)
             )
