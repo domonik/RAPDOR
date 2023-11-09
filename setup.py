@@ -43,7 +43,6 @@ setup(
         "kaleido",
         "PyQt5",
         "dash_daq",
-        "umap-learn",
         "dash_extensions"
     ],
     setup_requires=["pytest-runner"],
