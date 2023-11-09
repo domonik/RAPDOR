@@ -469,6 +469,10 @@ input:disabled {
     min-height: 50px !important;
 }
 
+.previous-next-container button:hover{
+    color: var(--primary-color) !important;
+}
+
 #tbl {
     height: 100% !important;
 }
