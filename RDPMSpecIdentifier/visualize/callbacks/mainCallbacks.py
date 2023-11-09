@@ -105,7 +105,7 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid, selected_column
     if uid is None:
         raise PreventUpdate
     logger.info(f"Normalization triggered via {ctx.triggered_id}")
-    eps = 0 if distance_method == "Jensen-Shannon-Distance" else 10  # Todo: Make this optional
+    eps = 10 if distance_method == "KL-Divergence" else 0  # Todo: Make this optional
     rdpmsdata: RDPMSpecData
     if rdpmsdata.state.kernel_size != kernel_size or rdpmsdata.state.distance_method != distance_method:
         logger.info(f"Normalizing using method: {distance_method} and eps: {eps}")

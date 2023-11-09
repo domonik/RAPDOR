@@ -106,5 +106,6 @@ clientside_callback(
     [Output("placeholder6", "children")],
     [
         Input("tbl", "data"),
+        Input("analysis-tabs", "value"),
     ],
 )

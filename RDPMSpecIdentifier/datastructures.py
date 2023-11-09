@@ -266,6 +266,24 @@ class RDPMSpecData:
         self.state.kernel_size = kernel_size
         self.state.eps = eps
 
+
+    def _calc_distance_via(self, method, array1, array2, axis: int = -1):
+        if method == "Jensen-Shannon-Distance":
+            distances = self._jensenshannondistance(array1, array2, axis=axis)
+
+        elif method == "KL-Divergence":
+            if self.state.eps is None or self.state.eps <= 0:
+                raise ValueError(
+                    "Cannot calculate KL-Divergence for Counts with 0 entries. "
+                    "Need to set epsilon which is added to the raw Protein intensities"
+                )
+            distances = self._symmetric_kl_divergence(array1, array2, axis=axis)
+        elif method == "Euclidean-Distance":
+            distances = self._euclidean_distance(array1, array2, axis=axis)
+        else:
+            raise ValueError(f"methhod: {method} is not supported")
+        return distances
+
     def calc_distances(self, method: str):
         """Calculates between sample distances.
                 
@@ -277,20 +295,8 @@ class RDPMSpecData:
                 epsilon to the protein intensities
 
         """
-        if method == "Jensen-Shannon-Distance":
-            self.distances = self._jensenshannondistance(self.norm_array)
-
-        elif method == "KL-Divergence":
-            if self.state.eps is None or self.state.eps <= 0:
-                raise ValueError(
-                    "Cannot calculate KL-Divergence for Counts with 0 entries. "
-                    "Need to set epsilon which is added to the raw Protein intensities"
-                )
-            self.distances = self._symmetric_kl_divergence(self.norm_array)
-        elif method == "Euclidean-Distance":
-            self.distances = self._euclidean_distance(self.norm_array)
-        else:
-            raise ValueError(f"methhod: {method} is not supported")
+        array1, array2 = self.norm_array[:, :, :, None], self.norm_array[:, :, :, None].transpose(0, 3, 2, 1)
+        self.distances = self._calc_distance_via(method, array1=array1, array2=array2, axis=-2)
         self.state.distance_method = method
 
     def _unset_scores_and_pvalues(self):
@@ -320,12 +326,12 @@ class RDPMSpecData:
 
         #. Calculate the mean of the :attr:`norm_array` per group (RNase & Control)
         #. Calculate the mixture distribution of the mean distributions.
-        #. Take the max of the relative entropy between the mean distribution and the mixture distribution
-        #. This yields a peak per group
-
-        This so-called peak reflect the highest change in probability mass compared to the other group.
-
-        The Mean Distance is just the Jensen-Shannon-Distance between the mean distributions
+        #. Calculate $D$ which is either:
+            * Relative position-wise entropy of both groups to the mixture distribution if distance method is KL-Divergence or Jensen-Shannon
+            * position-wise euclidean distance of both groups to the mixture distribution if distance method is Eucledian-Distance
+        #. For both groups $D = 0\ if\ D < 0$
+        #. Min max normalize $D$
+        #. Calculate a weighted average over the Fraction indices using $D$ as weights
 
         """
         indices = self.internal_design_matrix.groupby("RNase", group_keys=True).apply(lambda x: list(x.index))
@@ -334,17 +340,23 @@ class RDPMSpecData:
         mid = 0.5 * (rnase_true + rnase_false)
         s = int(np.ceil(self.state.kernel_size / 2))
         range = np.arange(s, s + mid.shape[-1])
-        rel1 = rel_entr(rnase_false, mid)
+        if self.state.distance_method in ["Jensen-Shannon-Distance", "KL-Divergence"]:
+            rel1 = rel_entr(rnase_false, mid)
+            rel2 = rel_entr(rnase_true, mid)
+        elif self.state.distance_method == "Euclidean-Distance":
+            rel1 = rnase_false - mid
+            rel2 = rnase_true - mid
+        else:
+            raise ValueError(f"Peak determination failed due to bug in source code")
         rel1[rel1 < 0] = 0
         rel1 = (rel1 / np.sum(rel1, axis=-1, keepdims=True)) * range
         r1 = np.sum(rel1, axis=-1)
         self.df["RNase False peak pos"] = r1
 
-        rel2 = rel_entr(rnase_true, mid)
         rel2[rel2 < 0] = 0
         rel2 = (rel2 / np.sum(rel2, axis=-1, keepdims=True)) * range
         r2 = np.sum(rel2, axis=-1)
-        jsd = jensenshannon(rnase_true, rnase_false, axis=-1, base=2)
+        jsd = self._calc_distance_via(self.state.distance_method, rnase_true, rnase_false, axis=-1)
 
         self.df["RNase True peak pos"] = r2
         self.df["Mean Distance"] = jsd
@@ -389,12 +401,12 @@ class RDPMSpecData:
             raise ValueError("Peaks not determined. Determine Peaks first")
         rnase_false = np.nanmean(self.norm_array[:, self._indices_false], axis=-2)
         rnase_true = np.nanmean(self.norm_array[:, self._indices_true], axis=-2)
-        mixture = 0.5 * (rnase_true + rnase_false)
+        mixture = rnase_true + rnase_false
         uni_nonzero = mixture > 0
         uniform = (np.ones((mixture.shape[0], mixture.shape[1])) / np.count_nonzero(uni_nonzero, axis=-1, keepdims=True)) * uni_nonzero
 
-        false_uni_distance = jensenshannon(rnase_false, uniform, base=2, axis=-1)
-        true_uni_distance = jensenshannon(rnase_true, uniform, base=2, axis=-1)
+        false_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_false, uniform, axis=-1)
+        true_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_true, uniform, axis=-1)
         diff = false_uni_distance - true_uni_distance
         shift = self.df["relative fraction shift"].to_numpy()
         self.cluster_features = np.concatenate((shift[:, np.newaxis], diff[:, np.newaxis]), axis=1)
@@ -412,8 +424,6 @@ class RDPMSpecData:
                 random_state=0,
                 method="exact" if embedding_dim >= 4 else "barnes_hut"
             )
-        elif method == "UMAP":
-            reducer = UMAP(n_components=embedding_dim)
         elif method == "PCA":
             reducer = PCA(n_components=embedding_dim)
         else:
@@ -459,18 +469,19 @@ class RDPMSpecData:
         return clusters
 
     @staticmethod
-    def _jensenshannondistance(array) -> np.ndarray:
-        return jensenshannon(array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1), base=2, axis=-2)
+    def _jensenshannondistance(array1, array2, axis: int = -2) -> np.ndarray:
+        return jensenshannon(array1, array2, base=2, axis=axis)
+
 
     @staticmethod
-    def _symmetric_kl_divergence(array):
-        r1 = rel_entr(array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1)).sum(axis=-2)
-        r2 = rel_entr(array[:, :, :, None].transpose(0, 3, 2, 1), array[:, :, :, None]).sum(axis=-2)
+    def _symmetric_kl_divergence(array1, array2, axis: int = -2):
+        r1 = rel_entr(array1, array2).sum(axis=axis)
+        r2 = rel_entr(array2, array1).sum(axis=axis)
         return r1 + r2
 
     @staticmethod
-    def _euclidean_distance(array):
-        return np.linalg.norm(array[:, :, :, None] - array[:, :, :, None].transpose(0, 3, 2, 1), axis=-2)
+    def _euclidean_distance(array1, array2, axis: int = -2):
+        return np.linalg.norm(array1 - array2, axis=axis)
 
     def _get_outer_group_distances(self, indices_false, indices_true):
         n_genes = self.distances.shape[0]

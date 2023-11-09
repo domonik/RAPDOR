@@ -49,6 +49,7 @@ layout = html.Div(
                     ), label="Clustering", className="custom-tab", selected_className='custom-tab--selected'
                 )
             ],
+            id="analysis-tabs",
             parent_className='custom-tabs',
             className='custom-tabs-container',
 

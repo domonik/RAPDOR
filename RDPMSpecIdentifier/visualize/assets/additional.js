@@ -14,11 +14,16 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
         },
 
-        moveBtn: function (tbl) {
-            var btn = document.getElementById("reset-rows-btn")
-            var container = document.getElementsByClassName("previous-next-container")[0];
-            container.insertBefore(btn, container.firstChild);
-            return ""
+        moveBtn: function (tbl, tab) {
+            if (tab === "tab-2") {
+                return ""
+            } else {
+                var btn = document.getElementById("reset-rows-btn")
+                var container = document.getElementsByClassName("previous-next-container")[0];
+                container.insertBefore(btn, container.firstChild);
+                return ""
+            }
+
         },
 
         styleSelectedTableRow: function (proteinKey) {
