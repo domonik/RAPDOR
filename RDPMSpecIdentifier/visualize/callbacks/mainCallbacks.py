@@ -10,6 +10,7 @@ from dash_extensions.enrich import Serverside, State, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import uuid
 import dash_bootstrap_components as dbc
+from RDPMSpecIdentifier.visualize import DISPLAY
 
 import logging
 
@@ -24,12 +25,18 @@ logger = logging.getLogger(__name__)
     State("data-initial-store", "data")
 )
 def assign_session_identifier(uid, data, initial_data):
+    logger.info(f"data is {data}")
     rdata = dash.no_update
     if uid is None:
         uid = str(uuid.uuid4())
-    if data is None and initial_data is not None:
-        rdata = Serverside(RDPMSpecData.from_json(initial_data), key=uid)
-        logger.info("Setting initial from initital data")
+    if data is None :
+        if initial_data is not None:
+            rdata = Serverside(RDPMSpecData.from_json(initial_data), key=uid)
+            logger.info("Setting initial from initital data")
+
+        elif DISPLAY:
+            rdata = Serverside(None, key=uid)
+            logger.info("Setting initial from initital data")
 
     return uid, rdata
 

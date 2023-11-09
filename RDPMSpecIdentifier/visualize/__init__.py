@@ -1,9 +1,18 @@
 import os
 mode = os.getenv('RDPMS_DISPLAY_MODE')
+file = os.getenv('RDPMS_DISPLAY_FILE')
+
 if mode == "True":
     DISPLAY = True
+    if file:
+        DISPLAY_FILE = file
+    else:
+        DISPLAY_FILE = "RDPMSpecIdentifier.json"
+    if not os.path.exists(DISPLAY_FILE):
+        raise ValueError(f"Running in Display Mode but cannot find the file to display:\n Expected File {DISPLAY_FILE}")
 else:
     DISPLAY = False
+    DISPLAY_FILE = None
 DISABLED = DISPLAY
 
 

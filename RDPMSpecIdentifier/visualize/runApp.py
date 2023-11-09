@@ -105,4 +105,4 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
     design = "testData/testDesign.tsv"
     logbase = 2
-    gui_wrapper(file, design, host="0.0.0.0", port=8080, debug=True, logbase=logbase)
+    gui_wrapper(file, design, host="0.0.0.0", port=8090, debug=True, logbase=logbase)

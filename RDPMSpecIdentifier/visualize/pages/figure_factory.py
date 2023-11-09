@@ -4,7 +4,7 @@ from dash import html
 import base64
 from dash import dcc
 from dash_extensions.enrich import callback, Input, Output, Serverside, State
-
+from RDPMSpecIdentifier.visualize import DISPLAY
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
 import dash_bootstrap_components as dbc
@@ -543,15 +543,15 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
 
 )
 def update_row_ids(values, rdpmsdata):
-    if rdpmsdata is None:
+    if rdpmsdata is None or values is None:
         raise PreventUpdate
     values = list(rdpmsdata.df[rdpmsdata.df["RDPMSpecID"].isin(values)].index)
     return values
 
+
 @callback(
     Output("displayed-column-dd", "options"),
     Input("data-store", "data"),
-
 )
 def update_selectable_columns(rdpmsdata):
     if rdpmsdata is None:

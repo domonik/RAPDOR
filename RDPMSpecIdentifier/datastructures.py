@@ -411,7 +411,6 @@ class RDPMSpecData:
         shift = self.df["relative fraction shift"].to_numpy()
         self.cluster_features = np.concatenate((shift[:, np.newaxis], diff[:, np.newaxis]), axis=1)
         self.current_embedding = self.cluster_features
-        self.state.dimension_reduction = "custom"
 
     def reduce_dim(self, data, embedding_dim: int = 2, method: str = "T-SNE"):
         data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
@@ -436,7 +435,6 @@ class RDPMSpecData:
 
     def set_embedding(self, dim, method):
         self.current_embedding = self.reduce_dim(data=self.cluster_features, method=method, embedding_dim=dim)
-        self.state.dimension_reduction = method
 
     def remove_clusters(self):
         if "Cluster" in self.df:
