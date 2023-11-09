@@ -4,7 +4,7 @@ import pandas as pd
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 from RDPMSpecIdentifier.visualize.appDefinition import app
 import dash_extensions.enrich
-from RDPMSpecIdentifier.visualize.modals import _color_theme_modal
+from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal
 from RDPMSpecIdentifier.visualize.staticContent import _header_layout, _footer
 import logging
 

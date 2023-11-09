@@ -3,22 +3,18 @@ import dash
 from dash import html
 import base64
 from dash import dcc
-from dash_extensions.enrich import callback, Input, Output, Serverside, State, ctx
-from RDPMSpecIdentifier.visualize.staticContent import COLOR_SCHEMES
+from dash_extensions.enrich import callback, Input, Output, Serverside, State
+
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
 import dash_bootstrap_components as dbc
-import pandas as pd
-from io import StringIO
 from dash.exceptions import PreventUpdate
-import os
-from RDPMSpecIdentifier.visualize import DISABLED
-from tempfile import NamedTemporaryFile
 from RDPMSpecIdentifier.plots import plot_protein_distributions, plot_protein_westernblots, empty_figure, plot_dimension_reduction_result2d, update_bubble_legend
-import numpy as np
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
-from RDPMSpecIdentifier.visualize.modals import _color_theme_modal, _modal_color_selection
-from io import BytesIO
+from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal, _modal_color_selection, _color_selection
+from RDPMSpecIdentifier.visualize import BOOTSH5, BOOTSROW
+from RDPMSpecIdentifier.visualize.callbacks.colorCallbacks import *
+
 import plotly.io as pio
 import copy
 
@@ -42,8 +38,6 @@ pio.templates["FFDefault"].update(
     }
 )
 
-BOOTSH5 = "col-12 justify-content-center px-0"
-BOOTSROW = "row  px-4 px-md-4 py-1"
 
 def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
     if isinstance(default_x, int):
@@ -187,6 +181,7 @@ def _distribution_settings():
     )
     return data
 
+
 def _font_settings():
     data = html.Div(
         [
@@ -200,6 +195,7 @@ def _font_settings():
         id="distribution-settings"
     )
     return data
+
 
 def _bubble_legend_settings():
     data = html.Div(
@@ -311,6 +307,7 @@ def _file_format():
     )
     return div
 
+
 def figure_factory_layout():
     layout = html.Div(
         [
@@ -373,41 +370,7 @@ def figure_factory_layout():
 
                             className="row justify-content-center"
                         ),
-                        html.Div(
-                            [
-                                html.Div(
-                                    html.Button(
-                                        "Select Color Scheme",
-                                        style={
-                                            "text-align": "center",
-                                            "border": "0px solid transparent",
-                                            "background": "transparent",
-                                            "color": "var(--r-text-color)",
-                                        },
-                                        id="color-scheme2"
-                                    ),
-                                    className="col-6 col-md-4 justify-content-center align-self-center"
-                                ),
-                                html.Div(
-                                    html.Button(
-                                        '', id='primary-2-open-color-modal', n_clicks=0, className="btn primary-color-btn",
-                                        style={"width": "100%", "height": "40px"}
-                                    ),
-                                    className="col-3 col-md-4 justify-content-center text-align-center primary-color-div primary-open-color-btn"
-                                ),
-                                html.Div(
-                                    html.Button(
-                                        '', id='secondary-2-open-color-modal', n_clicks=0,
-                                        className="btn secondary-color-btn",
-                                        style={"width": "100%", "height": "40px"}
-                                    ),
-                                    className="col-3 col-md-4 justify-content-center text-align-center primary-color-div secondary-open-color-btn"
-                                ),
-
-                            ],
-
-                            className=BOOTSROW
-                        ),
+                        _color_selection(),
                         html.Div(
                             [
                                 html.Div(
@@ -836,92 +799,5 @@ def update_ff_download_preview(
     )
     return fig
 
-@callback(
-    Output("color-scheme-modal-2", "is_open", allow_duplicate=True),
-    Output("primary-color", "data", allow_duplicate=True),
-    Output("secondary-color", "data", allow_duplicate=True),
-    Input("color-scheme2", "n_clicks"),
-    Input("apply-color-scheme-2", "n_clicks"),
-    State("color-scheme-modal-2", "is_open"),
-    State("color-scheme-dropdown-2", "value"),
-    prevent_initital_call=True
-)
-def _open_color_theme_modal(n1, n2, is_open, selected_scheme):
-    logger.info(f"{ctx.triggered_id} - triggerere color schema modal: {n1}, {n2}, {is_open}")
-    if n1 == 0 or n1 is None:
-        raise PreventUpdate
-    if ctx.triggered_id == "color-scheme2":
-        return not is_open, dash.no_update, dash.no_update
-    elif ctx.triggered_id == "apply-color-scheme-2":
-        if selected_scheme is None:
-            raise PreventUpdate
-        primary, secondary = COLOR_SCHEMES[selected_scheme]
-        return not is_open, primary, secondary
 
 
-
-@callback(
-    [
-        Output("secondary-2-color-modal", "is_open"),
-        Output("secondary-color", "data", allow_duplicate=True),
-
-    ],
-    [
-        Input("secondary-2-open-color-modal", "n_clicks"),
-        Input("secondary-2-apply-color-modal", "n_clicks"),
-    ],
-    [
-        State("secondary-2-color-modal", "is_open"),
-        State("secondary-2-color-picker", "value"),
-        State("secondary-2-open-color-modal", "style"),
-
-    ],
-    prevent_initial_call=True
-)
-def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
-    logger.info(f"{ctx.triggered_id} - triggered secondary color modal")
-    tid = ctx.triggered_id
-    if n1 == 0:
-        raise PreventUpdate
-    if tid == "secondary-2-open-color-modal":
-        return not is_open, dash.no_update
-    elif tid == "secondary-2-apply-color-modal":
-        rgb = color_value["rgb"]
-        r, g, b = rgb["r"], rgb["g"], rgb["b"]
-        color = f"rgb({r}, {g}, {b})"
-    else:
-        raise ValueError("")
-    return not is_open, color
-
-@callback(
-    [
-        Output("primary-2-color-modal", "is_open"),
-        Output("primary-color", "data", allow_duplicate=True),
-
-    ],
-    [
-        Input("primary-2-open-color-modal", "n_clicks"),
-        Input("primary-2-apply-color-modal", "n_clicks"),
-    ],
-    [
-        State("primary-2-color-modal", "is_open"),
-        State("primary-2-color-picker", "value"),
-        State("primary-2-open-color-modal", "style"),
-
-    ],
-    prevent_initial_call=True
-)
-def _toggle_secondary_color_modal(n1, n2, is_open, color_value, style):
-    logger.info(f"{ctx.triggered_id} - triggered secondary color modal")
-    tid = ctx.triggered_id
-    if n1 == 0:
-        raise PreventUpdate
-    if tid == "primary-2-open-color-modal":
-        return not is_open, dash.no_update
-    elif tid == "primary-2-apply-color-modal":
-        rgb = color_value["rgb"]
-        r, g, b = rgb["r"], rgb["g"], rgb["b"]
-        color = f"rgb({r}, {g}, {b})"
-    else:
-        raise ValueError("")
-    return not is_open, color

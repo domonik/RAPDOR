@@ -5,3 +5,7 @@ if mode == "True":
 else:
     DISPLAY = False
 DISABLED = DISPLAY
+
+
+BOOTSH5 = "col-12 justify-content-center px-0"
+BOOTSROW = "row  px-4 px-md-4 py-1"

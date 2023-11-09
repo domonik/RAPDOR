@@ -7,16 +7,16 @@ from RDPMSpecIdentifier.visualize.callbacks.mainCallbacks import *
 from RDPMSpecIdentifier.visualize.callbacks.plotCallbacks import * # Don´t delete that. It is needed.
 from RDPMSpecIdentifier.visualize.callbacks.tableCallbacks import *
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import *
+from RDPMSpecIdentifier.visualize.callbacks.colorCallbacks import *
 import os
 from RDPMSpecIdentifier.visualize.modals import (
     _modal_image_download,
-    _modal_color_selection,
     _modal_hdbscan_cluster_settings,
     _modal_dbscan_cluster_settings,
     _modal_kmeans_cluster_settings,
-    _modal_cluster_image_download,
-    _color_theme_modal
+    _modal_cluster_image_download
 )
+from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal, _modal_color_selection
 from RDPMSpecIdentifier.visualize import DISABLED
 
 

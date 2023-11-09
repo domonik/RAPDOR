@@ -1,8 +1,5 @@
 import dash_bootstrap_components as dbc
-import dash_daq as daq
 from dash import html, dcc
-from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS, COLOR_SCHEMES
-from RDPMSpecIdentifier.plots import empty_figure
 
 KMEANS_ARGS = 2
 DBSCAN_ARGS = 2
@@ -110,62 +107,6 @@ def _modal_cluster_image_download():
             ),
         ],
         id="cluster-img-modal",
-    )
-    return modal
-
-
-def _color_theme_modal(nr: int = 1):
-    modal = dbc.Modal(
-        [
-            dbc.ModalHeader(f"Select Color Scheme"),
-            dbc.ModalBody(
-                [
-                    dcc.Dropdown(
-                        list(COLOR_SCHEMES.keys()),
-                        "Flamingo",
-                        id=f"color-scheme-dropdown-{nr}",
-                        clearable=False
-                    )
-                ]
-            ),
-            dbc.ModalFooter(
-                dbc.Button("Apply", id=f"apply-color-scheme-{nr}", className="ml-auto",
-                           n_clicks=0)),
-        ],
-        id=f"color-scheme-modal-{nr}",
-    )
-    return modal
-
-
-
-def _modal_color_selection(number):
-    color = DEFAULT_COLORS[number.split("-")[0]]
-    color = color.split("(")[-1].split(")")[0]
-    r, g, b = (int(v) for v in color.split(","))
-    modal = dbc.Modal(
-        [
-            dbc.ModalHeader("Select color"),
-            dbc.ModalBody(
-                [
-                    html.Div(
-                        [
-                            daq.ColorPicker(
-                                id=f'{number}-color-picker',
-                                label='Color Picker',
-                                size=400,
-                                theme={"dark": True},
-                                value={"rgb": dict(r=r, g=g, b=b, a=1)}
-                            ),
-                        ],
-                        className="row justify-content-around",
-                    )
-                ]
-            ),
-            dbc.ModalFooter(
-                dbc.Button("Apply", id=f"{number}-apply-color-modal", className="ml-auto",
-                           n_clicks=0)),
-        ],
-        id=f"{number}-color-modal",
     )
     return modal
 

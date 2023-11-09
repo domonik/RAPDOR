@@ -6,6 +6,9 @@ import dash_daq as daq
 from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 from RDPMSpecIdentifier.plots import empty_figure
+from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal, _modal_color_selection, _color_selection
+from RDPMSpecIdentifier.visualize import BOOTSH5, BOOTSROW
+
 
 
 def _get_cluster_panel(disabled: bool = False):
@@ -132,6 +135,9 @@ def _get_cluster_panel(disabled: bool = False):
 def selector_box(disabled: bool = False):
     sel_box = html.Div(
         [
+            _color_theme_modal(2),
+            _modal_color_selection("primary-2"),
+            _modal_color_selection("secondary-2"),
             html.Div(
                 [
                     html.Div(
@@ -145,7 +151,7 @@ def selector_box(disabled: bool = False):
                         [
                             html.Div(
                                 html.Span("Distance Method", style={"text-align": "center"}),
-                                className="col-3 col-md-3 justify-content-center align-self-center"
+                                className="col-4 justify-content-center align-self-center"
                             ),
                             html.Div(
                                 dcc.Dropdown(
@@ -158,16 +164,16 @@ def selector_box(disabled: bool = False):
                                     persistence_type="session"
 
                                 ),
-                                className="col-7 justify-content-center text-align-center"
+                                className="col-8 justify-content-center text-align-center"
                             )
                         ],
-                        className="row justify-content-center p-2"
+                        className=BOOTSROW
                     ),
                     html.Div(
                         [
                             html.Div(
                                 html.Span("Kernel Size", style={"text-align": "center"}),
-                                className="col-10 col-md-3 justify-content-center align-self-center"
+                                className="col-12 col-md-4 justify-content-center align-self-center"
                             ),
                             html.Div(
                                 dcc.Slider(
@@ -181,25 +187,27 @@ def selector_box(disabled: bool = False):
                                     id="kernel-slider",
                                     disabled=disabled
                                 ),
-                                className="col-10 col-md-7 justify-content-center",
+                                className="col-12 col-md-8 justify-content-center",
                             ),
                         ],
-                        className="row justify-content-center p-2"
+                        className=BOOTSROW
                     ),
                     html.Div(
-                        html.Div(
-                            html.Button('Get Score', id='score-btn', n_clicks=0, className="btn btn-primary", style={"width": "100%"}, disabled=disabled),
-                            className="col-10 justify-content-center text-align-center"
-                        ),
-                        className="row justify-content-center p-2"
-                    ),
-                    html.Div(
-                        html.Div(
-                            html.Button('Rank Table', id='rank-btn', n_clicks=0, className="btn btn-primary", disabled=disabled,
-                                        style={"width": "100%"}),
-                            className="col-10 justify-content-center text-align-center"
-                        ),
-                        className="row justify-content-center p-2"
+                        [
+                            html.Div(
+                                html.Button('Get Score', id='score-btn', n_clicks=0, className="btn btn-primary",
+                                            style={"width": "100%"}, disabled=disabled),
+                                className="col-6 justify-content-center text-align-center"
+                            ),
+                            html.Div(
+                                html.Button('Rank Table', id='rank-btn', n_clicks=0, className="btn btn-primary",
+                                            disabled=disabled,
+                                            style={"width": "100%"}),
+                                className="col-6 justify-content-center text-align-center"
+                            ),
+                        ],
+
+                        className=BOOTSROW
                     ),
                     html.Div(
                         [
@@ -214,16 +222,16 @@ def selector_box(disabled: bool = False):
                                     min=0,
                                     disabled=disabled
                                 ),
-                                className="col-3 text-align-center align-items-center"
+                                className="col-4 text-align-center align-items-center"
                             ),
                             html.Div(
                                 html.Button('Peak T-Tests', id='local-t-test-btn', n_clicks=0,
                                             className="btn btn-primary",
                                             style={"width": "100%"}, disabled=disabled),
-                                className="col-7 justify-content-center text-align-center"
+                                className="col-8 justify-content-center text-align-center"
                             ),
                         ],
-                        className="row justify-content-center p-2"
+                        className=BOOTSROW
                     ),
 
                     html.Div(
@@ -238,21 +246,21 @@ def selector_box(disabled: bool = False):
                                     min=1,
                                     disabled=disabled
                                 ),
-                                className="col-3 text-align-center align-items-center"
+                                className="col-4 text-align-center align-items-center"
                             ),
                             html.Div(
                                 html.Button('Run PERMANOVA', id='permanova-btn', n_clicks=0,
                                             className="btn btn-primary",
                                             style={"width": "100%"}, disabled=disabled),
-                                className="col-7 justify-content-center text-align-center"
+                                className="col-8 justify-content-center text-align-center"
                             ),
                             html.Div(
                                 id="alert-div",
-                                className="col-10"
+                                className="col-12"
                             )
 
                         ],
-                        className="row justify-content-center p-2"
+                        className=BOOTSROW
                     ),
                     html.Div(
                         [
@@ -267,76 +275,42 @@ def selector_box(disabled: bool = False):
                                     min=1,
                                     disabled=disabled
                                 ),
-                                className="col-3 text-align-center align-items-center"
+                                className="col-4 text-align-center align-items-center"
                             ),
                             html.Div(
                                 html.Button('Run ANOSIM', id='anosim-btn', n_clicks=0,
                                             className="btn btn-primary", disabled=disabled,
                                             style={"width": "100%"}),
-                                className="col-7 justify-content-center text-align-center"
+                                className="col-8 justify-content-center text-align-center"
                             ),
 
                         ],
-                        className="row justify-content-center p-2"
+                        className=BOOTSROW
                     ),
-                    html.Div(
-                        [
-                            html.Div(
-                                html.Button('Export TSV', id='export-btn', n_clicks=0, className="btn btn-primary",
-                                            style={"width": "100%"}),
-                                className="col-10 justify-content-center text-align-center"
-                            ),
-                            dcc.Download(id="download-dataframe-csv"),
-                        ],
 
-                        className="row justify-content-center p-2"
-                    ),
                     html.Div(
                         [
                             html.Div(
                                 html.Button('Export JSON', id='export-pickle-btn', n_clicks=0, className="btn btn-primary",
                                             style={"width": "100%"}),
-                                className="col-10 justify-content-center text-align-center"
+                                className="col-6 justify-content-center text-align-center"
                             ),
                             dcc.Download(id="download-pickle"),
+                            html.Div(
+                                html.Button('Export TSV', id='export-btn', n_clicks=0, className="btn btn-primary",
+                                            style={"width": "100%"}),
+                                className="col-6 justify-content-center text-align-center"
+                            ),
+                            dcc.Download(id="download-dataframe-csv"),
                         ],
 
-                        className="row justify-content-center p-2"
+                        className=BOOTSROW
                     ),
                     html.Div(
-                        [
-                            html.Div(
-                                html.Button(
-                                    "Select Color Scheme",
-                                    style={
-                                        "text-align": "center",
-                                        "border": "0px solid transparent",
-                                        "background": "transparent",
-                                        "color": "var(--r-text-color"
-                                    },
-                                    id="color-scheme"
-                                ),
-                                className="col-4 col-md-4 justify-content-center align-self-center"
-                            ),
-                            html.Div(
-                                html.Button(
-                                    '', id='primary-open-color-modal', n_clicks=0, className="btn primary-color-btn",
-                                    style={"width": "100%", "height": "40px"}
-                                ),
-                                className="col-3 justify-content-center text-align-center primary-color-div"
-                            ),
-                            html.Div(
-                                html.Button(
-                                    '', id='secondary-open-color-modal', n_clicks=0,
-                                    className="btn secondary-color-btn",
-                                    style={"width": "100%", "height": "40px"}
-                                ),
-                                className="col-3 justify-content-center text-align-center primary-color-div"
-                            ),
-
-                        ],
-
-                        className="row justify-content-center p-2"
+                        html.Div(
+                            _color_selection(),
+                            className="col-12"),
+                        className="row justify-content-center pb-2"
                     ),
                 ],
                 className="databox justify-content-center"

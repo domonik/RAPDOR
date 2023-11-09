@@ -65,8 +65,10 @@ def assign_session_identifier(uid, data, initial_data):
     Input("unique-id", "data"),
     Input("refresh-btn", "n_clicks"),
     State("data-store", "data"),
+    State("additional-header-dd", "value"),
+
 )
-def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData):
+def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_header):
     logger.info(f" {ctx.triggered_id} triggered Setting from state")
     if uid is None:
         logger.info("user id is None. Not setting from state")
@@ -84,8 +86,10 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData):
             sel_columns.append(name)
     logger.info(f"Initially Selected Columns: {sel_columns}")
     options = list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns))
-    value = list(rdpmsdata.extra_df)[0] if "Gene" not in rdpmsdata.extra_df else "Gene"
-    return kernel_size, cluster_method, sel_columns, options, value
+    logger.info(selected_ad_header)
+    if selected_ad_header is None:
+        selected_ad_header = list(rdpmsdata.extra_df)[0] if "Gene" not in rdpmsdata.extra_df else "Gene"
+    return kernel_size, cluster_method, sel_columns, options, selected_ad_header
 
 
 @callback(

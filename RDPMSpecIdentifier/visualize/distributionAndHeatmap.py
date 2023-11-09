@@ -25,12 +25,21 @@ def distribution_panel(name):
                                             html.Div(html.H5(f"Protein {name}", style={"text-align": "center", "width": "100%", "margin-bottom": "0"}, id="protein-id", className="align-self-center"), className="col-lg-4 col-12 d-flex py-2"),
                                             html.Div(
                                                 dcc.Dropdown(
+                                                    [], None,
                                                     id="additional-header-dd",
                                                     style={"font-size": "1.25rem"},
+                                                    persistence=True,
+                                                    persistence_type="session"
                                                 ),
-                                                className="col-md-4 col-7"
+                                                className="col-md-4 col-7",
+
                                             ),
-                                            html.Div(html.H5("", id="additional-header", className="align-self-center", style={"text-align": "center"}), className="col-lg-4 col-4 d-flex"),
+                                            html.Div(html.H5(
+                                                "",
+                                                id="additional-header",
+                                                className="align-self-center",
+                                                style={"text-align": "center", "white-space": "nowrap", "overflow-x": "hidden", "text-overflow": "ellipsis"}),
+                                                className="col-lg-4 col-4 d-flex"),
 
                                         ],
                                         className="row justify-content-center py-1 py-lg-0"
