@@ -73,9 +73,9 @@ def assign_session_identifier(uid, data, initial_data):
     Input("refresh-btn", "n_clicks"),
     State("data-store", "data"),
     State("additional-header-dd", "value"),
-
+    State("sel-col-state", "data"),
 )
-def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_header):
+def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_header, sel_col_state):
     logger.info(f" {ctx.triggered_id} triggered Setting from state")
     if uid is None:
         logger.info("user id is None. Not setting from state")
@@ -87,10 +87,13 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
     logger.info(f"state: {state}")
     kernel_size = state.kernel_size if state.kernel_size is not None else 3
     cluster_method = state.cluster_method if state.cluster_method is not None else dash.no_update
-    sel_columns = []
-    for name in rdpmsdata.score_columns:
-        if name in rdpmsdata.extra_df:
-            sel_columns.append(name)
+    if sel_col_state is None or len(sel_col_state) == 0:
+        sel_columns = []
+        for name in rdpmsdata.score_columns:
+            if name in rdpmsdata.extra_df:
+                sel_columns.append(name)
+    else:
+        sel_columns = dash.no_update
     logger.info(f"Initially Selected Columns: {sel_columns}")
     options = list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns))
     logger.info(selected_ad_header)
@@ -161,12 +164,15 @@ def update_selected_id(active_cell, test_div, additional_header, rdpmsdata):
     if rdpmsdata is None:
         raise PreventUpdate
     if ctx.triggered_id == "tbl" or ctx.triggered_id == "additional-header-dd":
+        logger.info(f"active cell is: {active_cell}")
         if active_cell is None:
-            active_row_id = 0
+            active_row_id = None
+            protein = None
         else:
             logger.info(f"active cell is: {active_cell}")
             active_row_id = active_cell["row_id"]
-        protein = rdpmsdata.df.loc[active_row_id, "RDPMSpecID"]
+            protein = rdpmsdata.df.loc[active_row_id, "RDPMSpecID"]
+
     elif ctx.triggered_id == "test-div":
         logger.info(f"{test_div} - value")
         if test_div is None:
@@ -177,8 +183,11 @@ def update_selected_id(active_cell, test_div, additional_header, rdpmsdata):
         raise PreventUpdate
     protein = f"Protein {protein}"
     if additional_header:
-        additional_display = rdpmsdata.df.loc[active_row_id, additional_header]
-        if pd.isna(additional_display):
+        if active_cell is not None:
+            additional_display = rdpmsdata.df.loc[active_row_id, additional_header]
+            if pd.isna(additional_display):
+                additional_display = "Na"
+        else:
             additional_display = "Na"
     else:
         additional_display = ""

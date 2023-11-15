@@ -35,13 +35,18 @@ COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + quali
 def update_distribution_plot(key, kernel_size, primary_color, secondary_color, replicate_mode, night_mode, rdpmsdata):
     logger.info(f"{ctx.triggered_id} triggered update of distribution plot")
     colors = primary_color, secondary_color
-    if key is None:
-        raise PreventUpdate
-    if rdpmsdata is None:
-        fig = empty_figure(
-            "There is no data uploaded yet.<br> Please go to the Data upload Page",
-            "black" if not night_mode else "white"
-        )
+    if key is None or rdpmsdata is None:
+        if key is None:
+            fig = empty_figure(
+                "No row selected.<br>Click on a row in the table",
+                "black" if not night_mode else "white"
+            )
+
+        if rdpmsdata is None:
+            fig = empty_figure(
+                "There is no data uploaded yet.<br> Please go to the Data upload Page",
+                "black" if not night_mode else "white"
+            )
 
     else:
         array, _ = rdpmsdata[key]

@@ -50,7 +50,9 @@ def _get_table(rdpmsdata):
                                     placeholder="Select Table Columns",
                                     className="justify-content-center dropUp",
                                     multi=True,
-                                    id="table-selector"
+                                    id="table-selector",
+                                    persistence=True,
+                                    persistence_type="session"
                                 ),
                                 className="col-12 pt-1",
                                 id="tbl-dropdown"
@@ -73,15 +75,59 @@ def _get_table(rdpmsdata):
 def _create_table(rdpmsdata, selected_columns=None):
     if selected_columns is None:
         selected_columns = []
+    selected_columns = list(set(selected_columns))
+
     if rdpmsdata is None:
-        columns = ["empty", "Empty2"]
+        columns = [{'name': 'RDPMSpecID', 'id': 'RDPMSpecID', 'type': 'numeric'}]
         data = [{"empty": 1, "Empty2": 2}]
         return html.Div(dash_table.DataTable(
             data,
+            columns,
             id="tbl",
-        ), className="dont-show h-100"
+            sort_action="custom",
+            sort_mode="multi",
+            sort_by=[],
+            row_selectable="multi",
+            filter_action='custom',
+            filter_query='',
+            page_size=50,
+            page_current=0,
+            page_action="custom",
+            style_table={'overflowX': 'auto', "padding": "1px", "height": "300px",
+                         "overflowY": "auto"},
+            fixed_rows={'headers': True},
+            style_header={
+                'backgroundColor': 'rgb(30, 30, 30)',
+                'color': 'white',
+                "border": "1px",
+                "font-family": "var(--bs-body-font-family)"
+
+            },
+            style_data={
+                'color': 'var(--r-text-color)',
+                "border": "1px",
+                "font-family": "var(--bs-body-font-family)"
+
+            },
+            style_data_conditional=SELECTED_STYLE,
+            style_cell={
+                'overflow': 'hidden',
+                'textOverflow': 'ellipsis',
+                'maxWidth': 0
+            },
+            style_filter={
+                "color": "white",
+                "border-color": "red"
+            },
+            style_cell_conditional=[
+                {
+                    'if': {'column_id': 'RDPMSpecID'},
+                    'textAlign': 'left',
+
+                }
+            ]
+        ), className=" h-100"
         )
-    selected_columns = list(set(selected_columns))
 
     data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
     columns = []
