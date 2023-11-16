@@ -213,7 +213,7 @@ def calc_clusters(
             rdpmsdata.calc_distribution_features()
             logger.info("Calculated Cluster Features")
             logger.info("Running Dimension Reduction - because cluster features changed")
-        if cluster_method != "None":
+        if cluster_method is not None:
             if cluster_method == "HDBSCAN":
                 kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
             elif cluster_method == "DBSCAN":
@@ -249,7 +249,8 @@ def calc_clusters(
 )
 def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, rdpmsdata: RDPMSpecData):
     dim = 2 if not td_plot else 3
-
+    if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
+        raise PreventUpdate
     color = color, color2
     colors = COLORS + list(color)
     if rdpmsdata is None:
@@ -282,7 +283,6 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
         fig = plot_dimension_reduction_result3d(
             rdpmsdata.current_embedding,
             rdpmsdata,
-            name=rdpmsdata.state.dimension_reduction,
             colors=colors,
             highlight=selected_rows,
             clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,

@@ -433,6 +433,7 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 @callback(
     Output("table-selector", "value", allow_duplicate=True),
     Output("data-store", "data", allow_duplicate=True),
+    Output("run-clustering", "data", allow_duplicate=True),
     Input('score-btn', 'n_clicks'),
     State("table-selector", "value"),
     State("data-store", "data"),
@@ -446,7 +447,7 @@ def run_scoring(n_clicks, sel_columns, rdpmsdata, uid):
         rdpmsdata.calc_all_scores()
         sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "RNase False peak pos", "RNase True peak pos", "relative fraction shift"]
         sel_columns = list(set(sel_columns))
-    return sel_columns, Serverside(rdpmsdata, key=uid)
+    return sel_columns, Serverside(rdpmsdata, key=uid), True
 
 
 @callback(

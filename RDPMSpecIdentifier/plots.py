@@ -458,7 +458,7 @@ def plot_dimension_reduction_result(embedding, rdpmspecdata, name, colors=None, 
         raise ValueError("Unsupported shape in embedding")
 
 
-def plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None):
+def plot_dimension_reduction_result3d(embedding, rdpmspecdata, colors=None, clusters=None, highlight=None):
     fig = go.Figure()
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
 
