@@ -3,13 +3,14 @@ from dash import dcc, dash_table, html
 from dash import html, ctx
 import dash_loading_spinners as dls
 import dash_daq as daq
+import dash_bootstrap_components as dbc
 from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 from RDPMSpecIdentifier.plots import empty_figure
 from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal, _modal_color_selection, _color_selection
 from RDPMSpecIdentifier.visualize import BOOTSH5, BOOTSROW
 
-
+DISABLED_CLUSERING = "Clustering is disabled in the current version but we might reactivate it at some point"
 
 def _get_cluster_panel(disabled: bool = False):
     panel = html.Div(
@@ -82,16 +83,32 @@ def _get_cluster_panel(disabled: bool = False):
                                 html.Div(
                                     [
                                         html.Div(
-                                            html.Span("Cluster Method", style={"text-align": "center"}),
+                                            html.Span(
+                                                [
+                                                    "Cluster Method",
+                                                    html.I(className="fas fa-question-circle fa px-2",
+                                                           id="cluster-select-tip"),
+                                                    dbc.Tooltip(
+                                                        DISABLED_CLUSERING,
+                                                        target="cluster-select-tip"),
+                                                    dbc.Tooltip(
+                                                        DISABLED_CLUSERING,
+                                                        target="cluster-method"),
+                                                    dbc.Tooltip(
+                                                        DISABLED_CLUSERING,
+                                                        target="cluster-adjust"),
+                                                ],
+                                                style={"text-align": "center"}
+                                            ),
                                             className="col-3 col-md-3 justify-content-center align-self-center"
                                         ),
                                         html.Div(
                                             dcc.Dropdown(
-                                                ["HDBSCAN", "DBSCAN", "K-Means", "None"], "None",
+                                                ["HDBSCAN", "DBSCAN", "K-Means", "None"],
                                                 className="justify-content-center",
                                                 id="cluster-method",
                                                 clearable=False,
-                                                disabled=disabled
+                                                disabled=True
 
                                             ),
                                             className="col-7 justify-content-center text-align-center"
@@ -101,9 +118,9 @@ def _get_cluster_panel(disabled: bool = False):
                                 ),
                                 html.Div(
                                     html.Div(
-                                        html.Button('Adjust Cluster Settings', id='adj-cluster-settings', n_clicks=0, disabled=disabled,
+                                        html.Button('Adjust Cluster Settings', id='adj-cluster-settings', n_clicks=0, disabled=True,
                                                     className="btn btn-primary", style={"width": "100%"}),
-                                        className="col-10 justify-content-center text-align-center"
+                                        className="col-10 justify-content-center text-align-center", id="cluster-adjust"
                                     ),
                                     className="row justify-content-center p-2"
                                 ),

@@ -161,6 +161,7 @@ a:hover {
 
 }
 
+
 .Select-arrow-zone{
     background-color: var(--table-head-color) !important;
 }
@@ -324,7 +325,7 @@ input.current-page, input.current-page::placeholder {
     color: var(--r-text-color)
 }
 .Select-placeholder {
-    color: var(--r-text-color) !important;
+    color: var(--r-text-color);
 }
 
 .btn-primary {
@@ -341,6 +342,8 @@ input:disabled {
     background-color: var(--disabled-input) !important;
     border-color: var(--table-dark);
 }
+
+
 
 .btn-primary:disabled,
 .btn-primary[disabled] {
@@ -692,4 +695,22 @@ input[type="radio"]:checked {
     border: none !important;
     height: 100%;
     width: 80px;
+}
+
+.Select.is-disabled > .Select-control {
+    background-color: var(--table-dark) !important;
+    color: var(--table-light) !important;
+}
+
+.Select-control.Select.is-disabled {
+    background-color: var(--table-dark) !important;
+    color: var(--table-light) !important;
+}
+
+.Select.is-disabled > .Select-placeholder{
+  color: red !important;
+}
+
+.Select-placeholder.Select.is-disabled {
+  color: red !important;
 }
