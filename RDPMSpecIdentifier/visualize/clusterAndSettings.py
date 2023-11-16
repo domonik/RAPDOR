@@ -209,57 +209,63 @@ def selector_box(disabled: bool = False):
 
                         className=BOOTSROW
                     ),
+                    # html.Div(
+                    #     [
+                    #         html.Div(
+                    #             dcc.Input(
+                    #                 style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white",
+                    #                        "text-align": "center"},
+                    #                 id="distance-cutoff",
+                    #                 placeholder="Distance Cutoff",
+                    #                 className="text-align-center",
+                    #                 type="number",
+                    #                 min=0,
+                    #                 disabled=disabled
+                    #             ),
+                    #             className="col-4 text-align-center align-items-center"
+                    #         ),
+                    #         html.Div(
+                    #             html.Button('Peak T-Tests', id='local-t-test-btn', n_clicks=0,
+                    #                         className="btn btn-primary",
+                    #                         style={"width": "100%"}, disabled=disabled),
+                    #             className="col-8 justify-content-center text-align-center"
+                    #         ),
+                    #     ],
+                    #     className=BOOTSROW
+                    # ),
+                    # html.Div(
+                    #     [
+                    #         html.Div(
+                    #             dcc.Input(
+                    #                 style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white", "text-align": "center"},
+                    #                 id="permanova-permutation-nr",
+                    #                 placeholder="Number of Permutations",
+                    #                 className="text-align-center",
+                    #                 type="number",
+                    #                 min=1,
+                    #                 disabled=disabled
+                    #             ),
+                    #             className="col-4 text-align-center align-items-center"
+                    #         ),
+                    #         html.Div(
+                    #             html.Button('Run PERMANOVA', id='permanova-btn', n_clicks=0,
+                    #                         className="btn btn-primary",
+                    #                         style={"width": "100%"}, disabled=disabled),
+                    #             className="col-8 justify-content-center text-align-center"
+                    #         ),
+                    #         html.Div(
+                    #             id="alert-div",
+                    #             className="col-12"
+                    #         )
+                    #
+                    #     ],
+                    #     className=BOOTSROW
+                    # ),
                     html.Div(
-                        [
-                            html.Div(
-                                dcc.Input(
-                                    style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white",
-                                           "text-align": "center"},
-                                    id="distance-cutoff",
-                                    placeholder="Distance Cutoff",
-                                    className="text-align-center",
-                                    type="number",
-                                    min=0,
-                                    disabled=disabled
+                                html.Div(
+                                    id="alert-div",
+                                    className="col-12"
                                 ),
-                                className="col-4 text-align-center align-items-center"
-                            ),
-                            html.Div(
-                                html.Button('Peak T-Tests', id='local-t-test-btn', n_clicks=0,
-                                            className="btn btn-primary",
-                                            style={"width": "100%"}, disabled=disabled),
-                                className="col-8 justify-content-center text-align-center"
-                            ),
-                        ],
-                        className=BOOTSROW
-                    ),
-
-                    html.Div(
-                        [
-                            html.Div(
-                                dcc.Input(
-                                    style={"width": "100%", "height": "100%", "border-radius": "5px", "color": "white", "text-align": "center"},
-                                    id="permanova-permutation-nr",
-                                    placeholder="Number of Permutations",
-                                    className="text-align-center",
-                                    type="number",
-                                    min=1,
-                                    disabled=disabled
-                                ),
-                                className="col-4 text-align-center align-items-center"
-                            ),
-                            html.Div(
-                                html.Button('Run PERMANOVA', id='permanova-btn', n_clicks=0,
-                                            className="btn btn-primary",
-                                            style={"width": "100%"}, disabled=disabled),
-                                className="col-8 justify-content-center text-align-center"
-                            ),
-                            html.Div(
-                                id="alert-div",
-                                className="col-12"
-                            )
-
-                        ],
                         className=BOOTSROW
                     ),
                     html.Div(

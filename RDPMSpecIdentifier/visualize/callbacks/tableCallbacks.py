@@ -14,6 +14,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+MAXPERMUTATIONS = 9999
 
 @callback(
     Output("ff-ids", "data", allow_duplicate=True),
@@ -193,6 +194,8 @@ def save_table_state(page_current, sort_by, filter_query):
 
 )
 def load_table_state(pathname, table_state):
+    if table_state is None:
+        raise PreventUpdate
     return table_state["page_current"], table_state["sort_by"], table_state["filter_query"]
 
 
@@ -447,6 +450,64 @@ def run_scoring(n_clicks, sel_columns, rdpmsdata, uid):
 
 
 @callback(
+    Output("table-selector", "value", allow_duplicate=True),
+    Output("data-store", "data", allow_duplicate=True),
+    Output("alert-div", "children", allow_duplicate=True),
+    Output("tbl", "data", allow_duplicate=True),
+    Input('anosim-btn', 'n_clicks'),
+    State("table-selector", "value"),
+    State("anosim-permutation-nr", "value"),
+    State("data-store", "data"),
+    State("unique-id", "data"),
+
+)
+def run_anosim(n_clicks, sel_columns, anosim_permutations, rdpmsdata, uid):
+    alert_msg = dash.no_update
+    if n_clicks is None or n_clicks == 0:
+        raise PreventUpdate
+    else:
+        if anosim_permutations is None:
+            anosim_permutations = 999
+        if anosim_permutations > 9999:
+            alert_msg = f"Number of permutations ({anosim_permutations}) too high. " \
+                        f"Only less than {MAXPERMUTATIONS} supported."
+            alert_msg = html.Div(
+                dbc.Alert(
+                    alert_msg,
+                    color="danger",
+                    dismissable=True,
+                ),
+                className="p-2 align-items-center, alert-msg",
+
+            )
+            return dash.no_update, dash.no_update, alert_msg, dash.no_update
+
+        sel_columns += ["ANOSIM R"]
+
+        if rdpmsdata.permutation_sufficient_samples:
+            rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local")
+            sel_columns += ["local ANOSIM adj p-Value"]
+
+        else:
+            rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global")
+            sel_columns += ["global ANOSIM adj p-Value"]
+
+            alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
+            " This might be unreliable"
+            alert_msg = html.Div(
+                dbc.Alert(
+                    alert_msg,
+                    color="danger",
+                    dismissable=True,
+                ),
+                className="p-2 align-items-center, alert-msg",
+
+            )
+    sel_columns = list(set(sel_columns))
+    return sel_columns, Serverside(rdpmsdata, key=uid), alert_msg, dash.no_update
+
+
+@callback(
     Output("sel-col-state", "data"),
     Output('table-selector', 'value'),
     Input('table-selector', 'value'),
@@ -454,7 +515,7 @@ def run_scoring(n_clicks, sel_columns, rdpmsdata, uid):
 )
 def set_columns_from_state(selected_columns, sel_col_state):
     logger.info(f"Will update columns: {selected_columns}, col_state: {sel_col_state}")
-
+    sel_col_state = [] if sel_col_state is None else sel_col_state
     if (selected_columns is None or len(selected_columns) == 0) and len(sel_col_state) > 0:
         selected_columns = sel_col_state
         sel_col_state = dash.no_update
