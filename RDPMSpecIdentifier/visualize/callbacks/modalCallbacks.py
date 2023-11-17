@@ -212,47 +212,47 @@ def _toggle_cluster_modal(n1, n2, n3, n4, hdb_is_open, db_is_open, k_is_open, cl
         return hdb_is_open, db_is_open, k_is_open
 
 
-@callback(
-    Output("cluster-img-modal", "is_open"),
-    Output("download-cluster-image", "data"),
-    [
-        Input("cluster-img-modal-btn", "n_clicks"),
-        Input("download-cluster-image-button", "n_clicks"),
-    ],
-    [
-        State("cluster-img-modal", "is_open"),
-        State("cluster-graph", "figure"),
-        State("cluster-download", "value"),
-        State("unique-id", "data"),
-
-    ],
-    prevent_initial_call=True
-
-)
-def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename, uid):
-    logger.info(f"{ctx.triggered_id} - triggered cluster image download modal")
-    if n1 == 0:
-        raise PreventUpdate
-    if ctx.triggered_id == "cluster-img-modal-btn":
-        return not is_open, dash.no_update
-    else:
-        fig = go.Figure(graph)
-        fig.update_layout(
-            font=dict(color="black"),
-            yaxis=dict(gridcolor="black"),
-            xaxis=dict(gridcolor="black"),
-            plot_bgcolor='white',
-
-        )
-        filetype = filename.split(".")[-1]
-        if filetype not in ["svg", "pdf", "png"]:
-            filetype = "svg"
-        with NamedTemporaryFile(suffix=f".{filetype}") as tmpfile:
-            fig.write_image(tmpfile.name, width=1300, height=1300)
-            assert os.path.exists(tmpfile.name)
-            ret_val = dcc.send_file(tmpfile.name)
-            ret_val["filename"] = filename
-        return not is_open, ret_val
+# @callback(
+#     Output("cluster-img-modal", "is_open"),
+#     Output("download-cluster-image", "data"),
+#     [
+#         Input("cluster-img-modal-btn", "n_clicks"),
+#         Input("download-cluster-image-button", "n_clicks"),
+#     ],
+#     [
+#         State("cluster-img-modal", "is_open"),
+#         State("cluster-graph", "figure"),
+#         State("cluster-download", "value"),
+#         State("unique-id", "data"),
+#
+#     ],
+#     prevent_initial_call=True
+#
+# )
+# def _toggle_cluster_image_modal(n1, n2, is_open, graph, filename, uid):
+#     logger.info(f"{ctx.triggered_id} - triggered cluster image download modal")
+#     if n1 == 0:
+#         raise PreventUpdate
+#     if ctx.triggered_id == "cluster-img-modal-btn":
+#         return not is_open, dash.no_update
+#     else:
+#         fig = go.Figure(graph)
+#         fig.update_layout(
+#             font=dict(color="black"),
+#             yaxis=dict(gridcolor="black"),
+#             xaxis=dict(gridcolor="black"),
+#             plot_bgcolor='white',
+#
+#         )
+#         filetype = filename.split(".")[-1]
+#         if filetype not in ["svg", "pdf", "png"]:
+#             filetype = "svg"
+#         with NamedTemporaryFile(suffix=f".{filetype}") as tmpfile:
+#             fig.write_image(tmpfile.name, width=1300, height=1300)
+#             assert os.path.exists(tmpfile.name)
+#             ret_val = dcc.send_file(tmpfile.name)
+#             ret_val["filename"] = filename
+#         return not is_open, ret_val
 
 
 

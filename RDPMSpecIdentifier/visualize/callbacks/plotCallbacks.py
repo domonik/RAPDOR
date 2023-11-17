@@ -93,7 +93,7 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
 def update_westernblot(key, kernel_size, primary_color, secondary_color, night_mode, rdpmsdata):
     colors = primary_color, secondary_color
     if key is None:
-        raise PreventUpdate
+        return empty_figure()
     if rdpmsdata is None:
         raise PreventUpdate
     else:
@@ -248,6 +248,7 @@ def calc_clusters(
     State('data-store', "data"),
 )
 def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, rdpmsdata: RDPMSpecData):
+    logger.info(f"running cluster plot triggered via - {ctx.triggered_id}")
     dim = 2 if not td_plot else 3
     if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
         raise PreventUpdate

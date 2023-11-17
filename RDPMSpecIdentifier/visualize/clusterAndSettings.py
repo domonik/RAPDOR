@@ -124,15 +124,15 @@ def _get_cluster_panel(disabled: bool = False):
                                     ),
                                     className="row justify-content-center p-2"
                                 ),
-                                html.Div(
-                                    html.Div(
-                                        html.Button('Download Image', id='cluster-img-modal-btn', n_clicks=0,
-                                                    className="btn btn-primary", style={"width": "100%"}),
-                                        className="col-10 justify-content-center text-align-center"
-                                    ),
-                                    className="row justify-content-center p-2"
-                                ),
-                                dcc.Download(id="download-cluster-image"),
+                                # html.Div(
+                                #     html.Div(
+                                #         html.Button('Download Image', id='cluster-img-modal-btn', n_clicks=0,
+                                #                     className="btn btn-primary", style={"width": "100%"}),
+                                #         className="col-10 justify-content-center text-align-center"
+                                #     ),
+                                #     className="row justify-content-center p-2"
+                                # ),
+                                # dcc.Download(id="download-cluster-image"),
 
                             ],
 
