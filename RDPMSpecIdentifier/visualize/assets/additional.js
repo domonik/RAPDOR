@@ -26,7 +26,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
         },
 
-        styleSelectedTableRow: function (proteinKey) {
+        styleSelectedTableRow: function (proteinKey, tbl_data) {
             const key = proteinKey.split("Protein ")[1];
             console.log("Searching for the Protein Key:" + key)
             try {

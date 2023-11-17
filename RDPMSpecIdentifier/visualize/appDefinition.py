@@ -87,6 +87,7 @@ clientside_callback(
     [Output("placeholder4", "children")],
     [
         Input("protein-id", "children"),
+        Input("tbl", "data"),
     ],
 )
 
