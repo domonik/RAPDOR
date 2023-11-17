@@ -276,9 +276,9 @@ def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
     names = groups + design[groups].astype(str) + " " + design["Replicate"].astype(str)
     fig = go.Figure(
         data=go.Heatmap(
-            z=distances[:, ::-1],
+            z=distances,
             x=names,
-            y=names[::-1],
+            y=names,
             colorscale=colors[:2]
         )
     )

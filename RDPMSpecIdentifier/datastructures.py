@@ -256,6 +256,7 @@ class RDPMSpecData:
         if eps:
             array += eps
         array = array / np.sum(array, axis=-1, keepdims=True)
+        array = array.round(DECIMALS)
         return array
 
     def normalize_array_with_kernel(self, kernel_size: int = 0, eps: float = 0):
