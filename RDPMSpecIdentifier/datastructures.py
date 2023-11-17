@@ -58,10 +58,9 @@ class RDPMSpecData:
         logbase (int): the logbase if intensities in :attr:`df` are log transformed. Else None.
         design (pd.Dataframe): dataframe containing information about the intensity columns in :attr:`df`
         array: (np.ndarray): The non-normalized intensities from the :attr:`df` intensity columns.
+        min_replicates (int): minimum number of replicates required to calculate scores
         internal_design_matrix (pd.Dataframe): dataframe where fraction columns are stored as a list instead of
             seperate columns
-        current_kernel_size (Union[None, int]): If an averaging kernel was applied during `array` normalization,
-            this stores the kernel size. If there was no normalization yet or no kernel was used it is None.
         norm_array (Union[None, np.ndarray]): An array containing normalized values that add up to 1.
         distances (Union[None, np.ndarray]): An array of size `num_proteins x num_samples x num_samples` that stores the
             distance between samples. If no distance was calculated it is None.
@@ -106,11 +105,14 @@ class RDPMSpecData:
 
     _id_columns = ["RDPMSpecID", "id"]
 
-    def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None):
+    def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None, min_replicates: int = 2):
         self.state = RDPMState()
         self.df = df
         self.logbase = logbase
         self.design = design
+        self.min_replicates = min_replicates
+        if self.min_replicates < 2:
+            raise ValueError("A minimum of two replicates is required to run statistics")
         self.array = None
         self.internal_design_matrix = None
         self.norm_array = None
@@ -208,6 +210,16 @@ class RDPMSpecData:
         indices = self.internal_design_matrix.groupby("RNase", group_keys=True).apply(lambda x: list(x.index))
         self._indices_false = np.asarray(indices[False])
         self._indices_true = np.asarray(indices[True])
+        p = ~np.any(self.array, axis=-1)
+        pf = p[:, self._indices_false]
+        pf = pf.shape[-1] - np.count_nonzero(pf, axis=-1)
+
+        pt = p[:, self._indices_true]
+        pt = pt.shape[-1] - np.count_nonzero(pt, axis=-1)
+
+        tmp = np.any(p, axis=-1)
+        self.df["contains empty replicate"] = tmp
+        self.df["min replicates per group"] = np.min(np.stack((pt, pf), axis=-1), axis=-1)
 
     @classmethod
     def from_files(cls, intensities: str, design: str, logbase: int = None, sep: str = ","):
@@ -578,16 +590,26 @@ class RDPMSpecData:
         self.calc_all_anosim_value()
         self.determine_peaks()
 
-    def _calc_anosim(self, indices_false, indices_true):
+    def _calc_anosim(self, indices_false, indices_true, ignore_nan: bool = True):
         outer_group_distances = self._get_outer_group_distances(indices_false, indices_true)
         inner_group_distances = self._get_innergroup_distances(indices_false, indices_true)
         stat_distances = np.concatenate((outer_group_distances, inner_group_distances), axis=-1)
-        mask = np.isnan(stat_distances).any(axis=-1)
-        ranks = stat_distances.argsort(axis=-1).argsort(axis=-1)
-        rb = np.mean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
-        rw = np.mean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
-        r = (rb - rw) / (ranks.shape[-1] / 2)
-        r[mask] = np.nan
+        if ignore_nan:
+            mask = np.isnan(stat_distances)
+            ranks = stat_distances.argsort(axis=-1).argsort(axis=-1).astype(float)
+            ranks[mask] = np.nan
+            rb = np.nanmean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
+            rw = np.nanmean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
+            nonnan = np.count_nonzero(~mask, axis=-1)
+            r = (rb - rw) / (nonnan / 2)
+        else:
+            mask = np.isnan(stat_distances).any(axis=-1)
+            ranks = stat_distances.argsort(axis=-1).argsort(axis=-1)
+            rb = np.mean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
+            rw = np.mean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
+            r = (rb - rw) / (ranks.shape[-1] / 2)
+            r[mask] = np.nan
+        r[self.df["min replicates per group"] < self.min_replicates] = np.nan
         return r
 
     def _calc_permanova_f(self, indices_false, indices_true):
