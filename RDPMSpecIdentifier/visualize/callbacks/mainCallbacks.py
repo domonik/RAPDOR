@@ -104,7 +104,7 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
 
 @callback(
     Output("recomputation", "children"),
-    Output("data-store", "data"),
+    Output("data-store", "data", allow_duplicate=True),
     Output('table-selector', 'value', allow_duplicate=True),
     Output('sel-col-state', 'data', allow_duplicate=True),
     Input("kernel-slider", "value"),

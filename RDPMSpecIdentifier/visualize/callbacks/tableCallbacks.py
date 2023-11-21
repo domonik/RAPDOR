@@ -430,6 +430,7 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 #     return columns, data.to_dict('records'), dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
+
 @callback(
     Output("table-selector", "value", allow_duplicate=True),
     Output("data-store", "data", allow_duplicate=True),
@@ -449,6 +450,46 @@ def run_scoring(n_clicks, sel_columns, rdpmsdata, uid):
         sel_columns = list(set(sel_columns))
     return sel_columns, Serverside(rdpmsdata, key=uid), True
 
+
+@callback(
+    Output("table-selector", "value", allow_duplicate=True),
+    Output("data-store", "data", allow_duplicate=True),
+    Output("alert-div", "children", allow_duplicate=True),
+    Input('rank-btn', 'n_clicks'),
+    State("table-selector", "value"),
+    State('tbl', 'sort_by'),
+
+    State("data-store", "data"),
+    State("unique-id", "data"),
+    prevent_initial_call=True
+)
+def rank_table(btn, sel_columns, current_sorting, rdpmsdata, uid):
+    alert = False
+    if btn is None or btn == 0:
+        raise PreventUpdate
+    try:
+        cols = [col['column_id'] for col in current_sorting if col != "Rank"]
+        asc = [col['direction'] == "asc" for col in current_sorting if col != "Rank"]
+
+        rdpmsdata.rank_table(cols, asc)
+        sel_columns += ["Rank"]
+    except Exception as e:
+        alert = True
+        alert_msg = f"Ranking Failed:\n{str(e)}"
+    if alert:
+        alert_msg = html.Div(
+            dbc.Alert(
+                alert_msg,
+                color="danger",
+                dismissable=True,
+            ),
+            className="p-2 align-items-center, alert-msg",
+
+        )
+    else:
+        alert_msg = dash.no_update
+
+    return sel_columns, Serverside(rdpmsdata, key=uid), alert_msg
 
 @callback(
     Output("table-selector", "value", allow_duplicate=True),
