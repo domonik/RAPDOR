@@ -56,7 +56,7 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
         if replicate_mode:
             fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
         else:
-            fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
+            fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors, show_outliers=True)
         fig.layout.template = "rdpmspec_default"
         if not night_mode:
             fig.update_layout(
