@@ -1,3 +1,4 @@
+import copy
 import multiprocessing
 import os
 from scipy.stats import ttest_ind
@@ -579,10 +580,10 @@ class RDPMSpecData:
         """
         if not all([value in self.df.columns for value in values]):
             raise ValueError("Not all values that are specified in ranking scheme are already calculated")
-        rdf = self.df.sort_values(values, ascending=ascending)[["RDPMSpecID"]]
+        rdf = self.df.sort_values(values, ascending=ascending)
         rdf["Rank"] = np.arange(1, len(rdf) + 1)
-        self.df = self.df.reset_index(drop=True).merge(rdf, how="left", on="RDPMSpecID").set_index("id")
-        self.df["id"] = self.df.index
+        rdf = rdf[["Rank"]]
+        self.df = self.df.join(rdf)
 
     def calc_all_scores(self):
         """Calculates ANOSIM R, shift direction, peak positions and Mean Sample Distance.
