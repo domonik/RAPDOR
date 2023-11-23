@@ -576,9 +576,11 @@ def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 
 
 def plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, clusters=None,
                                       highlight=None, marker_max_size: int = 40, second_bg_color: str = "white",
-                                      bubble_legend_color: str = "black", legend_start: float = 0.2, legend_spread: float = 0.1
+                                      bubble_legend_color: str = "black", legend_start: float = 0.2, legend_spread: float = 0.1,
+                                      sel_column = None
                                       ):
     embedding = rdpmspecdata.current_embedding
+    displayed_text = rdpmspecdata.df["RDPMSpecID"] if sel_column is None else rdpmspecdata.df[sel_column]
     fig = make_subplots(rows=2, cols=1, row_width=[0.85, 0.15], vertical_spacing=0.0)
     hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
@@ -685,7 +687,8 @@ def plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, c
             go.Scatter(
                 x=embedding[nmask, :][:, 0],
                 y=embedding[nmask, :][:, 1],
-                mode="markers",
+                mode="markers+text",
+                text=displayed_text[nmask],
                 hovertext=hovertext[nmask],
                 marker=dict(color=colors[-2], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
                 name="Not Clustered",

@@ -605,7 +605,8 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
                     clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
                     marker_max_size=40,
                     second_bg_color="white",
-                    bubble_legend_color="black"
+                    bubble_legend_color="black",
+                    sel_column=displayed_col
                 )
 
                 fig.update_xaxes(mirror=True, row=2)

@@ -246,8 +246,9 @@ def calc_clusters(
     Input('3d-plot', 'on'),
 
     State('data-store', "data"),
+    State("additional-header-dd", "value"),
 )
-def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, rdpmsdata: RDPMSpecData):
+def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, rdpmsdata: RDPMSpecData, add_header):
     logger.info(f"running cluster plot triggered via - {ctx.triggered_id}")
     dim = 2 if not td_plot else 3
     if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
@@ -278,7 +279,8 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
             clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
             marker_max_size=marker_size,
             second_bg_color="white" if not night_mode else "#181818",
-            bubble_legend_color="black" if not night_mode else "white"
+            bubble_legend_color="black" if not night_mode else "white",
+            sel_column=add_header
         )
     else:
         fig = plot_dimension_reduction_result3d(
