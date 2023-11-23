@@ -152,7 +152,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, title_col: str = 
     return fig_subplots
 
 
-def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None):
+def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None, quantile: bool = False):
     """Plots the distribution of proteins using mean, median, min and max values of replicates
 
         Args:
@@ -182,11 +182,14 @@ def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 
         legend=f"legend{eidx+1}"
         names.append(name)
         median_values = np.nanmedian(subdata[idx,], axis=0)
+        if quantile:
+            max_values = np.nanquantile(subdata[idx,], 0.75, axis=0)
+            min_values = np.nanquantile(subdata[idx,], 0.25, axis=0)
+        else:
+            max_values = np.nanmax(subdata[idx,], axis=0)
+            min_values = np.nanmin(subdata[idx,], axis=0)
         mean_values = np.nanmean(subdata[idx,], axis=0)
-        max_values = np.nanquantile(subdata[idx,], 0.75, axis=0)
-        max_values = np.nanmax(subdata[idx,], axis=0)
-        min_values = np.nanquantile(subdata[idx,], 0.25, axis=0)
-        min_values = np.nanmin(subdata[idx,], axis=0)
+
         color = colors[eidx]
         a_color = _color_to_calpha(color, 0.4)
         medians.append(go.Scatter(
@@ -195,7 +198,8 @@ def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 
             marker=dict(color=colors[eidx]),
             name="Median",
             legend=legend,
-            line=dict(width=5)
+            line=dict(width=3, dash="dot")
+
             ))
         means.append(go.Scatter(
             x=x,
@@ -203,7 +207,8 @@ def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 
             marker=dict(color=colors[eidx]),
             name="Mean",
             legend=legend,
-            line=dict(width=3, dash="dot")
+            line=dict(width=5)
+
         ))
         y = np.concatenate((max_values, np.flip(min_values)), axis=0)
         errors.append(
@@ -211,7 +216,7 @@ def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 
                 x=x + x[::-1],
                 y=y,
                 marker=dict(color=colors[eidx]),
-                name="Min-Max",
+                name="Min-Max" if not quantile else "Q.25-Q.75",
                 legend=legend,
                 fill="toself",
                 fillcolor=a_color,
