@@ -3,7 +3,7 @@ import dash_daq as daq
 from dash import dcc, html
 
 from RDPMSpecIdentifier.visualize import BOOTSROW, BOOTSH5
-from RDPMSpecIdentifier.visualize.staticContent import COLOR_SCHEMES, DEFAULT_COLORS
+from RDPMSpecIdentifier.plots import COLOR_SCHEMES, DEFAULT_COLORS
 
 
 def _color_theme_modal(nr: int = 1):

@@ -4,13 +4,13 @@ import dash
 import numpy as np
 from dash import Output, Input, State, dcc, ctx, html
 import plotly.graph_objs as go
-from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_heatmap, plot_barcode_plot
+from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_heatmap, plot_barcode_plot, \
+    COLOR_SCHEMES
 from tempfile import NamedTemporaryFile
 from dash_extensions.enrich import callback
 from dash.exceptions import PreventUpdate
 import logging
 import plotly.io as pio
-from RDPMSpecIdentifier.visualize.staticContent import COLOR_SCHEMES
 
 logger = logging.getLogger(__name__)
 

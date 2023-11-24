@@ -8,16 +8,45 @@ from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import plotly.io as pio
 import copy
 
-DEFAULT_COLORS = [
-    'rgb(138, 255, 172)', 'rgb(255, 138, 221)',
-    'rgb(31, 119, 180)', 'rgb(255, 127, 14)',
-    'rgb(44, 160, 44)',
-    'rgb(148, 103, 189)', 'rgb(140, 86, 75)',
-    'rgb(227, 119, 194)', 'rgb(127, 127, 127)',
-    'rgb(188, 189, 34)', 'rgb(23, 190, 207)'
-]
+DEFAULT_COLORS = {"primary": "rgb(138, 255, 172)", "secondary": "rgb(255, 138, 221)"}
 
-COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + qualitative.G10
+COLOR_SCHEMES = {
+    "Flamingo": (DEFAULT_COLORS["primary"], DEFAULT_COLORS["secondary"]),
+    "Viking": ("rgb(79, 38, 131) ", "rgb(255, 198, 47)"),
+    "Dolphin": ("rgb(0, 142, 151) ", "rgb(252, 76, 2)"),
+    "Cardinal": ("rgb(151,35,63)", "rgb(0,0,0)"),
+    "Falcon": ("rgb(167, 25, 48)", "rgb(0, 0, 0)"),
+    "Raven": ("rgb(26, 25, 95)", "rgb(0, 0, 0)"),
+    "Bill": ("rgb(0, 51, 141)", "rgb(198, 12, 48)"),
+    "Panther": ("rgb(0, 133, 202)", "rgb(16, 24, 32)"),
+    "Bear": ("rgb(111, 22, 42)", "rgb(12, 35, 64)"),
+    "Bengal": ("rgb(251, 79, 20)", "rgb(0, 0, 0)"),
+    "Brown": ("rgb(49, 29, 0)", "rgb(255, 60, 0)"),
+    "Cowboy": ("rgb(0, 34, 68)", "rgb(255, 255, 255)"),
+    "Bronco": ("rgb(251, 79, 20)", "rgb(0, 34, 68)"),
+    "Lion": ("rgb(0, 118, 182)", "rgb(176, 183, 188)"),
+    "Packer": ("rgb(24, 48, 40)", "rgb(255, 184, 28)"),
+    "Texan": ("rgb(3, 32, 47)", "rgb(167, 25, 48)"),
+    "Colt": ("rgb(0, 44, 95)", "rgb(162, 170, 173)"),
+    "Jaguar": ("rgb(215, 162, 42)", "rgb(0, 103, 120)"),
+    "Chief": ("rgb(227, 24, 55)", "rgb(255, 184, 28)"),
+    "Charger": ("rgb(0, 128, 198)", "rgb(255, 194, 14)"),
+    "Ram": ("rgb(0, 53, 148)", "rgb(255, 163, 0)"),
+    "Patriot": ("rgb(0, 34, 68)", "rgb(198, 12, 48)"),
+    "Saint": ("rgb(211, 188, 141)", "rgb(16, 24, 31)"),
+    "Giant": ("rgb(100, 75, 0, 30)", "rgb(163, 13, 45)"),
+    "Jet": ("rgb(18, 87, 64)", "rgb(255, 255, 255)"),
+    "Raider": ("rgb(0, 0, 0)", "rgb(165, 172, 175)"),
+    "Eagle": ("rgb(0, 76, 84)", "rgb(165, 172, 175)"),
+    "Steeler": ("rgb(255, 182, 18)", "rgb(16, 24, 32)"),
+    "49": ("rgb(170, 0, 0)", "rgb(173, 153, 93)"),
+    "Seahawk": ("rgb(0, 34, 68)", "rgb(105, 190, 40)"),
+    "Buccaneer": ("rgb(213, 10, 10)", "rgb(255, 121, 0)"),
+    "Titan": ("rgb(75, 146, 219)", "rgb(200, 16, 46)"),
+    "Commander": ("rgb(90, 20, 20)", "rgb(255, 182, 18)"),
+}
+
+COLORS = list(qualitative.Alphabet) + list(qualitative.Light24) + list(qualitative.Dark24) + list(qualitative.G10)
 
 
 DEFAULT_TEMPLATE = copy.deepcopy(pio.templates["plotly_white"])
@@ -550,6 +579,30 @@ def plot_dimension_reduction(
         legend_spread: float = 0.1,
         title_col: str = None,
 ):
+    """
+
+    Args:
+        rdpmspecdata (RDPMSpecData): A :class:`~RDPMSpecIdentifier.datastructures.RDPMSpecData` object where distances
+            are calculated and the array is normalized already.
+        colors (Iterable[str]): An iterable of color strings to use for plotting
+        highlight (Iterable[Any]): RDPMSpecIDs to highlight in the plot
+        show_cluster (bool): If set to true it will show clusters in different colors.
+            (Only works if rdpmspecdata is clustered)
+        dimensions (int): Either 2 or 3. 2 will produce a plot where the mean distance axis is represented via a marker
+            size. If 3, it will add another axis and return a three-dimensional figure
+        marker_max_size (int): maximum marker size for highest mean distance (This has no effect if dimensions is 3)
+        second_bg_color (str): changes background color of the bubble legend (This has no effect if dimensions is 3)
+        bubble_legend_color (str): color of the bubbles and text in the bubble legend
+            (This has no effect if dimensions is 3)
+        legend_start (float): start position of the bubble legend in relative coordinates
+            (This has no effect if dimensions is 3)
+        legend_spread (float): spread of the bubble legend (This has no effect if dimensions is 3)
+        title_col (str): Will display names from that column in the rdpmspecdata for highlighted proteins
+            (This has no effect if dimensions is 3)
+
+    Returns: go.Figure()
+
+    """
     colors = COLORS + list(colors)
     if highlight is not None:
         highlight = rdpmspecdata[highlight]
@@ -573,7 +626,7 @@ def plot_dimension_reduction(
             title_col
         )
     elif dimensions == 3:
-        fig = plot_dimension_reduction_result3d(
+        fig = _plot_dimension_reduction_result3d(
                 rdpmspecdata,
                 colors=colors,
                 clusters=clusters,
@@ -584,7 +637,7 @@ def plot_dimension_reduction(
     return fig
 
 
-def plot_dimension_reduction_result3d(rdpmspecdata, colors=None, clusters=None, highlight=None):
+def _plot_dimension_reduction_result3d(rdpmspecdata, colors=None, clusters=None, highlight=None):
     embedding = rdpmspecdata.current_embedding
 
     fig = go.Figure()
@@ -869,6 +922,5 @@ if __name__ == '__main__':
 
     fig = plot_replicate_distribution(array[0], design, "RNase")
     fig.show()
-
 
 

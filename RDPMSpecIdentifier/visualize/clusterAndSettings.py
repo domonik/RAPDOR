@@ -4,9 +4,8 @@ from dash import html, ctx
 import dash_loading_spinners as dls
 import dash_daq as daq
 import dash_bootstrap_components as dbc
-from RDPMSpecIdentifier.visualize.staticContent import DEFAULT_COLORS
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
-from RDPMSpecIdentifier.plots import empty_figure
+from RDPMSpecIdentifier.plots import empty_figure, DEFAULT_COLORS
 from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal, _modal_color_selection, _color_selection
 from RDPMSpecIdentifier.visualize import BOOTSH5, BOOTSROW
 

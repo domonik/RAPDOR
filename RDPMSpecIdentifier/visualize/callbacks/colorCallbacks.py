@@ -3,7 +3,7 @@ from dash import Output, Input, State, ctx
 from dash.exceptions import PreventUpdate
 from dash_extensions.enrich import callback
 import logging
-from RDPMSpecIdentifier.visualize.staticContent import COLOR_SCHEMES
+from RDPMSpecIdentifier.plots import COLOR_SCHEMES
 
 logger = logging.getLogger(__name__)
 
