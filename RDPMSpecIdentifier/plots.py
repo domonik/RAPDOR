@@ -124,12 +124,14 @@ def plot_replicate_distribution(
     return fig
 
 
-def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, title_col: str = "RDPMSpecID", vspace: float = 0.):
+def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", vspace: float = 0.):
     if rdpmsdata.state.kernel_size is not None:
         i = int(rdpmsdata.state.kernel_size // 2)
     else:
         i = 0
-    proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(rdpmspecids)].index
+    proteins = rdpmsdata[rdpmspecids]
+
+    #result_df = result_df.loc[result_df["RDPMSpecID"].isin(rdpmspecids)].reindex(rdpmspecids)
     annotation = rdpmsdata.df[title_col][proteins]
 
     fig_subplots = make_subplots(
@@ -137,7 +139,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata, colors, title_col: str = 
         vertical_spacing=vspace
     )
     for idx, protein in enumerate(proteins, 1):
-        array, _ = rdpmsdata[protein]
+        array = rdpmsdata.norm_array[protein]
         fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
         for trace in fig["data"]:
             if idx > 1:

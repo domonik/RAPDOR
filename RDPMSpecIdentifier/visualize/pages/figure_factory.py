@@ -14,7 +14,7 @@ from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
 from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal, _modal_color_selection, _color_selection
 from RDPMSpecIdentifier.visualize import BOOTSH5, BOOTSROW
 from RDPMSpecIdentifier.visualize.callbacks.colorCallbacks import *
-
+import pandas as pd
 import plotly.io as pio
 import copy
 
@@ -464,7 +464,9 @@ def update_selected_proteins(rdpmsdata: RDPMSpecData, current_row_ids):
         raise PreventUpdate
     else:
         if current_row_ids is not None:
+            print(current_row_ids)
             value = list(rdpmsdata.df.loc[current_row_ids, "RDPMSpecID"])
+            print(value)
         else:
             value = dash.no_update
 
@@ -545,8 +547,8 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
 def update_row_ids(values, rdpmsdata):
     if rdpmsdata is None or values is None:
         raise PreventUpdate
-    values = list(rdpmsdata.df[rdpmsdata.df["RDPMSpecID"].isin(values)].index)
-    return values
+    proteins = rdpmsdata[values]
+    return list(proteins)
 
 
 @callback(

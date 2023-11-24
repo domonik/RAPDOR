@@ -11,7 +11,6 @@ from dash.dash_table.Format import Format
 from RDPMSpecIdentifier.visualize.dataTable import SELECTED_STYLE, _create_table
 from dash_extensions.enrich import Serverside, State, callback
 import logging
-
 logger = logging.getLogger(__name__)
 
 MAXPERMUTATIONS = 9999
@@ -34,17 +33,19 @@ def update_ff_ids(selected_columns, rdpmsdata):
     Output("tbl", "selected_rows"),
     Output("current-row-ids", "data", allow_duplicate=True),
     Output("tbl", "selected_row_ids", allow_duplicate=True),
-    Input("tbl", "data"),
+    Input("tbl", "derived_viewport_row_ids"),
     State("tbl", "selected_row_ids"),
-    State("tbl", "derived_viewport_row_ids"),
     State("current-row-ids", "data"),
 
 )
-def update_selection_on_page_switch(table_data, selected_ids, vpids, current_ids):
-    if selected_ids is None or vpids is None:
+def update_selection_on_page_switch(vpids, selected_ids, current_ids):
+    if vpids is None:
         raise PreventUpdate
+    if selected_ids is None:
+        selected_ids = []
+    logger.info(f"Syncing row Ids {selected_ids}, {current_ids}, {vpids}")
     vpids = np.asarray(vpids)
-    selected_ids = list(set(selected_ids + current_ids)) if current_ids is not None else selected_ids
+    selected_ids = list(dict.fromkeys(selected_ids + current_ids)) if current_ids is not None else selected_ids
     selected_ids = np.asarray(selected_ids)
     rows = np.where(np.isin(vpids, selected_ids))[0]
     return rows, selected_ids, selected_ids
@@ -72,14 +73,14 @@ def reset_selected_rows(n_clicks):
     State("tbl", "derived_viewport_row_ids"),
 
 )
-def update_current_rows(sel_rows, current_selction, vpids):
+def update_current_rows(sel_rows, current_selection, vpids):
     if sel_rows is None or vpids is None:
         raise PreventUpdate
-    if current_selction is None:
-        current_selction = []
+    if current_selection is None:
+        current_selection = []
     logger.info(f"selected-row-ids on page {sel_rows}")
-    current_selction = list(set(current_selction) - set(vpids))
-    sel_rows = list(set(sel_rows + current_selction))
+    current_selection = [cid for cid in current_selection if cid not in set(vpids)]
+    sel_rows = list(dict.fromkeys(sel_rows + current_selection))
     logger.info(f"current-row-ids {sel_rows}")
     return sel_rows
 

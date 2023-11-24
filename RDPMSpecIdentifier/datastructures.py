@@ -160,21 +160,17 @@ class RDPMSpecData:
     def __getitem__(self, item):
         """
         Args:
-            item (str): The index of the protein which data should be returned
+            item (List[str]): RDPMSpecID list
 
-        Returns:  Tuple[np.ndarray, np.ndarray]
-            The normalized array of the protein with the id in `item` and the sample distances
-
-        Raises:
-            ValueError: If either the array was not normalized or distances were not calculated yet.
+        Returns:  pd.Index
+            The index of the RDPMSpecID list matching the ordering. Note if the RDPMSpecID list is not unique the length
+            of the returned indices will be longer than the requested list
 
         """
-        if self.norm_array is None:
-            raise ValueError("Array is not normalized yet. Normalize it first")
-        if self.distances is None:
-            raise ValueError("Sample distances not calculated yet. Calculate them first")
-        index = self.df.index.get_loc(item)
-        return self.norm_array[index], self.distances[index]
+        proteins = self.df[self.df.loc[:, "RDPMSpecID"].isin(item)]
+        proteins["Value"] = pd.Categorical(proteins['RDPMSpecID'], categories=item, ordered=True)
+        indices = proteins.sort_values(by='Value').index
+        return indices
 
     def _check_dataframe(self):
         if not set(self.design["Name"]).issubset(set(self.df.columns)):

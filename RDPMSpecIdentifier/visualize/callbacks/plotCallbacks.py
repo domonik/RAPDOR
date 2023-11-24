@@ -49,7 +49,7 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
             )
 
     else:
-        array, _ = rdpmsdata[key]
+        array = rdpmsdata.norm_array[key]
         i = 0
         if rdpmsdata.state.kernel_size is not None:
             i = int(np.floor(rdpmsdata.state.kernel_size / 2))
@@ -151,7 +151,7 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
     if rdpmsdata is None:
         raise PreventUpdate
     else:
-        _, distances = rdpmsdata[key]
+        distances = rdpmsdata.distances[key]
         fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
         fig.layout.template = "rdpmspec_default"
         if not night_mode:
