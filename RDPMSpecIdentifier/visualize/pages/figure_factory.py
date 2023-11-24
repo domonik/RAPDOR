@@ -9,34 +9,21 @@ from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
-from RDPMSpecIdentifier.plots import plot_protein_distributions, plot_protein_westernblots, empty_figure, plot_dimension_reduction_result2d, update_bubble_legend
+from RDPMSpecIdentifier.plots import plot_protein_distributions, plot_protein_westernblots, empty_figure, _plot_dimension_reduction_result2d, update_bubble_legend, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK
 from RDPMSpecIdentifier.visualize.callbacks.modalCallbacks import FILEEXT
 from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal, _modal_color_selection, _color_selection
 from RDPMSpecIdentifier.visualize import BOOTSH5, BOOTSROW
 from RDPMSpecIdentifier.visualize.callbacks.colorCallbacks import *
 import pandas as pd
 import plotly.io as pio
-import copy
 
 dash.register_page(__name__, path='/figure_factory')
 
 logger = logging.getLogger(__name__)
 
-pio.templates["FFDefault"] = copy.deepcopy(pio.templates["plotly_white"])
 
-pio.templates["FFDefault"].update(
-    {
-        "layout": {
-            # e.g. you want to change the background to transparent
-            "paper_bgcolor": "rgba(255,255,255,1)",
-            "plot_bgcolor": " rgba(0,0,0,0)",
-            "font": dict(color="black"),
-            "xaxis": dict(linecolor="black", showline=True),
-            "yaxis": dict(linecolor="black", showline=True),
-            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black"))
-        }
-    }
-)
+pio.templates["RDPDefault"] = DEFAULT_TEMPLATE
+pio.templates["RDPDark"] = DEFAULT_TEMPLATE_DARK
 
 
 def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
@@ -158,8 +145,8 @@ def _distribution_settings():
             html.Div(html.H5("General", className="align-text-center"), className="col-12 justify-content-center px-0 align-items-center"),
             *_arg_and_dropdown(
                 "Template",
-                ["FFDefault"] + [template for template in list(pio.templates) if template != "FFDefault"],
-                "FFDefault", "template-dd"
+                ["RDPDefault"] + [template for template in list(pio.templates) if template != "RDPDefault"],
+                "RDPDefault", "template-dd"
             ),
             *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
             html.Div(html.H5("Plot style"), className=BOOTSH5),
@@ -534,7 +521,7 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
     else:
         pass
 
-    return m_size, line_width, grid_width, dtickx, dticky, height, vspace, xaxisw, yaxisw, "FFDefault", 0, 0, l1x, l1y, l2x, l2y
+    return m_size, line_width, grid_width, dtickx, dticky, height, vspace, xaxisw, yaxisw, "RDPDefault", 0, 0, l1x, l1y, l2x, l2y
 
 
 
@@ -600,7 +587,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
         elif plot_type == 3:
             if rdpmsdata.current_embedding is not None:
                 keys = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(keys)].index
-                fig = plot_dimension_reduction_result2d(
+                fig = _plot_dimension_reduction_result2d(
                     rdpmsdata,
                     colors=colors,
                     highlight=keys,

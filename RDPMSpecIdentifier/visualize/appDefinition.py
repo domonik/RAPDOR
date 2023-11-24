@@ -1,11 +1,9 @@
 import os
 
 import dash_bootstrap_components as dbc
-import plotly.io as pio
 from dash import clientside_callback, ClientsideFunction
 
 from RDPMSpecIdentifier.visualize.staticContent import LOGO, LIGHT_LOGO
-import copy
 assert os.path.exists(LOGO), f"{LOGO} does not exist"
 assert os.path.exists(LIGHT_LOGO), f"{LIGHT_LOGO} does not exist"
 from dash_extensions.enrich import DashProxy, Output, Input, State, Serverside, html, dcc, \
@@ -32,17 +30,7 @@ app = DashProxy(
     use_pages=True,
     pages_folder=os.path.join(FILEDIR, "pages")
 )
-pio.templates["rdpmspec_default"] = copy.deepcopy(pio.templates["plotly_white"])
-pio.templates["rdpmspec_default"].update(
-    {
-        "layout": {
-            # e.g. you want to change the background to transparent
-            "paper_bgcolor": "rgba(0,0,0,0)",
-            "plot_bgcolor": " rgba(0,0,0,0)",
-            "font": dict(color="white"),
-        }
-    }
-)
+
 
 
 clientside_callback(

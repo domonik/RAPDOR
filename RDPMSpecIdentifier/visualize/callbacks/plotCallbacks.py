@@ -4,16 +4,14 @@ from dash import Output, Input, State, ctx
 import dash
 from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
-from plotly.colors import qualitative
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
-    plot_dimension_reduction_result2d, plot_dimension_reduction_result3d, empty_figure
+    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK
 from dash_extensions.enrich import Serverside, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
 import traceback
-logger = logging.getLogger(__name__)
 
-COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + qualitative.G10
+logger = logging.getLogger(__name__)
 
 
 
@@ -42,12 +40,11 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
                 "black" if not night_mode else "white"
             )
 
-        if rdpmsdata is None:
+        elif rdpmsdata is None:
             fig = empty_figure(
                 "There is no data uploaded yet.<br> Please go to the Data upload Page",
                 "black" if not night_mode else "white"
             )
-
     else:
         array = rdpmsdata.norm_array[key]
         i = 0
@@ -57,14 +54,11 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
             fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
         else:
             fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors, show_outliers=True)
-        fig.layout.template = "rdpmspec_default"
         if not night_mode:
-            fig.update_layout(
-                font=dict(color="black"),
-                yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
-                xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
+            fig.layout.template = DEFAULT_TEMPLATE
+        else:
+            fig.layout.template = DEFAULT_TEMPLATE_DARK
 
-            )
     fig.update_layout(
         margin={"t": 0, "b": 0, "r": 50, "l": 100},
         font=dict(
@@ -97,21 +91,13 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
     if rdpmsdata is None:
         raise PreventUpdate
     else:
-        if rdpmsdata.state.kernel_size is not None:
-            i = int(rdpmsdata.state.kernel_size // 2)
-        else:
-            i = 0
         array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
         fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors, vspace=0)
         fig.update_yaxes(showticklabels=False, showgrid=False, showline=False)
         fig.update_xaxes(showgrid=False, showticklabels=False, title="", showline=False)
         fig.update_traces(showscale=False)
 
-        if not night_mode:
-            fig.update_layout(
-                font=dict(color="black"),
 
-            )
         fig.update_layout(
             margin={"t": 0, "b": 0, "r": 50, "l": 100},
             font=dict(
@@ -122,8 +108,10 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
 
         )
         fig.update_xaxes(fixedrange=True)
-
-        fig.layout.template = "rdpmspec_default"
+    if not night_mode:
+        fig.layout.template = DEFAULT_TEMPLATE
+    else:
+        fig.layout.template = DEFAULT_TEMPLATE_DARK
     return fig
 
 
@@ -153,19 +141,15 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
     else:
         distances = rdpmsdata.distances[key]
         fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
-        fig.layout.template = "rdpmspec_default"
-        if not night_mode:
-            fig.update_layout(
-                font=dict(color="black"),
-                yaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
-                xaxis=dict(gridcolor="black", zeroline=True, zerolinecolor="black"),
-
-            )
         fig.update_layout(
             margin={"t": 0, "b": 0, "l": 0, "r": 0}
         )
         fig.update_yaxes(showline=False)
         fig.update_xaxes(showline=False)
+    if not night_mode:
+        fig.layout.template = DEFAULT_TEMPLATE
+    else:
+        fig.layout.template = DEFAULT_TEMPLATE_DARK
     return fig, f"Sample {distance_method}"
 
 
@@ -253,45 +237,34 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
     dim = 2 if not td_plot else 3
     if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
         raise PreventUpdate
-    color = color, color2
-    colors = COLORS + list(color)
+    colors = [color, color2]
     if rdpmsdata is None:
         raise PreventUpdate
 
     if not plotting:
-        fig = go.Figure()
-        fig.add_annotation(
-            xref="paper",
-            yref="paper",
-            xanchor="center",
-            yanchor="middle",
-            x=0.5,
-            y=0.5,
-            text="Data not Calculated<br> Get Scores first",
-            showarrow=False,
-            font=(dict(size=28))
-        )
-    elif dim == 2:
-        fig = plot_dimension_reduction_result2d(
+        fig = empty_figure("Data not Calculated<br> Get Scores first")
+    else:
+        if selected_rows is not None and len(selected_rows) >= 1:
+            highlight = rdpmsdata.df.loc[selected_rows, "RDPMSpecID"]
+        else:
+            highlight = None
+        fig = plot_dimension_reduction(
             rdpmsdata,
+            dimensions=dim,
             colors=colors,
-            highlight=selected_rows,
-            clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
+            highlight=highlight,
+            show_cluster=True if "Cluster" in rdpmsdata.df else False,
             marker_max_size=marker_size,
             second_bg_color="white" if not night_mode else "#181818",
             bubble_legend_color="black" if not night_mode else "white",
-            sel_column=add_header
-        )
-    else:
-        fig = plot_dimension_reduction_result3d(
-            rdpmsdata.current_embedding,
-            rdpmsdata,
-            colors=colors,
-            highlight=selected_rows,
-            clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
-        )
+            title_col=add_header
 
-    fig.layout.template = "rdpmspec_default"
+        )
+    if not night_mode:
+
+        fig.layout.template = DEFAULT_TEMPLATE
+    else:
+        fig.layout.template = DEFAULT_TEMPLATE_DARK
 
     fig.update_layout(
         margin={"t": 0, "b": 30, "r": 50},

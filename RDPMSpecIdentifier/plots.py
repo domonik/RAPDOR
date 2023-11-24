@@ -2,9 +2,11 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
-from typing import Iterable
+from typing import Iterable, Tuple, List, Any
 from plotly.colors import qualitative
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
+import plotly.io as pio
+import copy
 
 DEFAULT_COLORS = [
     'rgb(138, 255, 172)', 'rgb(255, 138, 221)',
@@ -14,6 +16,43 @@ DEFAULT_COLORS = [
     'rgb(227, 119, 194)', 'rgb(127, 127, 127)',
     'rgb(188, 189, 34)', 'rgb(23, 190, 207)'
 ]
+
+COLORS = qualitative.Alphabet + qualitative.Light24 + qualitative.Dark24 + qualitative.G10
+
+
+DEFAULT_TEMPLATE = copy.deepcopy(pio.templates["plotly_white"])
+
+DEFAULT_TEMPLATE.update(
+    {
+        "layout": {
+            # e.g. you want to change the background to transparent
+            "paper_bgcolor": "rgba(255,255,255,1)",
+            "plot_bgcolor": " rgba(0,0,0,0)",
+            "font": dict(color="black"),
+            "xaxis": dict(linecolor="black", showline=True),
+            "yaxis": dict(linecolor="black", showline=True),
+            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black"))
+        }
+    }
+)
+
+DEFAULT_TEMPLATE_DARK = copy.deepcopy(DEFAULT_TEMPLATE)
+
+DEFAULT_TEMPLATE_DARK.update(
+    {
+        "layout": {
+            # e.g. you want to change the background to transparent
+            "paper_bgcolor": "#181818",
+            "plot_bgcolor": " rgba(0,0,0,0)",
+            "font": dict(color="white"),
+            "coloraxis": dict(colorbar=dict(outlinewidth=0)),
+            "xaxis": dict(linecolor="white", showline=True),
+            "yaxis": dict(linecolor="white", showline=True),
+
+        }
+    }
+)
+
 
 def _color_to_calpha(color: str, alpha: float = 0.2):
     color = color.split("(")[-1].split(")")[0]
@@ -125,13 +164,28 @@ def plot_replicate_distribution(
 
 
 def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", vspace: float = 0.):
+    """Plots a figure containing distributions of proteins using mean, median, min and max values of replicates
+
+        Args:
+            rdpmspecids (List[any]): RDPMSpecIDs that should be plotted
+            rdpmsdata (RDPMSpecData): a RDPMSpecData object containing the IDs from rdpmspecids
+            colors (Iterable[str]): An iterable of color strings to use for plotting
+            title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
+                as a subtitle in the plot (Default: RDPMSpecID)
+            vspace (float): Vertical space between subplots
+
+        Returns: go.Figure
+
+            A plotly figure containing a plot of the protein distribution  for each protein identified via the
+            rdpmspecids.
+
+            """
     if rdpmsdata.state.kernel_size is not None:
         i = int(rdpmsdata.state.kernel_size // 2)
     else:
         i = 0
     proteins = rdpmsdata[rdpmspecids]
 
-    #result_df = result_df.loc[result_df["RDPMSpecID"].isin(rdpmspecids)].reindex(rdpmspecids)
     annotation = rdpmsdata.df[title_col][proteins]
 
     fig_subplots = make_subplots(
@@ -308,8 +362,27 @@ def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
 
 
 def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", vspace: float = 0.01):
+    """Plots a figure containing a pseudo westernblot of the protein distribution.
 
-    proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(rdpmspecids)].index
+    This will ignore smoothing kernels and plots raw mean replicate intensities.
+    It will also normalize subplot colors based on the maximum intensity.
+
+    Args:
+        rdpmspecids (List[any]): RDPMSpecIDs that should be plotted
+        rdpmsdata (RDPMSpecData): a RDPMSpecData object containing the IDs from rdpmspecids
+        colors (Iterable[str]): An iterable of color strings to use for plotting
+        title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
+            as a subtitle in the plot (Default: RDPMSpecID)
+        vspace (float): Vertical space between subplots
+
+    Returns: go.Figure
+
+        A plotly figure containing a pseudo westernblot of the protein distribution  for each protein identified via the
+        rdpmspecids.
+
+    """
+
+    proteins = rdpmsdata[rdpmspecids]
     annotation = rdpmsdata.df[title_col][proteins].repeat(2)
     fig_subplots = make_subplots(rows=len(proteins) * 2, cols=1, shared_xaxes=True, x_title="Fraction",
                                  row_titles=list(annotation), vertical_spacing=0.0,
@@ -389,7 +462,6 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
 def plot_barcode_plot(subdata, design: pd.DataFrame, groups, colors=None, vspace: float = 0.025):
     """Creates a Westernblot like plot from the mean of protein intensities
 
-
     Args:
         subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`. Rows don´t need to add up to one
         design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
@@ -465,20 +537,56 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, colors=None, vspace
     return fig
 
 
-def plot_dimension_reduction_result(embedding, rdpmspecdata, name, colors=None, clusters=None, highlight=None, marker_size: int = 40):
-    if clusters is None:
-        clusters = np.zeros(embedding.shape[0])
-    if colors is None:
-        colors = qualitative.Alphabet + qualitative.Light24
-    if embedding.shape[-1] == 2:
-        return plot_dimension_reduction_result2d(embedding, rdpmspecdata, name, colors, clusters, highlight, marker_size)
-    elif embedding.shape[-1] == 3:
-        return plot_dimension_reduction_result3d(embedding, rdpmspecdata, name, colors, clusters, highlight)
+def plot_dimension_reduction(
+        rdpmspecdata: RDPMSpecData,
+        colors: Iterable[str] = None,
+        highlight: Iterable[Any] = None,
+        show_cluster: bool = False,
+        dimensions: int = 2,
+        marker_max_size: int = 40,
+        second_bg_color: str = "white",
+        bubble_legend_color: str = "black",
+        legend_start: float = 0.2,
+        legend_spread: float = 0.1,
+        title_col: str = None,
+):
+    colors = COLORS + list(colors)
+    if highlight is not None:
+        highlight = rdpmspecdata[highlight]
+    if show_cluster:
+        clusters = rdpmspecdata.df["Cluster"]
     else:
-        raise ValueError("Unsupported shape in embedding")
+        clusters = None
+
+    if dimensions == 2:
+
+        fig = _plot_dimension_reduction_result2d(
+            rdpmspecdata,
+            colors,
+            clusters,
+            highlight,
+            marker_max_size,
+            second_bg_color,
+            bubble_legend_color,
+            legend_start,
+            legend_spread,
+            title_col
+        )
+    elif dimensions == 3:
+        fig = plot_dimension_reduction_result3d(
+                rdpmspecdata,
+                colors=colors,
+                clusters=clusters,
+                highlight=highlight
+        )
+    else:
+        raise ValueError("Unsupported dimensionality")
+    return fig
 
 
-def plot_dimension_reduction_result3d(embedding, rdpmspecdata, colors=None, clusters=None, highlight=None):
+def plot_dimension_reduction_result3d(rdpmspecdata, colors=None, clusters=None, highlight=None):
+    embedding = rdpmspecdata.current_embedding
+
     fig = go.Figure()
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
 
@@ -576,11 +684,12 @@ def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 
         fig.data[0].update(marker=dict(line=dict(color=bubble_legend_color)))
     return fig
 
-def plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, clusters=None,
-                                      highlight=None, marker_max_size: int = 40, second_bg_color: str = "white",
-                                      bubble_legend_color: str = "black", legend_start: float = 0.2, legend_spread: float = 0.1,
-                                      sel_column = None
-                                      ):
+
+def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, clusters=None,
+                                       highlight=None, marker_max_size: int = 40, second_bg_color: str = "white",
+                                       bubble_legend_color: str = "black", legend_start: float = 0.2, legend_spread: float = 0.1,
+                                       sel_column = None
+                                       ):
     embedding = rdpmspecdata.current_embedding
     displayed_text = rdpmspecdata.df["RDPMSpecID"] if sel_column is None else rdpmspecdata.df[sel_column]
     fig = make_subplots(rows=2, cols=1, row_width=[0.85, 0.15], vertical_spacing=0.0)
