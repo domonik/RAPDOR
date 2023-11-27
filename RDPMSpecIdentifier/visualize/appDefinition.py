@@ -8,16 +8,16 @@ assert os.path.exists(LOGO), f"{LOGO} does not exist"
 assert os.path.exists(LIGHT_LOGO), f"{LIGHT_LOGO} does not exist"
 from dash_extensions.enrich import DashProxy, Output, Input, State, Serverside, html, dcc, \
     ServersideOutputTransform, FileSystemBackend
-from RDPMSpecIdentifier.visualize import DISPLAY, DISPLAY_FILE
+from RDPMSpecIdentifier.visualize import DISPLAY, DISPLAY_FILE, CONFIG
 from RDPMSpecIdentifier.visualize.dataBackEnd import DisplayModeBackend
 
 FILEDIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(FILEDIR, "assets")
 
 if not DISPLAY:
-    another_backend = FileSystemBackend("file_system_backend", threshold=200)
+    another_backend = FileSystemBackend(cache_dir=CONFIG["backend"]["name"], threshold=CONFIG["backend"]["threshold"])
 else:
-    another_backend = DisplayModeBackend(DISPLAY_FILE)
+    another_backend = DisplayModeBackend(DISPLAY_FILE, cache_dir=CONFIG["backend"]["name"], threshold=CONFIG["backend"]["threshold"])
 
 app = DashProxy(
     "RDPMSpecIdentifier Dashboard",

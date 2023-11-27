@@ -1,4 +1,8 @@
 
+# The file system backend where data is pickled and the threshold of files stored in there.
+backend:
+  name: "filesystem_backend"
+  threshold: 200
 # If this is enabled the tool will run in display mode and use the file specified underneath as the displayed file.
 
 display:

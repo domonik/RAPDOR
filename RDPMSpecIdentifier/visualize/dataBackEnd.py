@@ -1,14 +1,14 @@
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
-from dash_extensions.enrich import ServersideBackend
+from dash_extensions.enrich import FileSystemBackend
 import time
 import logging
 
 logger = logging.getLogger(__name__)
 
 
-
-class DisplayModeBackend(ServersideBackend):
-    def __init__(self, json_file: str):
+class DisplayModeBackend(FileSystemBackend):
+    def __init__(self, json_file: str, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.items = {}
         with open(json_file, "r") as handle:
             json_string = handle.read()
@@ -17,35 +17,16 @@ class DisplayModeBackend(ServersideBackend):
 
     def get(self, key, ignore_expired=False) -> any:
         if len(key.split("_")) > 1:
-            if key in self.items:
-                return self.items[key][0]
-            else:
-                return None
+            return super().get(key, ignore_expired)
         else:
             return self.rdpmspec_data
 
-    def _delete_old_items(self):
-        current_time = time.time()
-        tmp = []
-        for key, (_, timestamp) in self.items.items():
-            if current_time - timestamp > 86400:
-                del self.items[key]
-            else:
-                tmp.append((key, timestamp))
-        if len(self.items) >= self.max_items:
-            logger.warning("Not enough expired items. Deleting the 10 oldest items")
-            tmp = sorted(tmp, key=lambda x: x[1], reverse=True)
-            for key, timestamp in tmp[0:10]:
-                del self.items[key]
-
-    def set(self, key, value):
+    def set(self, key, value, timeout=None,
+            mgmt_element: bool = False, ):
         if isinstance(value, RDPMSpecData):
             pass
         else:
-            if value is not None:
-                self.items[key] = (value, time.time())
-            if len(self.items) > self.max_items:
-                self._delete_old_items()
+            super().set(key, value)
 
     def has(self, key):
-        return key in self.items
+        return super().has(key)
