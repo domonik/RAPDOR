@@ -35,11 +35,15 @@ of size 3.
 
 
 Since we only have 3 replicates per condition for this dataset, it is not reasonable to calculate a p-value. Instead we
-will calculate stats like the Jensen-Shannon-Distance of the means and the ANOSIM R value. This is done via:
+will calculate stats like the Jensen-Shannon-Distance of the means and the ANOSIM R value. We will then rank the table
+based on the R value and the mean distance. This is done via:
 
 .. code-block:: python
 
     rdpmdata.calc_all_scores()
+    rdpmdata.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
+
+
 
 Finally we want to export the file as a csv table and as a JSON file. The JSON is further needed to display your data in
 a Dash webserver interface. You can learn more about it in the :ref:`server setup section<server-setup>`.
@@ -47,4 +51,6 @@ a Dash webserver interface. You can learn more about it in the :ref:`server setu
 .. code-block:: python
 
     rdpmdata.export_csv(file="test.tsv", sep= "\t")
-    rdpmdata.to_json(file="test.json)
+    rdpmdata.to_json(file="test.json")
+
+

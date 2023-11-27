@@ -51,3 +51,7 @@ html[data-theme="dark"] {
     --pst-color-text-muted: #e3e2e2;
 
 }
+
+table.right-align-right-col td:last-child {
+    text-align: right
+}

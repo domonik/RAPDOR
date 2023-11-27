@@ -72,9 +72,9 @@ Calculates the default values that you can use to rank your table. Those values 
    * - shift direction
      - The direction in which the protein shifts upon RNase treatment.
    * - RNase False peak pos
-     - The fraction of the control from which the largest shift in probability mass towards the RNase treated samples is detected.
+     - The weighted average fraction of the control from which the largest shift in probability mass towards the RNase treated samples is detected.
    * - RNase True peak pos
-     - The fraction from the RNase from which the largest shift in probability mass towards the control samples is detected.
+     - The weighted average fraction from the RNase from which the largest shift in probability mass towards the control samples is detected.
 
 .. _rank-table:
 
@@ -82,28 +82,10 @@ Rank Table
 ++++++++++
 
 This will ad a rank to the table considering the current sorting. For instance if you have
-an insufficient number of samples for a PERMANOVA you might consider ranking the table based on a sorting using
+an insufficient number of samples for p-value calculation via PERMANOVA or ANOSIM you might consider ranking the table based on a sorting using
 **ANOSIM R** and the **Mean Distance**.
 
 
-Peak T-Tests
-++++++++++++
-
-Performs Welchs T-Tests to determine whether there is a significant difference at the RNase or Control peaks.
-
-.. warning::
-    Since you are dealing with multivariate data, this is not the recommended way to calculate p-Values.
-    Instead use a PERMANOVA if you have a sufficient amount of replicates or consider ranking the Table using
-    values calculated via the Get Scores button. (see :ref:`Rank Table<rank-table>`)
-
-Run PERMANOVA
-+++++++++++++
-
-Performs a Permanova to calculate whether RNase treatment leads to a difference in the distribution of the Proteins.
-You can select the number of permutations via the Input Field next to the button. The Default is 999.
-
-.. note::
-    This is the recommended way to calculate a p-Value if you have more than 5 replicates per group.
 
 
 Run ANOSIM
@@ -113,9 +95,7 @@ Performs ANOSIM to calculate whether RNase treatment leads to a difference in th
 You can select the number of permutations via the Input Field next to the button. The Default is 999.
 
 .. note::
-    This is the recommended way to calculate a p-Value if you have doubts that the underlying data meets the
-    requirements for a PERMANOVA
-
+    This is the recommended way to calculate a p-Value if you have a sufficient number of samples.
 
 Export TSV
 ++++++++++
@@ -124,45 +104,40 @@ This will export the Data Table with all the values calculated using the buttons
 
 Select Color Scheme
 +++++++++++++++++++
-If you dont like the default colors you can change them here.
+If you dont like the default colors you can change them here. There are several preset color schemes.
 
 
 
-5 Clustering
-------------
+5 Dimension Reduction
+---------------------
 
-The clustering panel is used to cluster proteins based on the shape of the peak shifts.
-Therefore it uses the peak positions as centers. It will then use the position-wise relative entropy
-between the control/RNase and the respective mixture distribution at the peaks as features.
+Here you can see a dimension reduction of all shifts. On the x-axis you will see the relative fraction shift. This
+is caclulated via subtracting the average control shift position from the RNase treated ones. On the y-axis you can see
+whether the protein has a broader (more negative) or sharper (more positive) distribution after treatment.
 
 .. note::
 
-    Due to the procedure it might cluster proteins without shifts even if the shape of the peaks look very
-    different.
+    Proteins selected in the table will be highlighted in this plot and you can hover over data points to show the
+    corresponding distribution.
 
 .. image:: _static/clustering.png
   :width: 800
 
 
-Dimension Reduction
-+++++++++++++++++++
-
-There are multiple options to reduce the dimension of the features. You can select whichever you like.
-
 
 3D
 ++
 
-This will display three dimensions on the left side instead of two
-
-Feature Kernel Size
-+++++++++++++++++++
-
-Instead of using only the relative entropy at the peak positions it will use up to this number of steps in each direction in addtion.
+This will display three dimensions in the plot if toggled. Instead of showing the mean distance via the marker size it
+will add another axis for this value.
 
 
 Cluster Method
 ++++++++++++++
+
+.. warning::
+
+    Note that the clustering is currently disabled in the GUI and you can only use it via the Python API.
 
 The Method that is used for clustering.
 
@@ -171,7 +146,4 @@ Adjust Cluster Settings
 
 Opens a modal where you can adjust some settings of the clustering algorithms.
 
-Download Image
-++++++++++++++
 
-Opens the image download dialog.

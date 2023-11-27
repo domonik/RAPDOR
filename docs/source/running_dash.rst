@@ -6,6 +6,29 @@ Running Dash Interface
 .. note::
     To run the Dash interface make sure you prepared your data according to :ref:`Data Prepatation<data-prep-tutorial>`.
 
+
+Test Data
+---------
+
+You can download our test data (intensities and design) that only contains a few proteins from the following links.
+
+.. note::
+
+    Your Browser will most likely open the file instead of downloading. Just right click on the download link and choose
+    save link as.
+
+
+.. rst-class:: right-align-right-col
+.. list-table::
+    :widths: 50 50
+    :header-rows: 0
+
+    * - **Intensities**
+      - :download:`testFile.tsv <https://raw.githubusercontent.com/domonik/RDPMSpecIdentifier/main/RDPMSpecIdentifier/tests/testData/testFile.tsv>`
+    * - **Design**
+      - :download:`testDesign.tsv <https://raw.githubusercontent.com/domonik/RDPMSpecIdentifier/main/RDPMSpecIdentifier/tests/testData/testDesign.tsv>`
+
+
 Command Line Executables
 ------------------------
 
