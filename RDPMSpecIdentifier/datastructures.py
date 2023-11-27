@@ -74,8 +74,7 @@ class RDPMSpecData:
         An instance of the RDPMSpecData class is obtained via the following code. Make sure your csv files
         are correctly fomatted as desribed in the :ref:`Data Prepatation<data-prep-tutorial>` Tutorial.
 
-        >>> df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
-        >>> df.index = df.index.astype(str)
+        >>> df = pd.read_csv("../testData/testFile.tsv", sep="\t")
         >>> design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
         >>> rdpmspec = RDPMSpecData(df, design, logbase=2)
     """

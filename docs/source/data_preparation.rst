@@ -14,8 +14,14 @@ For the CLI and the GUI you need to have two tabular files (e.g. tsv or csv file
 Intensity Table
 ---------------
 
-The first table contains your Mass Spec Intensities of all fractions, conditions and replicates.
-It might also include additional columns with data. For instance it can look like the example below
+The first table contains an id, your Mass Spec Intensities of all fractions, conditions and replicates.
+It might also include additional columns with data. For instance it can look like the example below.
+
+.. note::
+    It is highly recommended that the first column of the df contains no duplicates. It might not breakt the code but
+    lead to unexpected behaviour
+
+
 
 
 

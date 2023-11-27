@@ -40,6 +40,7 @@ extensions = [
     "sphinx_rtd_theme",
     'sphinxarg.ext',
     'sphinx_design',
+    'sphinx_copybutton'
 ]
 
 autosummary_generate = True
@@ -93,6 +94,10 @@ autosummary_mock_imports = [
     "dash_bootstrap_components",
     "dash",
     "plotly.colors.qualitative.Light24",
+    "plotly.colors.qualitative.Dark24",
+    "plotly.colors.qualitative.G10",
+    "plotly.colors.qualitative.Alphabet",
+    "plotly.colors.qualitative",
     "scipy",
     "sklearn",
     "RDPMSpecIdentifier.visualize",

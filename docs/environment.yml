@@ -20,3 +20,4 @@ dependencies:
     - sphinx-autopackagesummary
     - sphinx_design
     - sphinxcontrib-bibtex
+    - sphinx-copybutton
