@@ -1,6 +1,7 @@
 include versioneer.py
 include RDPMSpecIdentifier/_version.py
 include *.pyx
+include RDPMSpecIdentifier/dashConfig.yaml
 global-include cpp/*.h
 global-include tests/*.py
 global-include *.css

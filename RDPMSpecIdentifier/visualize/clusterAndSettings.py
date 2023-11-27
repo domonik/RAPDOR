@@ -7,7 +7,7 @@ import dash_bootstrap_components as dbc
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 from RDPMSpecIdentifier.plots import empty_figure, DEFAULT_COLORS
 from RDPMSpecIdentifier.visualize.colorSelection import _color_theme_modal, _modal_color_selection, _color_selection
-from RDPMSpecIdentifier.visualize import BOOTSH5, BOOTSROW
+from RDPMSpecIdentifier.visualize import BOOTSH5, BOOTSROW, MAX_KERNEL_SLIDER
 
 DISABLED_CLUSERING = "Clustering is disabled in the current version but we might reactivate it at some point"
 
@@ -193,11 +193,9 @@ def selector_box(disabled: bool = False):
                             ),
                             html.Div(
                                 dcc.Slider(
-                                    0, 5, step=None,
+                                    0, MAX_KERNEL_SLIDER, step=None,
                                     marks={
-                                        0: "0",
-                                        3: '3',
-                                        5: '5',
+                                        i: str(i) for i in [0] + list(range(3, MAX_KERNEL_SLIDER+1, 2))
                                     }, value=3,
                                     className="justify-content-center",
                                     id="kernel-slider",

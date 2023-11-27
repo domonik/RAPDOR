@@ -12,18 +12,12 @@ Here is example python code that can be used for server setup:
 ..  code-block:: python
 
     import os
-    os.environ["RDPMS_DISPLAY_MODE"] = "True"
+    os.environ["RDPMS_CONFIG_FILE"] = "customConfig.yaml"
     from RDPMSpecIdentifier.visualize.appDefinition import app
     from RDPMSpecIdentifier.visualize.runApp import get_app_layout
     from RDPMSpecIdentifier.datastructures import RDPMSpecData
 
-    input = "preAnalyzedData.json"
-
-    with open(input) as handle:
-        jsons = handle.read()
-    rdpmsdata = RDPMSpecData.from_json(jsons)
-
-    app.layout = get_app_layout(rdpmsdata)
+    app.layout = get_app_layout()
 
     server = app.server
 
@@ -32,10 +26,21 @@ After you set up this startup code in a file called `main.py` you can run the se
 
 .. note::
 
-    Make sure to set the environment variable :code:`RDPMS_DISPLAY_MODE` before importing the app.
+    If you want to use custom settings, make sure to set the environment variable :code:`RDPMS_CONFIG_FILE` before importing the app.
     Else, it wont have an effect.
 
 
 .. code-block:: bash
 
     gunicorn -b 0.0.0.0:8080 main:server
+
+
+Custom Settings:
+----------------
+
+You can change the default settings via a custom config file as specified above. Below you find the default yaml file
+that is loaded from the RDPMSpecIdentifier module. Fields are overwritte via using a custom file and setting the global
+variable :code:`RDPMS_CONFIG_FILE`.
+
+.. literalinclude:: ../../RDPMSpecIdentifier/dashConfig.yaml
+  :language: YAML

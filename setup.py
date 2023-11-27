@@ -27,7 +27,7 @@ setup(
     include_package_data=True,
     package_data={
         "RDPMSpecIdentifier.visualize": ["assets/*"],
-        "RDPMSpecIdentifier": ["tests/*.py", "tests/test_data/*"],
+        "RDPMSpecIdentifier": ["tests/*.py", "tests/test_data/*", "dashConfig.yaml"],
         "RDPMSpecIdentifier.qtInterface": ["Icon.svg", "RDPMSpecIdentifier_dark_no_text.svg", "style.css"],
     },
     install_requires=[
@@ -43,7 +43,8 @@ setup(
         "kaleido",
         "PyQt5",
         "dash_daq",
-        "dash_extensions"
+        "dash_extensions",
+        "pyYAML"
     ],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
