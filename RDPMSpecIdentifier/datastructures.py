@@ -650,9 +650,11 @@ class RDPMSpecData:
         for _ in range(nr_permutations):
             shuffled = np.random.permutation(indices)
             calls.append((shuffled[:_split_point], shuffled[_split_point:]))
-
-        with multiprocessing.Pool(threads) as pool:
-            result = pool.starmap(self._calc_anosim, calls)
+        if threads > 1:
+            with multiprocessing.Pool(threads) as pool:
+                result = pool.starmap(self._calc_anosim, calls)
+        else:
+            result = [self._calc_anosim(*call) for call in calls]
         result = np.stack(result)
         self._anosim_distribution = result
 
@@ -664,9 +666,11 @@ class RDPMSpecData:
         for _ in range(nr_permutations):
             shuffled = np.random.permutation(indices)
             calls.append((shuffled[:_split_point], shuffled[_split_point:]))
-
-        with multiprocessing.Pool(threads) as pool:
-            result = pool.starmap(self._calc_permanova_f, calls)
+        if threads > 1:
+            with multiprocessing.Pool(threads) as pool:
+                result = pool.starmap(self._calc_permanova_f, calls)
+        else:
+            result = [self._calc_permanova_f(*call) for call in calls]
         result = np.stack(result)
         self._permanova_distribution = result
 
