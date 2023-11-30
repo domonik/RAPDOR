@@ -9,7 +9,7 @@ TESTFILE_DIR = os.path.dirname(os.path.abspath(__file__))
 TESTDATA_DIR = os.path.join(TESTFILE_DIR, "testData")
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def intensities():
     file = os.path.join(TESTDATA_DIR, "testFile.tsv")
     df = pd.read_csv(file, sep="\t")
@@ -17,7 +17,7 @@ def intensities():
     return df
 
 
-@pytest.fixture()
+@pytest.fixture(scope="session")
 def design():
     file = os.path.join(TESTDATA_DIR, "testDesign.tsv")
     df = pd.read_csv(file, sep="\t")
@@ -29,15 +29,70 @@ def rdpmpecdata(intensities, design):
     rdpmsdata = RDPMSpecData(intensities, design, 2)
     return rdpmsdata
 
-
+@pytest.fixture()
 def norm_rdpmspecdata(rdpmpecdata):
     rdpmpecdata.normalize_and_get_distances("Jensen-Shannon-Distance", 3, eps=0)
     return rdpmpecdata
 
-
+@pytest.fixture()
 def scored_rdpmspecdata(norm_rdpmspecdata):
     norm_rdpmspecdata.calc_all_scores()
     return norm_rdpmspecdata
+
+
+@pytest.fixture(scope="session")
+def multi_design(design):
+    designs = []
+    for i in range(3):
+        cdesign = design.copy()
+        cdesign["Name"] += f".{i}"
+        cdesign["Replicate"] += f".{i}"
+        designs.append(cdesign)
+    new_design = pd.concat(designs, ignore_index=True)
+    return new_design
+
+
+@pytest.fixture(scope="session")
+def multi_intensities(intensities):
+    result = None
+    for i in range(3):
+        cdf = intensities.copy()
+        cdf.columns = [cdf.columns[0]] + [f"{col}.{i}" for col in cdf.columns[1:]]
+        if i == 0:
+            result = cdf
+        else:
+            result = pd.merge(result, cdf, left_index=True, right_index=True)
+    return result
+
+
+def drop_replicates(design, rnase_rep, ctrl_rep):
+    rnase = design[design["RNase"] == True].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=rnase_rep).sum()
+    ctrl = design[design["RNase"] == False].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=ctrl_rep).sum()
+    rnase = design.loc[rnase]
+    ctrl = design.loc[ctrl]
+    new_design = pd.concat((rnase, ctrl), ignore_index=True)
+    return new_design
+
+
+
+
+
+
+@pytest.mark.parametrize(
+    "rnase_rep,ctrl_rep",
+    [
+        (4, 7),
+        (9, 9),
+    ]
+)
+def test_multi_design(rnase_rep, ctrl_rep, multi_design, multi_intensities):
+    multi_design = drop_replicates(multi_design, rnase_rep, ctrl_rep)
+
+    rdpmsdata = RDPMSpecData(multi_intensities, multi_design, 2)
+    rdpmsdata.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
+    rdpmsdata.calc_all_scores()
+
+
 
 
 

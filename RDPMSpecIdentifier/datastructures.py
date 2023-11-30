@@ -493,7 +493,7 @@ class RDPMSpecData:
     def _get_outer_group_distances(self, indices_false, indices_true):
         n_genes = self.distances.shape[0]
         mg1, mg2 = np.meshgrid(indices_true, indices_false)
-        e = np.ones((n_genes, 3, 3))
+        e = np.ones((n_genes, len(indices_false), len(indices_true)))
         e = e * np.arange(0, n_genes)[:, None, None]
         e = e[np.newaxis, :]
         e = e.astype(int)
@@ -514,7 +514,7 @@ class RDPMSpecData:
         for eidx, (idx) in enumerate(indices):
             n_genes = distances.shape[0]
             mg1, mg2 = np.meshgrid(idx, idx)
-            e = np.ones((n_genes, 3, 3))
+            e = np.ones((n_genes, len(idx), len(idx)))
             e = e * np.arange(0, n_genes)[:, None, None]
             e = e[np.newaxis, :]
             e = e.astype(int)
@@ -527,39 +527,39 @@ class RDPMSpecData:
             inner_distances.append(ig_distances)
         return np.concatenate(inner_distances, axis=-1)
 
-    def calc_welchs_t_test(self, distance_cutoff: float = None):
-        """Runs Welchs T-Test at RNase and control peak position.
-        The p-Values are adjusted for multiple testing.
-
-        .. warning::
-            Since you are dealing with multivariate data, this is not the recommended way to calculate p-Values.
-            Instead, use a PERMANOVA if you have a sufficient amount of replicates or consider ranking the Table using
-            values calculated via the :func:`~calc_all_scores` function.
-
-        Args:
-            distance_cutoff (float): P-Values are not Calculated for proteins with a mean distance below this threshold.
-                This reduces number of tests.
-        """
-        if "RNase True peak pos" not in self.df:
-            raise ValueError("Need to compute peak positions first")
-        for peak, name in (
-                ("RNase True peak pos", "RNase Peak adj p-Value"), ("RNase False peak pos", "CTRL Peak adj p-Value")):
-            idx = np.asarray(self.df[peak] - int(np.ceil(self.state.kernel_size / 2)))
-            t = np.take_along_axis(self.norm_array, idx[:, np.newaxis, np.newaxis], axis=2).squeeze()
-            t_idx = np.tile(np.asarray(self._indices_true), t.shape[0]).reshape(t.shape[0], -1)
-            f_idx = np.tile(np.asarray(self._indices_false), t.shape[0]).reshape(t.shape[0], -1)
-            true = np.take_along_axis(t, t_idx, axis=-1)
-            false = np.take_along_axis(t, f_idx, axis=-1)
-            t_test = ttest_ind(true, false, axis=1, equal_var=False)
-            adj_pval = np.zeros(t_test.pvalue.shape)
-            mask = np.isnan(t_test.pvalue)
-            if distance_cutoff is not None:
-                if "Mean Distance" not in self.df.columns:
-                    raise ValueError("Need to run peak position estimation before please call self.determine_peaks()")
-                mask[self.df["Mean Distance"] < distance_cutoff] = True
-            adj_pval[mask] = np.nan
-            _, adj_pval[~mask], _, _ = multipletests(t_test.pvalue[~mask], method="fdr_bh")
-            self.df[name] = adj_pval
+    # def calc_welchs_t_test(self, distance_cutoff: float = None):
+    #     """Runs Welchs T-Test at RNase and control peak position.
+    #     The p-Values are adjusted for multiple testing.
+    #
+    #     .. warning::
+    #         Since you are dealing with multivariate data, this is not the recommended way to calculate p-Values.
+    #         Instead, use a PERMANOVA if you have a sufficient amount of replicates or consider ranking the Table using
+    #         values calculated via the :func:`~calc_all_scores` function.
+    #
+    #     Args:
+    #         distance_cutoff (float): P-Values are not Calculated for proteins with a mean distance below this threshold.
+    #             This reduces number of tests.
+    #     """
+    #     if "RNase True peak pos" not in self.df:
+    #         raise ValueError("Need to compute peak positions first")
+    #     for peak, name in (
+    #             ("RNase True peak pos", "RNase Peak adj p-Value"), ("RNase False peak pos", "CTRL Peak adj p-Value")):
+    #         idx = np.asarray(self.df[peak] - int(np.ceil(self.state.kernel_size / 2)))
+    #         t = np.take_along_axis(self.norm_array, idx[:, np.newaxis, np.newaxis], axis=2).squeeze()
+    #         t_idx = np.tile(np.asarray(self._indices_true), t.shape[0]).reshape(t.shape[0], -1)
+    #         f_idx = np.tile(np.asarray(self._indices_false), t.shape[0]).reshape(t.shape[0], -1)
+    #         true = np.take_along_axis(t, t_idx, axis=-1)
+    #         false = np.take_along_axis(t, f_idx, axis=-1)
+    #         t_test = ttest_ind(true, false, axis=1, equal_var=False)
+    #         adj_pval = np.zeros(t_test.pvalue.shape)
+    #         mask = np.isnan(t_test.pvalue)
+    #         if distance_cutoff is not None:
+    #             if "Mean Distance" not in self.df.columns:
+    #                 raise ValueError("Need to run peak position estimation before please call self.determine_peaks()")
+    #             mask[self.df["Mean Distance"] < distance_cutoff] = True
+    #         adj_pval[mask] = np.nan
+    #         _, adj_pval[~mask], _, _ = multipletests(t_test.pvalue[~mask], method="fdr_bh")
+    #         self.df[name] = adj_pval
 
     def rank_table(self, values, ascending):
         """Ranks the :attr:`df`
