@@ -575,6 +575,8 @@ class RDPMSpecData:
         """
         if not all([value in self.df.columns for value in values]):
             raise ValueError("Not all values that are specified in ranking scheme are already calculated")
+        if "Rank" in self.df:
+         self.df = self.df.drop('Rank', axis=1)
         rdf = self.df.sort_values(values, ascending=ascending)
         rdf["Rank"] = np.arange(1, len(rdf) + 1)
         rdf = rdf[["Rank"]]
