@@ -97,6 +97,11 @@ def _analyze_parser(subparsers, name):
         help="Will use all proteins as background in ANOSIM or PERMANOVA p-value calculation. This might be unreliable"
     )
     parser.add_argument(
+        "--json",
+        type=str,
+        help="Will write an output json file"
+    )
+    parser.add_argument(
         "--num-threads",
         type=int,
         default=os.cpu_count(),

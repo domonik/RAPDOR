@@ -844,6 +844,8 @@ def _analysis_executable_wrapper(args):
             elif args.distance_method.upper() == "ANOSIM":
                 rdpmspec.calc_anosim_p_value(args.permutations, args.num_threads, mode="global")
     rdpmspec.export_csv(args.output, str(args.sep))
+    if args.json is not None:
+        rdpmspec.to_json(args.json)
 
 
 if __name__ == '__main__':
