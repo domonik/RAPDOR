@@ -192,7 +192,7 @@ def plot_replicate_distribution(
     return fig
 
 
-def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", vspace: float = 0.):
+def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", **kwargs):
     """Plots a figure containing distributions of proteins using mean, median, min and max values of replicates
 
         Args:
@@ -215,19 +215,47 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
         i = 0
     proteins = rdpmsdata[rdpmspecids]
 
-    annotation = rdpmsdata.df[title_col][proteins]
-
+    annotation = list(rdpmsdata.df[title_col][proteins])
+    if "rows" in kwargs and "cols" in kwargs:
+        m = kwargs["rows"]
+        n = kwargs["cols"]
+        del kwargs["rows"]
+        del kwargs["cols"]
+    else:
+        n = 1
+        m = len(proteins)
     fig_subplots = make_subplots(
-        rows=len(proteins), cols=1, shared_xaxes=True, x_title="Fraction", y_title="Protein Amount [%]", row_titles=list(annotation),
-        vertical_spacing=vspace
+        rows=m, cols=n,
+        shared_xaxes=True,
+        x_title="Fraction",
+        y_title="Protein Amount [%]",
+        #row_titles=list(annotation),
+        **kwargs
     )
-    for idx, protein in enumerate(proteins, 1):
-        array = rdpmsdata.norm_array[protein]
-        fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
-        for trace in fig["data"]:
-            if idx > 1:
-                trace['showlegend'] = False
-            fig_subplots.add_trace(trace, row=idx, col=1)
+    idx = 0
+    for p in range(m):
+        for q in range(n):
+            protein = proteins[idx]
+            xref = f"x domain" if idx == 0 else f"x{idx+1} domain"
+            yref = f"y domain" if idx == 0 else f"y{idx+1} domain"
+            array = rdpmsdata.norm_array[protein]
+            fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
+            fig_subplots.add_annotation(
+                text=annotation[idx],
+                xref=xref,
+                yref=yref,
+                x=1,
+                y=0.5,
+                yanchor="middle",
+                xanchor="left",
+                showarrow=False,
+                textangle=90
+            )
+            for trace in fig["data"]:
+                if idx > 0:
+                    trace['showlegend'] = False
+                fig_subplots.add_trace(trace, row=p+1, col=q+1)
+            idx += 1
 
     fig_subplots.update_layout(
         legend=fig["layout"]["legend"],

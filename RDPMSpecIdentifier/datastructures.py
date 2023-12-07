@@ -20,6 +20,7 @@ import json
 from json import JSONEncoder
 from pandas.testing import assert_frame_equal
 from statsmodels.distributions.empirical_distribution import ECDF
+from io import StringIO
 
 DECIMALS = 15
 
@@ -788,6 +789,7 @@ class RDPMSpecData:
             if key == "state":
                 dict_repr[key] = RDPMState(**value)
             elif key in ("df", "design", "internal_design_matrix"):
+                value = StringIO(value)
                 dict_repr[key] = pd.read_json(value).round(decimals=DECIMALS).fillna(value=np.nan)
             elif isinstance(value, list):
                 dict_repr[key] = np.asarray(value)

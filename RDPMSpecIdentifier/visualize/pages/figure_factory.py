@@ -606,7 +606,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
             bubble_style["display"] = "flex"
 
         else:
-            fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
+            fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col, vertical_spacing=vspace)
             fig.update_xaxes(mirror=True)
             fig.update_yaxes(mirror=True)
             settings = DEFAULT_DISTRIBUTION_SETTINGS
