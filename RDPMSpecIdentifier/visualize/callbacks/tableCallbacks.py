@@ -183,7 +183,9 @@ def update_current_rows(sel_rows, current_selection, vpids):
 
 )
 def save_table_state(page_current, sort_by, filter_query):
-    return {"page_current": page_current, "sort_by": sort_by, "filter_query": filter_query}
+    tbl_state = {"page_current": page_current, "sort_by": sort_by, "filter_query": filter_query}
+    print(tbl_state)
+    return tbl_state
 
 
 @callback(

@@ -224,6 +224,8 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     else:
         n = 1
         m = len(proteins)
+    if m * n < len(proteins):
+        raise ValueError(f"Not enough columns ({n}) and rows ({m}) to place {len(proteins)} figures")
     fig_subplots = make_subplots(
         rows=m, cols=n,
         shared_xaxes=True,
@@ -235,27 +237,28 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     idx = 0
     for p in range(m):
         for q in range(n):
-            protein = proteins[idx]
-            xref = f"x domain" if idx == 0 else f"x{idx+1} domain"
-            yref = f"y domain" if idx == 0 else f"y{idx+1} domain"
-            array = rdpmsdata.norm_array[protein]
-            fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
-            fig_subplots.add_annotation(
-                text=annotation[idx],
-                xref=xref,
-                yref=yref,
-                x=1,
-                y=0.5,
-                yanchor="middle",
-                xanchor="left",
-                showarrow=False,
-                textangle=90
-            )
-            for trace in fig["data"]:
-                if idx > 0:
-                    trace['showlegend'] = False
-                fig_subplots.add_trace(trace, row=p+1, col=q+1)
-            idx += 1
+            if idx < len(proteins):
+                protein = proteins[idx]
+                xref = f"x domain" if idx == 0 else f"x{idx+1} domain"
+                yref = f"y domain" if idx == 0 else f"y{idx+1} domain"
+                array = rdpmsdata.norm_array[protein]
+                fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
+                fig_subplots.add_annotation(
+                    text=annotation[idx],
+                    xref=xref,
+                    yref=yref,
+                    x=1,
+                    y=0.5,
+                    yanchor="middle",
+                    xanchor="left",
+                    showarrow=False,
+                    textangle=90
+                )
+                for trace in fig["data"]:
+                    if idx > 0:
+                        trace['showlegend'] = False
+                    fig_subplots.add_trace(trace, row=p+1, col=q+1)
+                idx += 1
 
     fig_subplots.update_layout(
         legend=fig["layout"]["legend"],
