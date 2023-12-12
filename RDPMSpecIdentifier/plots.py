@@ -58,8 +58,8 @@ DEFAULT_TEMPLATE.update(
             "paper_bgcolor": "rgba(255,255,255,1)",
             "plot_bgcolor": " rgba(0,0,0,0)",
             "font": dict(color="black"),
-            "xaxis": dict(linecolor="black", showline=True),
-            "yaxis": dict(linecolor="black", showline=True),
+            "xaxis": dict(linecolor="black", showline=True, mirror=True),
+            "yaxis": dict(linecolor="black", showline=True, mirror=True),
             "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black"))
         }
     }
