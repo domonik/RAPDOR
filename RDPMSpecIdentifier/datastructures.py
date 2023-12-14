@@ -69,6 +69,7 @@ class RDPMSpecData:
         permutation_sufficient_samples (bool): Set to true if there are at least 5 samples per condition. Else False.
         score_columns (List[str]): list of strings that are used as column names for scores that can be calculated via
             this object.
+        control (str): Name of the level of treatment that should be used as control.
 
 
      Examples:
@@ -96,34 +97,34 @@ class RDPMSpecData:
         "Mean Distance",
         "shift direction",
         "relative fraction shift",
-        "RNase False peak pos",
-        "RNase True peak pos",
         "Permanova p-value",
         "Permanova adj-p-value",
         "CTRL Peak adj p-Value",
-        "RNase Peak adj p-Value"
+        "RNase Peak adj p-Value",
+        "position strongest shift"
     ]
 
     _id_columns = ["RDPMSpecID", "id"]
 
-    def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None, min_replicates: int = 2):
+    def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None, min_replicates: int = 2, control: str = "Control"):
         self.state = RDPMState()
         self.df = df
         self.logbase = logbase
         self.design = design
         self.min_replicates = min_replicates
+        self.control = control
         if self.min_replicates < 2:
             raise ValueError("A minimum of two replicates is required to run statistics")
         self.array = None
         self.internal_design_matrix = None
+        self.fractions = None
         self.norm_array = None
         self.distances = None
         self._anosim_distribution = None
         self._permanova_distribution = None
         self._data_rows = None
         self._current_eps = None
-        self._indices_true = None
-        self._indices_false = None
+        self.indices = None
         self.cluster_features = None
         self.current_embedding = None
         self.permutation_sufficient_samples = False
@@ -177,17 +178,27 @@ class RDPMSpecData:
             raise ValueError("Not all Names in the designs Name column are columns in the count df")
 
     def _check_design(self):
-        for col in ["Fraction", "RNase", "Replicate", "Name"]:
+        for col in ["Fraction", "Treatment", "Replicate", "Name"]:
             if not col in self.design.columns:
                 raise IndexError(f"{col} must be a column in the design dataframe\n")
 
     def _set_design_and_array(self):
-        design_matrix = self.design.sort_values(by="Fraction")
-        tmp = design_matrix.groupby(["RNase", "Replicate"])["Name"].apply(list).reset_index()
+        design_matrix = self.design
+        treatment_levels = design_matrix["Treatment"].unique().tolist()
+        if self.control in treatment_levels:
+            treatment_levels.remove(self.control)
+            treatment_levels = [self.control] + treatment_levels
+
+        design_matrix["Treatment"] = pd.Categorical(design_matrix["Treatment"], categories=treatment_levels, ordered=True)
+        self.score_columns += [f"{treatment} expected shift" for treatment in treatment_levels]
+        self.treatment_levels = treatment_levels
+        design_matrix = design_matrix.sort_values(by=["Fraction", "Treatment", "Replicate"])
+        tmp = design_matrix.groupby(["Treatment", "Replicate"])["Name"].apply(list).reset_index()
         self.df.index = np.arange(self.df.shape[0])
         self.df = self.df.round(decimals=DECIMALS)
-
-        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("RNase", group_keys=True)["Replicate"].count() >= 5))
+        self.fractions = design_matrix["Fraction"].unique()
+        self.categorical_fraction = self.fractions.dtype == np.dtype('O')
+        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("Treatment", group_keys=True)["Replicate"].count() >= 5))
         l = []
         rnames = []
         for idx, row in tmp.iterrows():
@@ -204,14 +215,14 @@ class RDPMSpecData:
             array[mask] = 0
         self.array = array
         self.internal_design_matrix = tmp
-        indices = self.internal_design_matrix.groupby("RNase", group_keys=True).apply(lambda x: list(x.index))
-        self._indices_false = np.asarray(indices[False])
-        self._indices_true = np.asarray(indices[True])
+        indices = self.internal_design_matrix.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
+        self.indices = [np.asarray(index) for index in indices]
+
         p = ~np.any(self.array, axis=-1)
-        pf = p[:, self._indices_false]
+        pf = p[:, self.indices[0]]
         pf = pf.shape[-1] - np.count_nonzero(pf, axis=-1)
 
-        pt = p[:, self._indices_true]
+        pt = p[:, self.indices[1]]
         pt = pt.shape[-1] - np.count_nonzero(pt, axis=-1)
 
         tmp = np.any(p, axis=-1)
@@ -329,6 +340,32 @@ class RDPMSpecData:
         self.calc_distances(method)
         self._unset_scores_and_pvalues()
 
+    def determine_strongest_shift(self):
+        rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
+        rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
+        mid = 0.5 * (rnase_true + rnase_false)
+        if self.state.distance_method in ["Jensen-Shannon-Distance", "KL-Divergence"]:
+            rel1 = rel_entr(rnase_false, mid)
+            rel2 = rel_entr(rnase_true, mid)
+        elif self.state.distance_method == "Euclidean-Distance":
+            rel1 = rnase_false - mid
+            rel2 = rnase_true - mid
+        else:
+            raise ValueError(f"Peak determination failed due to bug in source code")
+        test = np.concatenate((rel1, rel2), axis=-1)
+        print(test[0:10])
+
+        idx = np.argmax(test, axis=-1)
+        print(idx[0:10])
+        positions = idx % rel1.shape[-1]
+        positions += self.state.kernel_size // 2
+
+        self.df["position strongest shift"] = self.fractions[positions]
+
+
+
+
+
     def determine_peaks(self):
         """Determines the Mean Distance, Peak Positions and shift direction.
 
@@ -344,9 +381,8 @@ class RDPMSpecData:
         #. Calculate a weighted average over the Fraction indices using $D$ as weights
 
         """
-        indices = self.internal_design_matrix.groupby("RNase", group_keys=True).apply(lambda x: list(x.index))
-        rnase_false = np.nanmean(self.norm_array[:, indices[False]], axis=-2)
-        rnase_true = np.nanmean(self.norm_array[:, indices[True]], axis=-2)
+        rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
+        rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
         mid = 0.5 * (rnase_true + rnase_false)
         s = int(np.ceil(self.state.kernel_size / 2))
         range = np.arange(s, s + mid.shape[-1])
@@ -361,14 +397,14 @@ class RDPMSpecData:
         rel1[rel1 < 0] = 0
         rel1 = (rel1 / np.sum(rel1, axis=-1, keepdims=True)) * range
         r1 = np.sum(rel1, axis=-1)
-        self.df["RNase False peak pos"] = r1
+        self.df[f"{self.treatment_levels[0]} expected shift"] = r1
 
         rel2[rel2 < 0] = 0
         rel2 = (rel2 / np.sum(rel2, axis=-1, keepdims=True)) * range
         r2 = np.sum(rel2, axis=-1)
         jsd = self._calc_distance_via(self.state.distance_method, rnase_true, rnase_false, axis=-1)
 
-        self.df["RNase True peak pos"] = r2
+        self.df[f"{self.treatment_levels[1]} expected shift"] = r2
         self.df["Mean Distance"] = jsd
         side = r2 - r1
         self.df["relative fraction shift"] = side
@@ -380,37 +416,38 @@ class RDPMSpecData:
         shift_strings = np.where(side == 1, "right", shift_strings)
         self.df["shift direction"] = shift_strings
 
-    def calc_cluster_features(self, kernel_range: int = 2):
-        if "shift direction" not in self.df:
-            raise ValueError("Peaks not determined. Determine Peaks first")
-        rnase_false = self.norm_array[:, self._indices_false].mean(axis=-2)
-        rnase_true = self.norm_array[:, self._indices_true].mean(axis=-2)
-        mixture = 0.5 * (rnase_true + rnase_false)
-        ctrl_peak = rel_entr(rnase_false, mixture)
-        rnase_peak = rel_entr(rnase_true, mixture)
-        ctrl_peak_pos = (self.df["RNase False peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
-        rnase_peak_pos = (self.df["RNase True peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
-
-        ctrl_peak = np.pad(ctrl_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
-        ctrl_peak_range = np.stack((ctrl_peak_pos, ctrl_peak_pos + 2 * kernel_range + 1), axis=1)
-        ctrl_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=ctrl_peak_range, axis=-1)
-        v1 = np.take_along_axis(ctrl_peak, ctrl_peak_range, axis=-1)
-
-        rnase_peak = np.pad(rnase_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
-        rnase_peak_range = np.stack((rnase_peak_pos, rnase_peak_pos + 2 * kernel_range + 1), axis=1)
-        rnase_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=rnase_peak_range,
-                                               axis=-1)
-        v2 = np.take_along_axis(rnase_peak, rnase_peak_range, axis=-1)
-        shift = ctrl_peak_pos - rnase_peak_pos
-        cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
-        self.cluster_features = cluster_values
-        self.state.cluster_kernel_distance = kernel_range
+    # def calc_cluster_features(self, kernel_range: int = 2):
+    #     if "shift direction" not in self.df:
+    #         raise ValueError("Peaks not determined. Determine Peaks first")
+    #     rnase_false = self.norm_array[:, self._indices_false].mean(axis=-2)
+    #     rnase_true = self.norm_array[:, self._indices_true].mean(axis=-2)
+    #     mixture = 0.5 * (rnase_true + rnase_false)
+    #     ctrl_peak = rel_entr(rnase_false, mixture)
+    #     rnase_peak = rel_entr(rnase_true, mixture)
+    #     ctrl_peak_pos = (self.df["RNase False peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
+    #     rnase_peak_pos = (self.df["RNase True peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
+    #
+    #     ctrl_peak = np.pad(ctrl_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
+    #     ctrl_peak_range = np.stack((ctrl_peak_pos, ctrl_peak_pos + 2 * kernel_range + 1), axis=1)
+    #     ctrl_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=ctrl_peak_range, axis=-1)
+    #     v1 = np.take_along_axis(ctrl_peak, ctrl_peak_range, axis=-1)
+    #
+    #     rnase_peak = np.pad(rnase_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
+    #     rnase_peak_range = np.stack((rnase_peak_pos, rnase_peak_pos + 2 * kernel_range + 1), axis=1)
+    #     rnase_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=rnase_peak_range,
+    #                                            axis=-1)
+    #     v2 = np.take_along_axis(rnase_peak, rnase_peak_range, axis=-1)
+    #     shift = ctrl_peak_pos - rnase_peak_pos
+    #     cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
+    #     self.cluster_features = cluster_values
+    #     self.state.cluster_kernel_distance = kernel_range
 
     def calc_distribution_features(self):
         if "shift direction" not in self.df:
             raise ValueError("Peaks not determined. Determine Peaks first")
-        rnase_false = np.nanmean(self.norm_array[:, self._indices_false], axis=-2)
-        rnase_true = np.nanmean(self.norm_array[:, self._indices_true], axis=-2)
+
+        rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
+        rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
         mixture = rnase_true + rnase_false
         uni_nonzero = mixture > 0
         uniform = (np.ones((mixture.shape[0], mixture.shape[1])) / np.count_nonzero(uni_nonzero, axis=-1, keepdims=True)) * uni_nonzero
@@ -418,7 +455,10 @@ class RDPMSpecData:
         false_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_false, uniform, axis=-1)
         true_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_true, uniform, axis=-1)
         diff = false_uni_distance - true_uni_distance
-        shift = self.df["relative fraction shift"].to_numpy()
+        if self.categorical_fraction:
+            shift = self.df["position strongest shift"].to_numpy()
+        else:
+            shift = self.df["relative fraction shift"].to_numpy()
         self.cluster_features = np.concatenate((shift[:, np.newaxis], diff[:, np.newaxis]), axis=1)
         self.current_embedding = self.cluster_features
 
@@ -588,7 +628,9 @@ class RDPMSpecData:
 
         """
         self.calc_all_anosim_value()
-        self.determine_peaks()
+        if not self.categorical_fraction:
+            self.determine_peaks()
+        self.determine_strongest_shift()
 
     def _calc_anosim(self, indices_false, indices_true, ignore_nan: bool = True):
         outer_group_distances = self._get_outer_group_distances(indices_false, indices_true)
@@ -634,21 +676,21 @@ class RDPMSpecData:
     def calc_all_permanova_f(self):
         """Calculates PERMANOVA F for each protein and stores it in :py:attr:`df`
         """
-        f = self._calc_permanova_f(self._indices_false, self._indices_true)
+        f = self._calc_permanova_f(self.indices[0], self.indices[1])
         self.df["PERMANOVA F"] = f.round(decimals=DECIMALS)
         self.state.permanova_f = True
 
 
     def calc_all_anosim_value(self):
         """Calculates ANOSIM R for each protein and stores it in :py:attr:`df`"""
-        r = self._calc_anosim(self._indices_false, self._indices_true)
+        r = self._calc_anosim(self.indices[0], self.indices[1])
         self.df["ANOSIM R"] = r.round(decimals=DECIMALS)
         self.state.anosim_r = True
 
     def _calc_global_anosim_distribution(self, nr_permutations: int, threads: int, seed: int = 0):
         np.random.seed(seed)
-        _split_point = len(self._indices_false)
-        indices = np.concatenate((self._indices_false, self._indices_true))
+        _split_point = len(self.indices[0])
+        indices = np.concatenate((self.indices[0], self.indices[1]))
         calls = []
         for _ in range(nr_permutations):
             shuffled = np.random.permutation(indices)
@@ -663,8 +705,8 @@ class RDPMSpecData:
 
     def _calc_global_permanova_distribution(self, nr_permutations: int, threads: int, seed: int = 0):
         np.random.seed(seed)
-        _split_point = len(self._indices_false)
-        indices = np.concatenate((self._indices_false, self._indices_true))
+        _split_point = len(self.indices[0])
+        indices = np.concatenate((self.indices[0], self.indices[1]))
         calls = []
         for _ in range(nr_permutations):
             shuffled = np.random.permutation(indices)

@@ -5,7 +5,7 @@ import dash
 from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
-    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK
+    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK, plot_boxes
 from dash_extensions.enrich import Serverside, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
@@ -51,9 +51,13 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
         if rdpmsdata.state.kernel_size is not None:
             i = int(np.floor(rdpmsdata.state.kernel_size / 2))
         if replicate_mode:
-            fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
+            fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
         else:
-            fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors, show_outliers=True)
+            if rdpmsdata.categorical_fraction:
+                fig = plot_boxes(array, rdpmsdata.internal_design_matrix, x=rdpmsdata.fractions, offset=i,
+                                 colors=colors)
+            else:
+                fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, show_outliers=True)
         if not night_mode:
             fig.layout.template = DEFAULT_TEMPLATE
         else:
@@ -92,7 +96,7 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
         raise PreventUpdate
     else:
         array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
-        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors, vspace=0)
+        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, colors=colors, vspace=0)
         fig.update_yaxes(showticklabels=False, showgrid=False, showline=False)
         fig.update_xaxes(showgrid=False, showticklabels=False, title="", showline=False)
         fig.update_traces(showscale=False)
@@ -140,7 +144,7 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
         raise PreventUpdate
     else:
         distances = rdpmsdata.distances[key]
-        fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
+        fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, colors=colors)
         fig.update_layout(
             margin={"t": 0, "b": 0, "l": 0, "r": 0}
         )

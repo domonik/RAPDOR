@@ -212,6 +212,8 @@ layout = html.Div(
     Output("data-store", "data", allow_duplicate=True),
     Output("url", "pathname", allow_duplicate=True),
     Output("upload-alert-div", "children", allow_duplicate=True),
+    Output("sel-col-state", "data", allow_duplicate=True),
+    Output("table-state", "data", allow_duplicate=True),
     Input("upload-json", "contents"),
     State("unique-id", "data")
 
@@ -241,7 +243,7 @@ def upload_json(data, uid):
             className="p-2 align-items-center, alert-msg",
 
         )
-    return rdpmspec, redirect, alert
+    return rdpmspec, redirect, alert, None, None
 
 
 for name in ("intensities", "design", "json"):
@@ -261,6 +263,8 @@ for name in ("intensities", "design", "json"):
     Output("data-store", "data", allow_duplicate=True),
     Output("url", "pathname", allow_duplicate=True),
     Output("upload-alert-div", "children", allow_duplicate=True),
+    Output("sel-col-state", "data", allow_duplicate=True),
+    Output("table-state", "data", allow_duplicate=True),
     Input("upload-csv-btn", "n_clicks"),
     State("unique-id", "data"),
     State("seperator-radio", "value"),
@@ -295,4 +299,4 @@ def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase)
             className="p-2 align-items-center, alert-msg",
 
         )
-    return rdpmsdata, redirect, alert
+    return rdpmsdata, redirect, alert, None, None

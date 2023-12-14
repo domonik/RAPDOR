@@ -146,7 +146,6 @@ def empty_figure(annotation: str = None, font_color: str = None):
 def plot_replicate_distribution(
         subdata: np.ndarray,
         design: pd.DataFrame,
-        groups: str,
         offset: int = 0,
         colors: Iterable[str] = None
 ):
@@ -155,7 +154,6 @@ def plot_replicate_distribution(
     Args:
         subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`. Rows need to add up to one
         design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
-        groups (str): which design column to use for grouping.
         offset (int): adds this offset to the fractions at the x-axis range
         colors (Iterable[str]): An iterable of color strings to use for plotting
 
@@ -166,13 +164,13 @@ def plot_replicate_distribution(
     """
     if colors is None:
         colors = DEFAULT_COLORS
-    indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
+    indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
     x = list(range(offset+1, subdata.shape[1] + offset+1))
     fig = go.Figure()
     names = []
     values = []
     for eidx, (name, idx) in enumerate(indices.items()):
-        name = f"{groups}: {name}".ljust(15, " ")
+        name = f"{name}".ljust(15, " ")
         legend = f"legend{eidx + 1}"
         names.append(name)
         for row_idx in idx:
@@ -242,7 +240,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
                 xref = f"x domain" if idx == 0 else f"x{idx+1} domain"
                 yref = f"y domain" if idx == 0 else f"y{idx+1} domain"
                 array = rdpmsdata.norm_array[protein]
-                fig = plot_distribution(array, rdpmsdata.internal_design_matrix, groups="RNase", offset=i, colors=colors)
+                fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
                 fig_subplots.add_annotation(
                     text=annotation[idx],
                     xref=xref,
@@ -268,13 +266,72 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     return fig_subplots
 
 
-def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 0, colors = None, show_outliers: bool = True):
+def plot_boxes(subdata, design, x, offset: int = 0, colors=None):
+    if colors is None:
+        colors = DEFAULT_COLORS
+    fig = go.Figure()
+    indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
+    x = x[offset: subdata.shape[1] + offset]
+    names = []
+    for eidx, (name, idx) in enumerate(indices.items()):
+        name = f"{name}".ljust(15, " ")
+        legend = f"legend{eidx + 1}"
+        names.append(name)
+        mean_values = np.nanmean(subdata[idx,], axis=0)
+        upper_quantile = np.nanquantile(subdata[idx,], 0.75, axis=0) - mean_values
+        lower_quantile = mean_values - np.nanquantile(subdata[idx,], 0.25, axis=0)
+        fig.add_trace(go.Bar(
+            y=mean_values,
+            x=x,
+            name="Bar",
+            error_y=dict(
+                type='data',  # value of error bar given in data coordinates
+                array=upper_quantile,
+                arrayminus=lower_quantile,
+                symmetric=False,
+                visible=True,
+                color="black"
+            ),
+            marker_color=colors[eidx],
+            legend=legend,
+            marker=dict(line=dict(width=1))
+        ))
+    fig.update_layout(hovermode="x")
+    fig.update_layout(
+        yaxis_title="Protein Amount [%]",
+    )
+    fig.update_layout(
+        xaxis=dict(title="Fraction"),
+        legend=dict(
+            title=names[0],
+            orientation="h",
+            yanchor="bottom",
+            y=1.05,
+            xanchor="left",
+            x=0,
+            itemsizing="constant"
+
+        ),
+        legend2=dict(
+            title=names[1],
+            orientation="h",
+            yanchor="bottom",
+            y=1.15,
+            xanchor="left",
+            x=0,
+            itemsizing="constant"
+        )
+
+    )
+    return fig
+
+
+def plot_distribution(subdata, design: pd.DataFrame, offset: int = 0, colors = None, show_outliers: bool = True):
     """Plots the distribution of proteins using mean, median, min and max values of replicates
 
         Args:
             subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`. Rows need to add up to one
             design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
-            groups (str): which design column to use for grouping.
             offset (int): adds this offset to the fractions at the x-axis range
             colors (Iterable[str]): An iterable of color strings to use for plotting
 
@@ -287,14 +344,14 @@ def plot_distribution(subdata, design: pd.DataFrame, groups: str, offset: int = 
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure()
-    indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
+    indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
     medians = []
     means = []
     errors = []
     x = list(range(offset+1, subdata.shape[1] + offset+1))
     names = []
     for eidx, (name, idx) in enumerate(indices.items()):
-        name = f"{groups}: {name}".ljust(15, " ")
+        name = f"{name}".ljust(15, " ")
         legend=f"legend{eidx+1}"
         names.append(name)
         median_values = np.nanmedian(subdata[idx,], axis=0)
@@ -393,13 +450,12 @@ def _update_distribution_layout(fig, names, x, offset):
     )
     return fig
 
-def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
+def plot_heatmap(distances, design: pd.DataFrame, colors=None):
     """Plots a heatmap of the sample distances
 
     Args:
         distances (np.ndarray): between sample distances of shape :code:`num samples x num samples`
         design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
-        groups (str): which design column to use for naming.
         colors (Iterable[str]): An iterable of color strings to use for plotting
 
     Returns: go.Figure
@@ -407,7 +463,7 @@ def plot_heatmap(distances, design: pd.DataFrame, groups: str, colors=None):
     """
     if colors is None:
         colors = DEFAULT_COLORS
-    names = groups + design[groups].astype(str) + " " + design["Replicate"].astype(str)
+    names = design["Treatment"].astype(str) + " " + design["Replicate"].astype(str)
     fig = go.Figure(
         data=go.Heatmap(
             z=distances,
@@ -458,7 +514,7 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
                                  )
     for idx, protein in enumerate(proteins, 1):
         array = rdpmsdata.array[protein]
-        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, groups="RNase", colors=colors)
+        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, colors=colors)
         for i_idx, trace in enumerate(fig["data"]):
             fig_subplots.add_trace(trace, row=(idx * 2) + i_idx - 1, col=1)
     fig = fig_subplots
@@ -519,13 +575,12 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
 
 
 
-def plot_barcode_plot(subdata, design: pd.DataFrame, groups, colors=None, vspace: float = 0.025):
+def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float = 0.025):
     """Creates a Westernblot like plot from the mean of protein intensities
 
     Args:
         subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`. Rows don´t need to add up to one
         design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
-        groups (str): which design column to use for grouping.
         offset (int): adds this offset to the fractions at the x-axis range
         colors (Iterable[str]): An iterable of color strings to use for plotting
         vspace (float): vertical space between westernblots (between 0 and 1)
@@ -537,7 +592,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, colors=None, vspace
     """
     if colors is None:
         colors = DEFAULT_COLORS
-    indices = design.groupby(groups, group_keys=True).apply(lambda x: list(x.index))
+    indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
     fig = make_subplots(cols=1, rows=2, vertical_spacing=vspace)
 
     ys = []
@@ -550,7 +605,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, groups, colors=None, vspace
         a_color = _color_to_calpha(color, 0.)
         color = _color_to_calpha(color, 1)
         scale.append([[0, a_color], [1, color]])
-        name = f"{groups}: {name}"
+        name = f"{name}"
         mean_values = np.mean(subdata[idx, ], axis=0)
         ys.append([name for _ in range(len(mean_values))])
         xs.append(list(range(1, subdata.shape[1]+1)))
@@ -787,10 +842,6 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, 
 
     marker_size = desired_min + (data - min_data) * (marker_max_size - desired_min) / (max_data - min_data)
     marker_size[np.isnan(marker_size)] = 1
-    min_x = np.nanmin(embedding[:, 0])
-    min_y = np.nanmin(embedding[:, 1])
-    max_x = np.max(embedding[:, 0])
-    max_y = np.max(embedding[:, 1])
     fig.add_shape(type="rect",
                   x0=-2, y0=-2, x1=2, y1=2,
                   fillcolor=second_bg_color,

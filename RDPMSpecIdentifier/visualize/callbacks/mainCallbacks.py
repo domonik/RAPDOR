@@ -69,6 +69,7 @@ def assign_session_identifier(uid, data, initial_data):
     Output("table-selector", "value", allow_duplicate=True),
     Output("additional-header-dd", "options"),
     Output("additional-header-dd", "value"),
+    Output("kernel-slider", "disabled"),
     Input("unique-id", "data"),
     Input("refresh-btn", "n_clicks"),
     State("data-store", "data"),
@@ -85,7 +86,12 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
         raise PreventUpdate
     state = rdpmsdata.state
     logger.info(f"state: {state}")
-    kernel_size = state.kernel_size if state.kernel_size is not None else 3
+    if rdpmsdata.categorical_fraction:
+        kernel_size = 0
+        kernel_disabled = True
+    else:
+        kernel_size = state.kernel_size if state.kernel_size is not None else 3
+        kernel_disabled = dash.no_update
     cluster_method = state.cluster_method if state.cluster_method is not None else dash.no_update
     if sel_col_state is None or len(sel_col_state) == 0:
         sel_columns = []
@@ -100,7 +106,7 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
     logger.info(selected_ad_header)
     if selected_ad_header is None:
         selected_ad_header = list(rdpmsdata.extra_df)[0] if "Gene" not in rdpmsdata.extra_df else "Gene"
-    return kernel_size, cluster_method, sel_columns, options, selected_ad_header
+    return kernel_size, cluster_method, sel_columns, options, selected_ad_header, kernel_disabled
 
 
 @callback(

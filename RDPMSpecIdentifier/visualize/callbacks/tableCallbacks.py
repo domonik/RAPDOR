@@ -184,7 +184,6 @@ def update_current_rows(sel_rows, current_selection, vpids):
 )
 def save_table_state(page_current, sort_by, filter_query):
     tbl_state = {"page_current": page_current, "sort_by": sort_by, "filter_query": filter_query}
-    print(tbl_state)
     return tbl_state
 
 
@@ -192,7 +191,7 @@ def save_table_state(page_current, sort_by, filter_query):
     Output('tbl', "page_current", allow_duplicate=True),
     Output('tbl', 'sort_by'),
     Output('tbl', 'filter_query'),
-    Input("url", "pathname"),
+    Input("tbl", "columns"),
     State("table-state", "data"),
 
 )
@@ -449,7 +448,12 @@ def run_scoring(n_clicks, sel_columns, rdpmsdata, uid):
         raise PreventUpdate
     else:
         rdpmsdata.calc_all_scores()
-        sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "RNase False peak pos", "RNase True peak pos", "relative fraction shift"]
+        sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "relative fraction shift", "strongest shift"]
+        if not rdpmsdata.categorical_fraction:
+            peak_names = rdpmsdata.score_columns[-2:]
+            if isinstance(peak_names, np.ndarray):
+                peak_names = peak_names.tolist()
+            sel_columns += peak_names
         sel_columns = list(set(sel_columns))
     return sel_columns, Serverside(rdpmsdata, key=uid), True
 
@@ -583,8 +587,8 @@ def set_columns_from_state(selected_columns, sel_col_state, rdpmsdata):
 )
 def update_columns(selected_columns, rdpmsdata):
 
-    if selected_columns is None:
-        raise PreventUpdate
+    selected_columns = [] if selected_columns is None else selected_columns
+
     data = rdpmsdata.extra_df.loc[0:1, rdpmsdata._id_columns + selected_columns]
     columns = []
     num_cols = ["shift direction"]
