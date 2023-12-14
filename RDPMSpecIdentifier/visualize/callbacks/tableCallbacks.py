@@ -557,11 +557,15 @@ def run_anosim(n_clicks, sel_columns, anosim_permutations, rdpmsdata, uid):
     Output('table-selector', 'value'),
     Input('table-selector', 'value'),
     State('sel-col-state', 'data'),
+    State("data-store", "data"),
+
 )
-def set_columns_from_state(selected_columns, sel_col_state):
+def set_columns_from_state(selected_columns, sel_col_state, rdpmsdata):
     logger.info(f"Will update columns: {selected_columns}, col_state: {sel_col_state}")
     sel_col_state = [] if sel_col_state is None else sel_col_state
-    if (selected_columns is None or len(selected_columns) == 0) and len(sel_col_state) > 0:
+    check = all(column in rdpmsdata.extra_df.columns for column in sel_col_state)
+
+    if (selected_columns is None or len(selected_columns) == 0) and len(sel_col_state) > 0 and check:
         selected_columns = sel_col_state
         sel_col_state = dash.no_update
     else:

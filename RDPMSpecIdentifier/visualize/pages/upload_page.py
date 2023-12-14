@@ -21,7 +21,7 @@ dash.register_page(__name__, path='/')
 
 
 def from_csv(disabled: bool = False):
-    data = dcc.Tab(html.Div([
+    data = dcc.Tab([html.Div([
         html.Div(
             [
                 html.Div(html.Span("Intensities"), className="col-3 justify-content-center align-self-center"),
@@ -135,7 +135,7 @@ def from_csv(disabled: bool = False):
             ],
             className="row justify-content-center p-2"
         ),
-    ], className="databox databox-open py-3"), label="From CSV", className="custom-tab", selected_className='custom-tab--selected')
+    ], className="databox databox-open py-3")], label="From CSV", className="custom-tab", selected_className='custom-tab--selected')
     return data
 
 

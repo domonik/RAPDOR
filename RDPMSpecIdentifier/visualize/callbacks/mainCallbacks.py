@@ -89,6 +89,7 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
     cluster_method = state.cluster_method if state.cluster_method is not None else dash.no_update
     if sel_col_state is None or len(sel_col_state) == 0:
         sel_columns = []
+        logger.info("Table dropdown state does not match the selection, will update")
         for name in rdpmsdata.score_columns:
             if name in rdpmsdata.extra_df:
                 sel_columns.append(name)
@@ -127,6 +128,7 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid, selected_column
     if rdpmsdata.state.kernel_size != kernel_size or rdpmsdata.state.distance_method != distance_method:
         logger.info(f"Normalizing using method: {distance_method} and eps: {eps}")
         rdpmsdata.normalize_and_get_distances(method=distance_method, kernel=kernel_size, eps=eps)
+        selected_columns = [] if selected_columns is None else selected_columns
         selected_columns = list(set(selected_columns) - set(rdpmsdata.score_columns))
         return html.Div(), Serverside(rdpmsdata, key=uid), selected_columns, selected_columns, [], ""
     logger.info("Data already Normalized")
