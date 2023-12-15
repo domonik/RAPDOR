@@ -488,17 +488,21 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
     m_size = line_width = grid_width = dtickx = dticky = height = vspace = xaxisw = yaxisw = dash.no_update
     l1x = l2x = l1y = l2y = None
     if plot_type == 0:
+        rows = len(selected_proteins)
         m_size = 5
         line_width = 3
         grid_width = 1
         dtickx = 1
         dticky = None
         height = max(100 * len(selected_proteins), 400)
-        vspace = 0.01
+        vspace = round(0.1 * (1/rows), 2)
         xaxisw = yaxisw = 1
         l1x = l2x = 0
-        l1y = 1.01
-        l2y = 1.1
+        l1y = 1.02
+        if rows > 2:
+            l2y = round(1 + 0.4 * (1/rows), 2)
+        else:
+            l2y = 1.1
     elif plot_type == 2:
         grid_width = 0
         dtickx = 1
