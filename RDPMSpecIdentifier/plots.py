@@ -190,7 +190,7 @@ def plot_replicate_distribution(
     return fig
 
 
-def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", **kwargs):
+def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", mode: str="line", **kwargs):
     """Plots a figure containing distributions of proteins using mean, median, min and max values of replicates
 
         Args:
@@ -199,7 +199,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
             colors (Iterable[str]): An iterable of color strings to use for plotting
             title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
                 as a subtitle in the plot (Default: RDPMSpecID)
-            vspace (float): Vertical space between subplots
+            mode (str): One of line or bar. Will result in a line plot or a bar plot.
 
         Returns: go.Figure
 
@@ -240,7 +240,12 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
                 xref = f"x domain" if idx == 0 else f"x{idx+1} domain"
                 yref = f"y domain" if idx == 0 else f"y{idx+1} domain"
                 array = rdpmsdata.norm_array[protein]
-                fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
+                if mode == "line":
+                    fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
+                elif mode == "bar":
+                    fig = plot_bars(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, x=rdpmsdata.fractions)
+                else:
+                    raise ValueError("mode must be one of line or bar")
                 fig_subplots.add_annotation(
                     text=annotation[idx],
                     xref=xref,
@@ -266,15 +271,20 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     return fig_subplots
 
 
-def plot_boxes(subdata, design, x, offset: int = 0, colors=None):
+def plot_bars(subdata, design, x, offset: int = 0, colors=None):
     if colors is None:
         colors = DEFAULT_COLORS
-    fig = go.Figure()
+    fig = go.Figure(layout=go.Layout(yaxis2=go.layout.YAxis(
+            visible=False,
+            matches="y",
+            overlaying="y",
+            anchor="x",
+        )))
     indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
     x = x[offset: subdata.shape[1] + offset]
     names = []
     for eidx, (name, idx) in enumerate(indices.items()):
-        name = f"{name}".ljust(15, " ")
+        name = f"{name}".ljust(10, " ")
         legend = f"legend{eidx + 1}"
         names.append(name)
         mean_values = np.nanmean(subdata[idx,], axis=0)
@@ -284,17 +294,32 @@ def plot_boxes(subdata, design, x, offset: int = 0, colors=None):
             y=mean_values,
             x=x,
             name="Bar",
+            offsetgroup=str(eidx),
+            #offset=(eidx - 1) * 1 / 3,
+            marker_color=colors[eidx],
+            legend=legend,
+            marker=dict(line=dict(width=1, color="black"))
+        ))
+        fig.add_trace(go.Bar(
+            y=mean_values,
+            x=x,
+            name="Q.25-Q.75",
+            offsetgroup=str(eidx),
+            #offset=(eidx - 1) * 1 / 3,
             error_y=dict(
                 type='data',  # value of error bar given in data coordinates
                 array=upper_quantile,
                 arrayminus=lower_quantile,
                 symmetric=False,
                 visible=True,
-                color="black"
+                color="black",
+                thickness=2,
+                width=10
             ),
-            marker_color=colors[eidx],
+            yaxis=f"y2",
+            marker_color="rgba(0, 0, 0, 0)",
             legend=legend,
-            marker=dict(line=dict(width=1))
+            marker=dict(line=dict(width=1, color="black"))
         ))
     fig.update_layout(hovermode="x")
     fig.update_layout(
@@ -306,10 +331,11 @@ def plot_boxes(subdata, design, x, offset: int = 0, colors=None):
             title=names[0],
             orientation="h",
             yanchor="bottom",
-            y=1.05,
+            y=1.03,
             xanchor="left",
             x=0,
-            itemsizing="constant"
+            itemsizing="constant",
+            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace', size=16)
 
         ),
         legend2=dict(
@@ -319,7 +345,9 @@ def plot_boxes(subdata, design, x, offset: int = 0, colors=None):
             y=1.15,
             xanchor="left",
             x=0,
-            itemsizing="constant"
+            itemsizing="constant",
+            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace', size=16)
+
         )
 
     )
@@ -514,7 +542,7 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
                                  )
     for idx, protein in enumerate(proteins, 1):
         array = rdpmsdata.array[protein]
-        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, colors=colors)
+        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, colors=colors, fractions=rdpmsdata.fractions)
         for i_idx, trace in enumerate(fig["data"]):
             fig_subplots.add_trace(trace, row=(idx * 2) + i_idx - 1, col=1)
     fig = fig_subplots
@@ -575,7 +603,7 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RDPMSpecData, colors, titl
 
 
 
-def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float = 0.025):
+def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float = 0.025, fractions=None):
     """Creates a Westernblot like plot from the mean of protein intensities
 
     Args:
@@ -608,7 +636,10 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
         name = f"{name}"
         mean_values = np.mean(subdata[idx, ], axis=0)
         ys.append([name for _ in range(len(mean_values))])
-        xs.append(list(range(1, subdata.shape[1]+1)))
+        if fractions is None:
+            xs.append(list(range(1, subdata.shape[1]+1)))
+        else:
+            xs.append(fractions)
         names.append(name)
         means.append(mean_values)
 

@@ -494,7 +494,7 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
         grid_width = 1
         dtickx = 1
         dticky = None
-        height = max(100 * len(selected_proteins), 400)
+        height = max(150 * len(selected_proteins), 400)
         vspace = round(0.1 * (1/rows), 2)
         xaxisw = yaxisw = 1
         l1x = l2x = 0
@@ -504,9 +504,11 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
         else:
             l2y = 1.1
     elif plot_type == 2:
+        rows = len(selected_proteins)
+
         grid_width = 0
         dtickx = 1
-        vspace = 0.01
+        vspace = round(0.1 * (1/rows), 2)
         height = max(100 * len(selected_proteins), 400)
         xaxisw = yaxisw = 1
         l1x = 0
@@ -610,7 +612,13 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
             bubble_style["display"] = "flex"
 
         else:
-            fig = plot_protein_distributions(keys, rdpmsdata, colors=colors, title_col=displayed_col, vertical_spacing=vspace)
+            fig = plot_protein_distributions(
+                keys, rdpmsdata,
+                colors=colors,
+                title_col=displayed_col,
+                vertical_spacing=vspace,
+                mode="bar" if rdpmsdata.categorical_fraction else "line"
+            )
             fig.update_xaxes(mirror=True)
             fig.update_yaxes(mirror=True)
             settings = DEFAULT_DISTRIBUTION_SETTINGS
@@ -745,18 +753,20 @@ def update_ff_download_preview(
             y=ly
         )
     )
-    if marker_size is not None:
-        if marker_size > 0:
+    if fig.data[0].type == "scatter":
+        if marker_size is not None:
+                if marker_size > 0:
+                    fig.update_traces(
+                        marker=dict(size=marker_size)
+                    )
+                else:
+                    fig.update_traces(mode="lines")
+        if line_width is not None:
             fig.update_traces(
-                marker=dict(size=marker_size)
+                line=dict(width=max(line_width, 0)
+                          )
             )
-        else:
-            fig.update_traces(mode="lines")
-    if line_width is not None:
-        fig.update_traces(
-            line=dict(width=max(line_width, 0)
-                      )
-        )
+
     fig.update_layout(
         legend=dict(
             font=dict(size=legend_font_size)
@@ -766,6 +776,9 @@ def update_ff_download_preview(
         )
 
     )
+    if fig.data[0].type == "bar":
+        color = pio.templates[template]["layout"]["font"]["color"]
+        fig.update_traces(error_y=dict(color=color), marker=dict(line=dict(width=1, color=color)))
     if plot_type == 3:
         legend_start = legend_start if legend_start is not None else 0.25
         legend_spread = legend_spread if legend_spread is not None else 0.125

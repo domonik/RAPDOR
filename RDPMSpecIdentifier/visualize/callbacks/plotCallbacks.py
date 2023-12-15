@@ -5,7 +5,7 @@ import dash
 from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
 from RDPMSpecIdentifier.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
-    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK, plot_boxes
+    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK, plot_bars
 from dash_extensions.enrich import Serverside, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
@@ -54,8 +54,10 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
             fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
         else:
             if rdpmsdata.categorical_fraction:
-                fig = plot_boxes(array, rdpmsdata.internal_design_matrix, x=rdpmsdata.fractions, offset=i,
-                                 colors=colors)
+                fig = plot_bars(array, rdpmsdata.internal_design_matrix, x=rdpmsdata.fractions, offset=i,
+                                colors=colors)
+                if night_mode:
+                    fig.update_traces(error_y=dict(color="white"), marker=dict(line=dict(width=1, color="white")))
             else:
                 fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, show_outliers=True)
         if not night_mode:

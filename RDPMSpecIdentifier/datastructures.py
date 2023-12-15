@@ -371,18 +371,19 @@ class RDPMSpecData:
             rel2 = rnase_true - mid
         else:
             raise ValueError(f"Peak determination failed due to bug in source code")
-        test = np.concatenate((rel1, rel2), axis=-1)
-        print(test[0:10])
+        test = rel2
 
-        idx = np.argmax(test, axis=-1)
-        print(idx[0:10])
-        positions = idx % rel1.shape[-1]
+        positions = np.argmax(test, axis=-1)
+
         positions += self.state.kernel_size // 2
 
         self.df["position strongest shift"] = self.fractions[positions]
 
-
-
+    def calc_mean_distance(self):
+        rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
+        rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
+        jsd = self._calc_distance_via(self.state.distance_method, rnase_true, rnase_false, axis=-1)
+        self.df["Mean Distance"] = jsd
 
 
     def determine_peaks(self):
@@ -402,6 +403,8 @@ class RDPMSpecData:
         """
         rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
         rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
+
+
         mid = 0.5 * (rnase_true + rnase_false)
         s = int(np.ceil(self.state.kernel_size / 2))
         range = np.arange(s, s + mid.shape[-1])
@@ -421,10 +424,8 @@ class RDPMSpecData:
         rel2[rel2 < 0] = 0
         rel2 = (rel2 / np.sum(rel2, axis=-1, keepdims=True)) * range
         r2 = np.sum(rel2, axis=-1)
-        jsd = self._calc_distance_via(self.state.distance_method, rnase_true, rnase_false, axis=-1)
 
         self.df[f"{self.treatment_levels[1]} expected shift"] = r2
-        self.df["Mean Distance"] = jsd
         side = r2 - r1
         self.df["relative fraction shift"] = side
         side[side < 0] = -1
@@ -462,7 +463,7 @@ class RDPMSpecData:
     #     self.state.cluster_kernel_distance = kernel_range
 
     def calc_distribution_features(self):
-        if "shift direction" not in self.df:
+        if "position strongest shift" not in self.df:
             raise ValueError("Peaks not determined. Determine Peaks first")
 
         rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
@@ -647,6 +648,7 @@ class RDPMSpecData:
 
         """
         self.calc_all_anosim_value()
+        self.calc_mean_distance()
         if not self.categorical_fraction:
             self.determine_peaks()
         self.determine_strongest_shift()
