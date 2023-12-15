@@ -3,6 +3,9 @@ import pytest
 import pandas as pd
 import os
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
+import numpy as np
+
+np.random.seed(42)
 
 
 TESTFILE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -66,8 +69,8 @@ def multi_intensities(intensities):
 
 
 def drop_replicates(design, rnase_rep, ctrl_rep):
-    rnase = design[design["RNase"] == True].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=rnase_rep).sum()
-    ctrl = design[design["RNase"] == False].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=ctrl_rep).sum()
+    rnase = design[design["Treatment"] == "RNase"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=rnase_rep).sum()
+    ctrl = design[design["Treatment"] == "Control"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=ctrl_rep).sum()
     rnase = design.loc[rnase]
     ctrl = design.loc[ctrl]
     new_design = pd.concat((rnase, ctrl), ignore_index=True)

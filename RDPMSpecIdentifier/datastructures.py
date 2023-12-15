@@ -24,6 +24,32 @@ from io import StringIO
 
 DECIMALS = 15
 
+
+
+def check_equality(value, other_item):
+    if not isinstance(value, type(other_item)):
+        return False
+    elif isinstance(value, pd.DataFrame):
+        try:
+            assert_frame_equal(value, other_item, check_dtype=False)
+        except AssertionError:
+            return False
+    elif isinstance(value, np.ndarray):
+        if value.dtype.kind in ["U", "S"]:
+            if not np.all(value == other_item):
+                return False
+        else:
+            if not np.allclose(value, other_item, equal_nan=True):
+                return False
+    elif isinstance(value, list) or isinstance(value, tuple):
+        if not (all([check_equality(v, other_item[idx]) for idx, v in enumerate(value)])):
+            return False
+    else:
+        if value != other_item:
+            return False
+    return True
+
+
 @dataclass()
 class RDPMState:
     distance_method: str = None
@@ -106,6 +132,13 @@ class RDPMSpecData:
 
     _id_columns = ["RDPMSpecID", "id"]
 
+    # prevents setting these attributes when loading from json
+    _blacklisted_fields = [
+        "internal_design_matrix",
+        "_data_rows",
+        "indices"
+    ]
+
     def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None, min_replicates: int = 2, control: str = "Control"):
         self.state = RDPMState()
         self.df = df
@@ -139,23 +172,9 @@ class RDPMSpecData:
             other_dict = other.__dict__
             for key, value in self.__dict__.items():
                 other_item = other_dict[key]
-                if not isinstance(value, type(other_item)):
+                v = check_equality(value, other_item)
+                if not v:
                     return False
-                elif isinstance(value, pd.DataFrame):
-                    try:
-                        assert_frame_equal(value, other_item, check_dtype=False)
-                    except AssertionError:
-                        return False
-                elif isinstance(value, np.ndarray):
-                    if value.dtype.kind in ["U", "S"]:
-                        if not np.all(value == other_item):
-                            return False
-                    else:
-                        if not np.allclose(value, other_item, equal_nan=True):
-                            return False
-                else:
-                    if value != other_item:
-                        return False
             return True
 
     def __getitem__(self, item):
@@ -193,12 +212,12 @@ class RDPMSpecData:
         self.score_columns += [f"{treatment} expected shift" for treatment in treatment_levels]
         self.treatment_levels = treatment_levels
         design_matrix = design_matrix.sort_values(by=["Fraction", "Treatment", "Replicate"])
-        tmp = design_matrix.groupby(["Treatment", "Replicate"])["Name"].apply(list).reset_index()
+        tmp = design_matrix.groupby(["Treatment", "Replicate"], as_index=False)["Name"].agg(list).dropna().reset_index()
         self.df.index = np.arange(self.df.shape[0])
         self.df = self.df.round(decimals=DECIMALS)
         self.fractions = design_matrix["Fraction"].unique()
         self.categorical_fraction = self.fractions.dtype == np.dtype('O')
-        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("Treatment", group_keys=True)["Replicate"].count() >= 5))
+        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("Treatment")["Replicate"].count() >= 5))
         l = []
         rnames = []
         for idx, row in tmp.iterrows():
@@ -216,7 +235,7 @@ class RDPMSpecData:
         self.array = array
         self.internal_design_matrix = tmp
         indices = self.internal_design_matrix.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
-        self.indices = [np.asarray(index) for index in indices]
+        self.indices = tuple(np.asarray(index) for index in indices)
 
         p = ~np.any(self.array, axis=-1)
         pf = p[:, self.indices[0]]
@@ -834,16 +853,20 @@ class RDPMSpecData:
                 value = StringIO(value)
                 dict_repr[key] = pd.read_json(value).round(decimals=DECIMALS).fillna(value=np.nan)
             elif isinstance(value, list):
-                dict_repr[key] = np.asarray(value)
-                if isinstance(dict_repr[key], np.floating):
-                    dict_repr[key] = dict_repr[key].round(decimals=DECIMALS)
+                if not isinstance(value[0], str):
+                    dict_repr[key] = np.asarray(value)
+                    if isinstance(dict_repr[key], np.floating):
+                        dict_repr[key] = dict_repr[key].round(decimals=DECIMALS)
+                else:
+                    dict_repr[key] = value
             elif value == "true":
                 dict_repr[key] = True
             elif value == "false":
                 dict_repr[key] = False
         data = cls(dict_repr["df"], design=dict_repr["design"], logbase=dict_repr["logbase"])
         for key, value in dict_repr.items():
-            setattr(data, key, value)
+            if key not in cls._blacklisted_fields:
+                setattr(data, key, value)
         return data
 
 

@@ -448,7 +448,7 @@ def run_scoring(n_clicks, sel_columns, rdpmsdata, uid):
         raise PreventUpdate
     else:
         rdpmsdata.calc_all_scores()
-        sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "relative fraction shift", "strongest shift"]
+        sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "relative fraction shift", "position strongest shift"]
         if not rdpmsdata.categorical_fraction:
             peak_names = rdpmsdata.score_columns[-2:]
             if isinstance(peak_names, np.ndarray):

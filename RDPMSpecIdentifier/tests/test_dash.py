@@ -32,7 +32,9 @@ def test_csv_upload(base64design, base64intensities):
     logbase = 2
     base64design = "base64," + base64design["content"]
     base64intensities = "base64," + base64intensities["content"]
-    rdpmsdata, redirect, alert = upload_from_csv(btn, uid, sep, base64intensities, base64design, logbase)
+    rdpmsdata, redirect, alert, state, state2 = upload_from_csv(btn, uid, sep, base64intensities, base64design, logbase)
     assert redirect == "analysis"
     assert alert == []
     assert isinstance(rdpmsdata.value, RDPMSpecData)
+    assert state2 is None
+    assert state is None
