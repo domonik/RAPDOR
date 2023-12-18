@@ -46,7 +46,7 @@ conditions.
 
 
 .. note::
-    The design table must have those column headers
+    The design table must have those column headers. Further only two level Treatments are supported by now.
 
     .. list-table::
        :header-rows: 1
@@ -55,8 +55,8 @@ conditions.
          - Explanation
        * - Name
          - The Names of the Columns that contain the Intensities in the Intensity Table
-       * - RNase
-         - A Boolean column that specifies whether that Intensities are treated with RNase or not
+       * - Treatment
+         - A column containing names of the different treatments.
        * - Fraction
          - The fraction to which those intensities belong to
        * - Replicate
