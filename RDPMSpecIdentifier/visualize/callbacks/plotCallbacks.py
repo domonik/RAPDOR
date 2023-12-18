@@ -24,13 +24,14 @@ logger = logging.getLogger(__name__)
         Input("primary-color", "data"),
         Input("secondary-color", "data"),
         Input("replicate-mode", "on"),
-        Input("night-mode", "on")
+        Input("night-mode", "on"),
+        Input("raw-plot", "on")
     ],
     State("data-store", "data"),
     prevent_initial_call=True
 
 )
-def update_distribution_plot(key, kernel_size, primary_color, secondary_color, replicate_mode, night_mode, rdpmsdata):
+def update_distribution_plot(key, recomp, primary_color, secondary_color, replicate_mode, night_mode, raw, rdpmsdata):
     logger.info(f"{ctx.triggered_id} triggered update of distribution plot")
     colors = primary_color, secondary_color
     if key is None or rdpmsdata is None:
@@ -46,20 +47,21 @@ def update_distribution_plot(key, kernel_size, primary_color, secondary_color, r
                 "black" if not night_mode else "white"
             )
     else:
-        array = rdpmsdata.norm_array[key]
+        array = rdpmsdata.norm_array[key] if not raw else rdpmsdata.kernel_array[key]
+        yname = "Protein Amount [%]" if not raw else "Raw Intensities"
         i = 0
         if rdpmsdata.state.kernel_size is not None:
             i = int(np.floor(rdpmsdata.state.kernel_size / 2))
         if replicate_mode:
-            fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
+            fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, yname=yname)
         else:
             if rdpmsdata.categorical_fraction:
                 fig = plot_bars(array, rdpmsdata.internal_design_matrix, x=rdpmsdata.fractions, offset=i,
-                                colors=colors)
+                                colors=colors, yname=yname)
                 if night_mode:
                     fig.update_traces(error_y=dict(color="white"), marker=dict(line=dict(width=1, color="white")))
             else:
-                fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, show_outliers=True)
+                fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, show_outliers=True, yname=yname)
         if not night_mode:
             fig.layout.template = DEFAULT_TEMPLATE
         else:

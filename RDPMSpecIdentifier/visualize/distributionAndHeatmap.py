@@ -55,7 +55,7 @@ def distribution_panel(name):
                                         [
                                             html.Div(
                                                 html.Span("Replicate Mode", className="align-self-center"),
-                                                className="col-4 co-lg-4 d-flex align-items-bottom justify-content-center"
+                                                className="col-4 co-lg-4 d-flex align-items-bottom justify-content-end"
                                             ),
                                             html.Div(
 
@@ -68,12 +68,28 @@ def distribution_panel(name):
                                                     className="align-self-center",
 
                                                 ),
-                                                className="col-2 col-lg-2 d-flex align-items-center justify-content-center"
+                                                className="col-2 col-lg-2 d-flex align-items-center justify-content-start"
                                             ),
                                             html.Div(
-                                                html.Button("Download Image", style={"text-align": "center"},
-                                                            id="open-modal", className="btn btn-primary"),
-                                                className="col-6 col-lg-5 justify-content-right align-self-center text-end",
+                                                html.Span("Normalized", className="align-self-center"),
+                                                className="col-3 co-lg-2 d-flex align-items-bottom justify-content-end"
+                                            ),
+                                            html.Div(
+
+                                                daq.BooleanSwitch(
+                                                    label='',
+                                                    labelPosition='left',
+                                                    color="var(--primary-color)",
+                                                    on=False,
+                                                    id="raw-plot",
+                                                    className="align-self-center",
+
+                                                ),
+                                                className="col-1 col-lg-1 d-flex align-items-center justify-content-center"
+                                            ),
+                                            html.Div(
+                                                html.Span("Raw", className="align-self-center"),
+                                                className="col-2 co-lg-2 d-flex align-items-bottom justify-content-start"
                                             ),
 
                                         ],
@@ -81,7 +97,7 @@ def distribution_panel(name):
                                     ),
 
                                 ],
-                                className="col-12 col-lg-4"
+                                className="col-12 col-lg-6"
                             ),
 
                             dcc.Download(id="download-image"),

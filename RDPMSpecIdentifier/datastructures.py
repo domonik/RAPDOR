@@ -152,6 +152,7 @@ class RDPMSpecData:
         self.internal_design_matrix = None
         self.fractions = None
         self.norm_array = None
+        self.kernel_array = None
         self.distances = None
         self._anosim_distribution = None
         self._permanova_distribution = None
@@ -301,7 +302,7 @@ class RDPMSpecData:
                 raise ValueError(f"Kernel size must be odd")
             kernel = np.ones(kernel_size) / kernel_size
             array = np.apply_along_axis(lambda m: np.convolve(m, kernel, mode="valid"), axis=-1, arr=array)
-
+        self.kernel_array = array
         self.norm_array = self._normalize_rows(array, eps=eps)
         self.state.kernel_size = kernel_size
         self.state.eps = eps

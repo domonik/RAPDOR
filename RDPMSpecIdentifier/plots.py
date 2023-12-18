@@ -147,7 +147,8 @@ def plot_replicate_distribution(
         subdata: np.ndarray,
         design: pd.DataFrame,
         offset: int = 0,
-        colors: Iterable[str] = None
+        colors: Iterable[str] = None,
+        yname: str = "Protein Amount [%]"
 ):
     """Plots the distribution of protein for each replicate
 
@@ -186,7 +187,7 @@ def plot_replicate_distribution(
                 )
             )
     fig.add_traces(values)
-    fig = _update_distribution_layout(fig, names, x, offset)
+    fig = _update_distribution_layout(fig, names, x, offset, yname=yname)
     return fig
 
 
@@ -271,7 +272,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     return fig_subplots
 
 
-def plot_bars(subdata, design, x, offset: int = 0, colors=None):
+def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "Protein Amount [%]"):
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure(layout=go.Layout(yaxis2=go.layout.YAxis(
@@ -323,7 +324,7 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None):
         ))
     fig.update_layout(hovermode="x")
     fig.update_layout(
-        yaxis_title="Protein Amount [%]",
+        yaxis_title=yname,
     )
     fig.update_layout(
         xaxis=dict(title="Fraction"),
@@ -354,14 +355,23 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None):
     return fig
 
 
-def plot_distribution(subdata, design: pd.DataFrame, offset: int = 0, colors = None, show_outliers: bool = True):
+def plot_distribution(
+        subdata,
+        design: pd.DataFrame,
+        offset: int = 0,
+        colors: Iterable = None,
+        yname: str = "Protein Amount [%]",
+        show_outliers: bool = True
+):
     """Plots the distribution of proteins using mean, median, min and max values of replicates
 
         Args:
-            subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`. Rows need to add up to one
+            subdata (np.ndarray): an array of shape :code:`num samples x num_fractions`.
             design (pd.Dataframe): the design dataframe to distinguish the groups from the samples dimension
             offset (int): adds this offset to the fractions at the x-axis range
             colors (Iterable[str]): An iterable of color strings to use for plotting
+            yname (str): yaxis_title
+            show_outliers (bool): Shows min and max of subdata.
 
         Returns: go.Figure
 
@@ -443,15 +453,15 @@ def plot_distribution(subdata, design: pd.DataFrame, offset: int = 0, colors = N
     fig.add_traces(
         medians + means
     )
-    fig = _update_distribution_layout(fig, names, x, offset)
+    fig = _update_distribution_layout(fig, names, x, offset, yname)
     return fig
 
 
-def _update_distribution_layout(fig, names, x, offset):
+def _update_distribution_layout(fig, names, x, offset , yname):
     fig.update_layout(hovermode="x")
     fig.update_layout(xaxis_range=[x[0] - offset - 0.5, x[-1] + offset + 0.5])
     fig.update_layout(
-        yaxis_title="Protein Amount [%]",
+        yaxis_title=yname,
     )
     fig.update_layout(
         xaxis=dict(title="Fraction"),
