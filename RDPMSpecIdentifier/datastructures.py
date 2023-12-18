@@ -850,13 +850,14 @@ class RDPMSpecData:
     def _from_dict(cls, dict_repr):
 
         for key, value in dict_repr.items():
+            print(key)
             if key == "state":
                 dict_repr[key] = RDPMState(**value)
             elif key in ("df", "design", "internal_design_matrix"):
                 value = StringIO(value)
                 dict_repr[key] = pd.read_json(value).round(decimals=DECIMALS).fillna(value=np.nan)
             elif isinstance(value, list):
-                if not isinstance(value[0], str):
+                if not isinstance(value[0], str) and key != "indices":
                     dict_repr[key] = np.asarray(value)
                     if isinstance(dict_repr[key], np.floating):
                         dict_repr[key] = dict_repr[key].round(decimals=DECIMALS)

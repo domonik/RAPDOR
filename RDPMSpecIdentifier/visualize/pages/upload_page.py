@@ -232,9 +232,10 @@ def upload_json(data, uid):
         rdpmspec = Serverside(rdpmspec, key=uid)
         redirect = "analysis"
         alert = []
-    except Exception:
+    except Exception as e:
         rdpmspec = dash.no_update
         redirect = dash.no_update
+        logger.exception("Data is not in expected format")
         alert = html.Div(
             dbc.Alert(
                 "Data is not in the expected format.",
@@ -292,6 +293,7 @@ def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase)
     except Exception as e:
         rdpmsdata = dash.no_update
         redirect = dash.no_update
+        logger.exception("Data is not in expected format")
         alert = html.Div(
             dbc.Alert(
                 "Data is not in the expected format.",

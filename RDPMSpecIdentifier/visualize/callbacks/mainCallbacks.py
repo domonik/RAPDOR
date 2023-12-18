@@ -70,6 +70,7 @@ def assign_session_identifier(uid, data, initial_data):
     Output("additional-header-dd", "options"),
     Output("additional-header-dd", "value"),
     Output("kernel-slider", "disabled"),
+    Output("distance-method", "value"),
     Input("unique-id", "data"),
     Input("refresh-btn", "n_clicks"),
     State("data-store", "data"),
@@ -101,12 +102,13 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
                 sel_columns.append(name)
     else:
         sel_columns = dash.no_update
+    dm = rdpmsdata.state.distance_method if rdpmsdata.state.distance_method is not None else dash.no_update
     logger.info(f"Initially Selected Columns: {sel_columns}")
     options = list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns))
     logger.info(selected_ad_header)
     if selected_ad_header is None:
         selected_ad_header = list(rdpmsdata.extra_df)[0] if "Gene" not in rdpmsdata.extra_df else "Gene"
-    return kernel_size, cluster_method, sel_columns, options, selected_ad_header, kernel_disabled
+    return kernel_size, cluster_method, sel_columns, options, selected_ad_header, kernel_disabled, dm
 
 
 @callback(

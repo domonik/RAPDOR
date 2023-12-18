@@ -94,6 +94,10 @@ def test_multi_design(rnase_rep, ctrl_rep, multi_design, multi_intensities):
     rdpmsdata = RDPMSpecData(multi_intensities, multi_design, 2)
     rdpmsdata.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
     rdpmsdata.calc_all_scores()
+    s = rdpmsdata.to_jsons()
+    loaded_data = RDPMSpecData.from_json(s)
+    assert loaded_data == rdpmsdata
+
 
 
 
