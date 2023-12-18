@@ -104,7 +104,7 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
         sel_columns = dash.no_update
     dm = rdpmsdata.state.distance_method if rdpmsdata.state.distance_method is not None else dash.no_update
     logger.info(f"Initially Selected Columns: {sel_columns}")
-    options = list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns))
+    options = list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns + rdpmsdata._id_columns + rdpmsdata.replicate_info))
     logger.info(selected_ad_header)
     if selected_ad_header is None:
         selected_ad_header = list(rdpmsdata.extra_df)[0] if "Gene" not in rdpmsdata.extra_df else "Gene"

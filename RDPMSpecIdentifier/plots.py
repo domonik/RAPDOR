@@ -389,7 +389,7 @@ def plot_distribution(
     x = list(range(offset+1, subdata.shape[1] + offset+1))
     names = []
     for eidx, (name, idx) in enumerate(indices.items()):
-        name = f"{name}".ljust(15, " ")
+        name = f"{name}".ljust(10, " ")
         legend=f"legend{eidx+1}"
         names.append(name)
         median_values = np.nanmedian(subdata[idx,], axis=0)
@@ -472,7 +472,8 @@ def _update_distribution_layout(fig, names, x, offset , yname):
             y=1.05,
             xanchor="left",
             x=0,
-            itemsizing="constant"
+            itemsizing="constant",
+            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace', size=16)
 
         ),
         legend2=dict(
@@ -482,7 +483,9 @@ def _update_distribution_layout(fig, names, x, offset , yname):
             y=1.15,
             xanchor="left",
             x=0,
-            itemsizing="constant"
+            itemsizing="constant",
+            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace', size=16)
+
         )
 
     )

@@ -621,6 +621,8 @@ def update_selectable_columns(rdpmsdata, options):
     if rdpmsdata is None:
         raise PreventUpdate
     new_options = rdpmsdata.extra_df.columns
+    new_options = list(new_options)
+    new_options.remove("RDPMSpecID")
     options = dash.no_update if set(new_options) == set(options) else new_options
     return options
 

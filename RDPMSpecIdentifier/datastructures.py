@@ -113,7 +113,6 @@ class RDPMSpecData:
     ]
     score_columns = [
         "Rank",
-        "RDPMSScore",
         "ANOSIM R",
         "global ANOSIM adj p-Value",
         "local ANOSIM adj p-Value",
@@ -128,6 +127,10 @@ class RDPMSpecData:
         "CTRL Peak adj p-Value",
         "RNase Peak adj p-Value",
         "position strongest shift"
+    ]
+    replicate_info = [
+        "min replicates per group",
+        "contains empty replicate",
     ]
 
     _id_columns = ["RDPMSpecID", "id"]
