@@ -423,13 +423,13 @@ class RDPMSpecData:
         rel1[rel1 < 0] = 0
         rel1 = (rel1 / np.sum(rel1, axis=-1, keepdims=True)) * range
         r1 = np.sum(rel1, axis=-1)
-        self.df[f"{self.treatment_levels[0]} expected shift"] = r1
+        self.df[f"{self.treatment_levels[0]} expected shift"] = r1.round(decimals=DECIMALS)
 
         rel2[rel2 < 0] = 0
         rel2 = (rel2 / np.sum(rel2, axis=-1, keepdims=True)) * range
         r2 = np.sum(rel2, axis=-1)
 
-        self.df[f"{self.treatment_levels[1]} expected shift"] = r2
+        self.df[f"{self.treatment_levels[1]} expected shift"] = r2.round(decimals=DECIMALS)
         side = r2 - r1
         self.df["relative fraction shift"] = side
         side[side < 0] = -1

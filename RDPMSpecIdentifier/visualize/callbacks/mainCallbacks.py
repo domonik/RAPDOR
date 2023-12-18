@@ -102,6 +102,7 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
         for name in rdpmsdata.score_columns:
             if name in rdpmsdata.extra_df:
                 sel_columns.append(name)
+        sel_columns = list(set(sel_columns))
     else:
         sel_columns = dash.no_update
     dm = rdpmsdata.state.distance_method if rdpmsdata.state.distance_method is not None else dash.no_update
