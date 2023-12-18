@@ -97,6 +97,8 @@ def load_initital_state(uid, pathname, rdpmsdata: RDPMSpecData, selected_ad_head
     if sel_col_state is None or len(sel_col_state) == 0:
         sel_columns = []
         logger.info("Table dropdown state does not match the selection, will update")
+        if "Gene" in rdpmsdata.extra_df:
+            sel_columns.append("Gene")
         for name in rdpmsdata.score_columns:
             if name in rdpmsdata.extra_df:
                 sel_columns.append(name)
