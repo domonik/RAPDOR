@@ -207,14 +207,14 @@ class RDPMSpecData:
 
     def _set_design_and_array(self):
         design_matrix = self.design
-        treatment_levels = design_matrix["Treatment"].unique().tolist()
+        treatment_levels = sorted(design_matrix["Treatment"].unique().tolist())
         if self.control in treatment_levels:
             treatment_levels.remove(self.control)
             treatment_levels = [self.control] + treatment_levels
 
         design_matrix["Treatment"] = pd.Categorical(design_matrix["Treatment"], categories=treatment_levels, ordered=True)
         self.score_columns += [f"{treatment} expected shift" for treatment in treatment_levels]
-        self.treatment_levels = treatment_levels
+        self.treatment_levels = design_matrix["Treatment"].unique().tolist()
         design_matrix = design_matrix.sort_values(by=["Fraction", "Treatment", "Replicate"])
         tmp = design_matrix.groupby(["Treatment", "Replicate"], as_index=False)["Name"].agg(list).dropna().reset_index()
         self.df.index = np.arange(self.df.shape[0])
