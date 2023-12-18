@@ -582,6 +582,7 @@ def set_columns_from_state(selected_columns, sel_col_state, rdpmsdata):
 @callback(
     Output("tbl", "columns"),
     Output('tbl', 'data', allow_duplicate=True),
+    Output("data-table", "style"),
     Input('table-selector', 'value'),
     State('data-store', 'data'),
     prevent_initial_call=True
@@ -608,7 +609,8 @@ def update_columns(selected_columns, rdpmsdata):
                 num_cols.append(str(i))
             columns.append(d)
     logger.info(f"Updated displayed columns- {columns}")
-    return columns, data.to_dict('records')
+    style = {"min-width": len(columns) * 120, "overflow-x": "auto"}
+    return columns, data.to_dict('records'), style
 
 
 @callback(
