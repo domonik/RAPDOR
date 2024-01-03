@@ -69,8 +69,14 @@ def multi_intensities(intensities):
 
 
 def drop_replicates(design, rnase_rep, ctrl_rep):
-    rnase = design[design["Treatment"] == "RNase"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=rnase_rep).sum()
-    ctrl = design[design["Treatment"] == "Control"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=ctrl_rep).sum()
+    if rnase_rep > 0:
+        rnase = design[design["Treatment"] == "RNase"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=rnase_rep).sum()
+    else:
+        rnase = []
+    if ctrl_rep > 0:
+        ctrl = design[design["Treatment"] == "Control"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=ctrl_rep).sum()
+    else:
+        ctrl = []
     rnase = design.loc[rnase]
     ctrl = design.loc[ctrl]
     new_design = pd.concat((rnase, ctrl), ignore_index=True)
@@ -99,6 +105,30 @@ def test_multi_design(rnase_rep, ctrl_rep, multi_design, multi_intensities):
     assert loaded_data == rdpmsdata
 
 
+@pytest.mark.parametrize(
+    "rnase_rep,ctrl_rep",
+    [
+        (0, 3),
+        (6, 0),
+    ]
+)
+def test_wrong_treatment_levels(rnase_rep, ctrl_rep, multi_design, multi_intensities):
+    multi_design = drop_replicates(multi_design, rnase_rep, ctrl_rep)
+    with pytest.raises(ValueError):
+        _ = RDPMSpecData(multi_intensities, multi_design, 2)
+
+
+def test_different_columns(intensities, design):
+    intensities = intensities[["id"] + [col for col in intensities.columns if "LFQ" in col]]
+    rdpmsdata = RDPMSpecData(intensities, design, 2)
+    rdpmsdata.normalize_array_with_kernel(3)
+    rdpmsdata.calc_distances("Jensen-Shannon-Distance")
+    rdpmsdata.calc_all_scores()
+    rdpmsdata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
+
+    s = rdpmsdata.to_jsons()
+    loaded_data = RDPMSpecData.from_json(s)
+    assert loaded_data == rdpmsdata
 
 
 
