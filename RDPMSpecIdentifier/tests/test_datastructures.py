@@ -118,6 +118,19 @@ def test_wrong_treatment_levels(rnase_rep, ctrl_rep, multi_design, multi_intensi
         _ = RDPMSpecData(multi_intensities, multi_design, 2)
 
 
+def test_treatment_names(intensities, design):
+    design["Treatment"] = ["Z" + t if t == "Control" else t for t in design["Treatment"]]
+    rdpmsdata = RDPMSpecData(intensities, design, 2, control="ZControl")
+    rdpmsdata.normalize_array_with_kernel(3)
+    rdpmsdata.calc_distances("Jensen-Shannon-Distance")
+    rdpmsdata.calc_all_scores()
+    rdpmsdata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
+
+    s = rdpmsdata.to_jsons()
+    loaded_data = RDPMSpecData.from_json(s)
+    assert loaded_data == rdpmsdata
+
+
 def test_different_columns(intensities, design):
     intensities = intensities[["id"] + [col for col in intensities.columns if "LFQ" in col]]
     rdpmsdata = RDPMSpecData(intensities, design, 2)

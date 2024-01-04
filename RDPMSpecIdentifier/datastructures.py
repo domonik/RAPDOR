@@ -872,7 +872,7 @@ class RDPMSpecData:
                 dict_repr[key] = True
             elif value == "false":
                 dict_repr[key] = False
-        data = cls(dict_repr["df"], design=dict_repr["design"], logbase=dict_repr["logbase"])
+        data = cls(dict_repr["df"], design=dict_repr["design"], logbase=dict_repr["logbase"], control=dict_repr["control"])
         for key, value in dict_repr.items():
             if key not in cls._blacklisted_fields:
                 setattr(data, key, value)
