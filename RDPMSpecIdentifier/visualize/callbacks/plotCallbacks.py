@@ -48,7 +48,8 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
             )
     else:
         array = rdpmsdata.norm_array[key] if not raw else rdpmsdata.kernel_array[key]
-        yname = "Protein Amount [%]" if not raw else "Raw Intensities"
+        mode = "raw" if raw else "rel."
+        yname = f"{mode} {rdpmsdata.measure_type} {rdpmsdata.measure}"
         i = 0
         if rdpmsdata.state.kernel_size is not None:
             i = int(np.floor(rdpmsdata.state.kernel_size / 2))

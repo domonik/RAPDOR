@@ -139,16 +139,30 @@ class RDPMSpecData:
     _blacklisted_fields = [
         "internal_design_matrix",
         "_data_rows",
-        "indices"
+        "indices",
+        "control",
+        "measure",
+        "measure_type"
     ]
 
-    def __init__(self, df: pd.DataFrame, design: pd.DataFrame, logbase: int = None, min_replicates: int = 2, control: str = "Control"):
+    def __init__(
+            self,
+            df: pd.DataFrame,
+            design: pd.DataFrame,
+            logbase: int = None,
+            min_replicates: int = 2,
+            control: str = "Control",
+            measure_type: str = "Protein",
+            measure: str = "Intensities"
+    ):
         self.state = RDPMState()
         self.df = df
         self.logbase = logbase
         self.design = design
         self.min_replicates = min_replicates
         self.control = control
+        self.measure_type = measure_type
+        self.measure = measure
         if self.min_replicates < 2:
             raise ValueError("A minimum of two replicates is required to run statistics")
         self.array = None
@@ -872,7 +886,14 @@ class RDPMSpecData:
                 dict_repr[key] = True
             elif value == "false":
                 dict_repr[key] = False
-        data = cls(dict_repr["df"], design=dict_repr["design"], logbase=dict_repr["logbase"], control=dict_repr["control"])
+        data = cls(
+            dict_repr["df"],
+            design=dict_repr["design"],
+            logbase=dict_repr["logbase"],
+            control=dict_repr["control"],
+            measure=dict_repr["measure"],
+            measure_type=dict_repr["measure_type"]
+        )
         for key, value in dict_repr.items():
             if key not in cls._blacklisted_fields:
                 setattr(data, key, value)

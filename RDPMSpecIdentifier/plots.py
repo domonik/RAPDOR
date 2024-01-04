@@ -148,7 +148,7 @@ def plot_replicate_distribution(
         design: pd.DataFrame,
         offset: int = 0,
         colors: Iterable[str] = None,
-        yname: str = "Protein Amount [%]"
+        yname: str = "rel. protein amount"
 ):
     """Plots the distribution of protein for each replicate
 
@@ -229,7 +229,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
         rows=m, cols=n,
         shared_xaxes=True,
         x_title="Fraction",
-        y_title="Protein Amount [%]",
+        y_title=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}",
         #row_titles=list(annotation),
         **kwargs
     )
@@ -272,7 +272,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     return fig_subplots
 
 
-def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "Protein Amount [%]"):
+def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount"):
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure(layout=go.Layout(yaxis2=go.layout.YAxis(
@@ -360,7 +360,7 @@ def plot_distribution(
         design: pd.DataFrame,
         offset: int = 0,
         colors: Iterable = None,
-        yname: str = "Protein Amount [%]",
+        yname: str = "rel. protein amount",
         show_outliers: bool = True
 ):
     """Plots the distribution of proteins using mean, median, min and max values of replicates
