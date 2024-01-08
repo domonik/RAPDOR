@@ -272,6 +272,51 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     return fig_subplots
 
 
+def plot_var_histo(rdpmspecids, rdpmsdata: RDPMSpecData, color: str = DEFAULT_COLORS["primary"], var_measure: str = "ANOSIM R", step: float=None):
+    fig = go.Figure()
+    proteins = rdpmsdata[rdpmspecids]
+    x = rdpmsdata.df.loc[proteins][var_measure]
+    x_min = rdpmsdata.df[var_measure].min()
+    x_max = rdpmsdata.df[var_measure].max()
+    fig.add_trace(
+        go.Histogram(
+            x=x,
+            marker_color=color,
+            xbins=dict(
+                start=x_min,
+                end=x_max,
+                size=step if step is not None else (x_max - x_min) / 10
+            ),
+        )
+    )
+    fig.update_xaxes(title=var_measure, range=[x_min, x_max])
+    fig.update_yaxes(title="Count")
+    return fig
+
+
+def plot_distance_histo(rdpmspecids, rdpmsdata: RDPMSpecData, color: str = DEFAULT_COLORS["secondary"], step: float = None):
+    fig = go.Figure()
+    proteins = rdpmsdata[rdpmspecids]
+    x = rdpmsdata.df.loc[proteins]["Mean Distance"]
+    x_min = rdpmsdata.df["Mean Distance"].min()
+    x_max = rdpmsdata.df["Mean Distance"].max()
+    fig.add_trace(
+        go.Histogram(
+            x=x,
+            marker_color=color,
+            xbins=dict(
+                start=x_min,
+                end=x_max,
+                size=step if step is not None else (x_max - x_min) / 10
+            ),
+        )
+    )
+    fig.update_xaxes(title=rdpmsdata.state.distance_method, range=[x_min, x_max])
+    fig.update_yaxes(title="Count")
+    return fig
+
+
+
 def plot_mean_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = None):
     """
 
@@ -323,6 +368,47 @@ def plot_mean_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_
             ))
 
     fig = _update_distribution_layout(fig, names, x, i, yname=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}")
+    return fig
+
+
+def plot_means_and_histos(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = None, **kwargs):
+    if "row_heights" not in kwargs:
+        kwargs["row_heights"] = [0.5, 0.25, 0.25]
+    if "vertical_spacing" not in kwargs:
+        kwargs["vertical_spacing"] = 0.1
+
+    fig = make_subplots(rows=3, cols=1, **kwargs)
+
+    fig1 = plot_mean_distributions(rdpmspecids, rdpmsdata, colors, title_col)
+    fig2 = plot_distance_histo(rdpmspecids, rdpmsdata, colors[0])
+    fig3 = plot_var_histo(rdpmspecids, rdpmsdata, colors[1])
+    for trace in fig1['data']:
+        fig.add_trace(trace, row=1, col=1)
+        fig.update_xaxes(fig1["layout"]["xaxis"], row=1)
+        fig.update_yaxes(fig1["layout"]["yaxis"], row=1)
+
+    for trace in fig2['data']:
+        trace.update(showlegend=False)
+        fig.add_trace(trace, row=2, col=1)
+        fig.update_xaxes(fig2["layout"]["xaxis"], row=2)
+        fig.update_yaxes(fig2["layout"]["yaxis"], row=2)
+
+    # Add traces from the second figure to the second subplot
+    for trace in fig3['data']:
+        trace.update(showlegend=False)
+        fig.add_trace(trace, row=3, col=1)
+        fig.update_xaxes(fig3["layout"]["xaxis"], row=3)
+        fig.update_yaxes(fig3["layout"]["yaxis"], row=3)
+
+
+    # Add traces from the third figure to the third subplot
+
+    fig.update_layout(
+        legend=fig1["layout"]["legend"],
+        legend2=fig1["layout"]["legend2"],
+
+    )
+
     return fig
 
 
@@ -1094,13 +1180,16 @@ if __name__ == '__main__':
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
     df["ribosomal protein"] = ((df["Gene"].str.contains('rpl|rps|Rpl|Rps', case=False)) | (
         df['ProteinFunction'].str.contains('ribosomal protein', case=False)))
-    df["small ribo"] = df["Gene"].str.contains('rps|Rps', case=False)
+    df["small ribo"] = df["Gene"].str.contains('rpl|Rpl', case=False)
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-    rdpmspec = RDPMSpecData(df, design, logbase=2)
+    rdpmspec = RDPMSpecData(df, design, logbase=2, control="CTRL")
     rdpmspec.normalize_array_with_kernel(kernel_size=3)
-    print(rdpmspec.df["Gene"].str.contains('rps|Rps'))
+    rdpmspec.calc_distances(method="Jensen-Shannon-Distance")
+    rdpmspec.calc_all_scores()
+    print(rdpmspec.df["Gene"].str.contains('rpl|Rpl'))
     ids = list(rdpmspec.df[rdpmspec.df["small ribo"] == True]["RDPMSpecID"])
-    fig = plot_mean_distributions(ids, rdpmspec, colors=COLOR_SCHEMES["Flamingo"], title_col="Gene")
+    fig = plot_means_and_histos(ids, rdpmspec, colors=COLOR_SCHEMES["Dolphin"])
+    fig.update_layout(template=DEFAULT_TEMPLATE)
     fig.show()
 
 
