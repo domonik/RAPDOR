@@ -390,7 +390,7 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
             xanchor="left",
             x=0,
             itemsizing="constant",
-            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace', size=16)
+            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace')
 
         ),
         legend2=dict(
@@ -401,7 +401,7 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
             xanchor="left",
             x=0,
             itemsizing="constant",
-            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace', size=16)
+            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace')
 
         )
 
