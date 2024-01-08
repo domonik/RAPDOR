@@ -228,7 +228,7 @@ class RDPMSpecData:
 
         design_matrix["Treatment"] = pd.Categorical(design_matrix["Treatment"], categories=treatment_levels, ordered=True)
         self.score_columns += [f"{treatment} expected shift" for treatment in treatment_levels]
-        self.treatment_levels = design_matrix["Treatment"].unique().tolist()
+        self.treatment_levels = design_matrix["Treatment"].unique().sort_values().to_list()
         if len(self.treatment_levels) != 2:
             raise ValueError(f"Number of treatment levels is not equal 2:\n found levels are {self.treatment_levels}")
         design_matrix = design_matrix.sort_values(by=["Fraction", "Treatment", "Replicate"])
