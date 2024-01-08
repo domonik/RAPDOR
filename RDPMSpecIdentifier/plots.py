@@ -272,6 +272,60 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     return fig_subplots
 
 
+def plot_mean_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = None):
+    """
+
+    Args:
+        rdpmspecids (List[any]): RDPMSpecIDs that should be plotted
+        rdpmsdata (RDPMSpecData): a RDPMSpecData object containing the IDs from rdpmspecids
+        colors (Iterable[str]): An iterable of color strings to use for plotting
+        title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will use this column
+            as names for the mean distributions. Set to None if Names should not be displayed.
+
+    Returns:
+
+    """
+    if rdpmsdata.state.kernel_size is not None:
+        i = int(rdpmsdata.state.kernel_size // 2)
+    else:
+        i = 0
+    fig = go.Figure()
+    proteins = rdpmsdata[rdpmspecids]
+    if title_col is not None:
+        annotation = list(rdpmsdata.df[title_col][proteins])
+    else:
+        annotation = ["" for _ in range(len(proteins))]
+
+    indices = rdpmsdata.indices
+    levels = rdpmsdata.treatment_levels
+    x = rdpmsdata.fractions
+    x = x[i: rdpmsdata.norm_array.shape[-1] + i]
+
+    names = []
+    for eidx, (name, idx) in enumerate(zip(levels, indices)):
+        name = f"{name}".ljust(10, " ")
+        legend = f"legend{eidx + 1}"
+        names.append(name)
+        for pidx, protein in enumerate(proteins):
+            subdata = rdpmsdata.norm_array[protein]
+            mean_values = np.nanmean(subdata[idx,], axis=0)
+            showlegend = False if title_col is None and pidx > 0 else True
+            fig.add_trace(go.Scatter(
+                x=x,
+                y=mean_values,
+                marker=dict(color=colors[eidx]),
+                name=annotation[pidx],
+                legend=legend,
+                line=dict(width=5),
+                showlegend=showlegend,
+                legendgroup=legend if title_col is None else None
+
+            ))
+
+    fig = _update_distribution_layout(fig, names, x, i, yname=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}")
+    return fig
+
+
 def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount"):
     if colors is None:
         colors = DEFAULT_COLORS
@@ -1038,15 +1092,15 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, 
 if __name__ == '__main__':
     from RDPMSpecIdentifier.datastructures import RDPMSpecData
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
-
+    df["ribosomal protein"] = ((df["Gene"].str.contains('rpl|rps|Rpl|Rps', case=False)) | (
+        df['ProteinFunction'].str.contains('ribosomal protein', case=False)))
+    df["small ribo"] = df["Gene"].str.contains('rps|Rps', case=False)
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-    df.index = df.index.astype(str)
     rdpmspec = RDPMSpecData(df, design, logbase=2)
     rdpmspec.normalize_array_with_kernel(kernel_size=3)
-    array = rdpmspec.norm_array
-    design = rdpmspec.internal_design_matrix
-
-    fig = plot_replicate_distribution(array[0], design, "RNase")
+    print(rdpmspec.df["Gene"].str.contains('rps|Rps'))
+    ids = list(rdpmspec.df[rdpmspec.df["small ribo"] == True]["RDPMSpecID"])
+    fig = plot_mean_distributions(ids, rdpmspec, colors=COLOR_SCHEMES["Flamingo"], title_col="Gene")
     fig.show()
 
 
