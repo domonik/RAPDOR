@@ -2,7 +2,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
-from typing import Iterable, Tuple, List, Any
+from typing import Iterable, Tuple, List, Any, Dict
 from plotly.colors import qualitative
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import plotly.io as pio
@@ -272,7 +272,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     return fig_subplots
 
 
-def plot_var_histo(rdpmspecids, rdpmsdata: RDPMSpecData, color: str = DEFAULT_COLORS["primary"], var_measure: str = "ANOSIM R", step: float=None):
+def plot_var_histo(rdpmspecids, rdpmsdata: RDPMSpecData, color: str = DEFAULT_COLORS["primary"], var_measure: str = "ANOSIM R", bins: int=10):
     fig = go.Figure()
     proteins = rdpmsdata[rdpmspecids]
     x = rdpmsdata.df.loc[proteins][var_measure]
@@ -282,19 +282,21 @@ def plot_var_histo(rdpmspecids, rdpmsdata: RDPMSpecData, color: str = DEFAULT_CO
         go.Histogram(
             x=x,
             marker_color=color,
+            histnorm='probability',
+
             xbins=dict(
                 start=x_min,
                 end=x_max,
-                size=step if step is not None else (x_max - x_min) / 10
+                size=(x_max - x_min) / bins,
             ),
         )
     )
     fig.update_xaxes(title=var_measure, range=[x_min, x_max])
-    fig.update_yaxes(title="Count")
+    fig.update_yaxes(title="Freq.")
     return fig
 
 
-def plot_distance_histo(rdpmspecids, rdpmsdata: RDPMSpecData, color: str = DEFAULT_COLORS["secondary"], step: float = None):
+def plot_distance_histo(rdpmspecids, rdpmsdata: RDPMSpecData, color: str = DEFAULT_COLORS["secondary"], bins: int = 10):
     fig = go.Figure()
     proteins = rdpmsdata[rdpmspecids]
     x = rdpmsdata.df.loc[proteins]["Mean Distance"]
@@ -304,15 +306,16 @@ def plot_distance_histo(rdpmspecids, rdpmsdata: RDPMSpecData, color: str = DEFAU
         go.Histogram(
             x=x,
             marker_color=color,
+            histnorm='probability',
             xbins=dict(
                 start=x_min,
                 end=x_max,
-                size=step if step is not None else (x_max - x_min) / 10
+                size=(x_max - x_min) / bins,
             ),
         )
     )
     fig.update_xaxes(title=rdpmsdata.state.distance_method, range=[x_min, x_max])
-    fig.update_yaxes(title="Count")
+    fig.update_yaxes(title="Freq.")
     return fig
 
 
@@ -347,25 +350,46 @@ def plot_mean_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_
     x = x[i: rdpmsdata.norm_array.shape[-1] + i]
 
     names = []
-    for eidx, (name, idx) in enumerate(zip(levels, indices)):
-        name = f"{name}".ljust(10, " ")
+    for eidx, (orig_name, idx) in enumerate(zip(levels, indices)):
+        name = f"{orig_name}".ljust(10, " ")
         legend = f"legend{eidx + 1}"
         names.append(name)
+        overall_means = []
         for pidx, protein in enumerate(proteins):
             subdata = rdpmsdata.norm_array[protein]
             mean_values = np.nanmean(subdata[idx,], axis=0)
-            showlegend = False if title_col is None and pidx > 0 else True
+            showlegend = False if title_col is None else True
+            color = _color_to_calpha(colors[eidx], 0.25)
             fig.add_trace(go.Scatter(
                 x=x,
                 y=mean_values,
-                marker=dict(color=colors[eidx]),
+                marker=dict(color=color),
                 name=annotation[pidx],
+                mode="lines",
                 legend=legend,
-                line=dict(width=5),
+                line=dict(width=1),
                 showlegend=showlegend,
                 legendgroup=legend if title_col is None else None
 
             ))
+            overall_means.append(mean_values)
+        overall_means = np.asarray(overall_means)
+        overall_means = overall_means.mean(axis=0)
+
+        fig.add_trace(go.Scatter(
+            x=x,
+            y=overall_means,
+            marker=dict(color=colors[eidx]),
+            mode="lines",
+            name=f"{orig_name} mean" if title_col is not None else "",
+            legend=legend,
+            line=dict(width=2),
+            showlegend=True,
+            legendgroup=legend if title_col is None else None
+
+        ))
+
+
 
     fig = _update_distribution_layout(fig, names, x, i, yname=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}")
     return fig
@@ -410,6 +434,98 @@ def plot_means_and_histos(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_co
     )
 
     return fig
+
+
+def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RDPMSpecData, colors, **kwargs):
+    """Plots histograms of ANOSIM R and Distance as well as the distributions of the mean of multiple ids.
+
+    Args:
+        rdpmspecsets (dict of str: List): a dictionary containing a key that will appear in the plot as column header.
+            The values of the dictionary must be a list that contains ids from the RDPMSpecData used in rdpmsdata.
+        rdpmsdata (RDPMSpecData): a RDPMSpecData object containing the IDs from rdpmspecids
+        colors (Iterable[str]): An iterable of color strings to use for plotting. Muste have length 3. Will use the
+            first two colors for the distribution and the third for the histograms.
+        **kwargs: Will be passed to the make_subplots call of plotly
+
+    Returns: go.Figure
+
+    """
+    if "row_heights" not in kwargs:
+        kwargs["row_heights"] = [0.15, 0.15, 0.7]
+    if "vertical_spacing" not in kwargs:
+        kwargs["vertical_spacing"] = 0.06
+    if "horizontal_spacing" not in kwargs:
+        kwargs["horizontal_spacing"] = 0.02
+    if "row_titles" not in kwargs:
+        distance = "JSD" if rdpmsdata.state.distance_method == "Jensen-Shannon-Distance" else "Distance"
+        kwargs["row_titles"] = [distance, "ANOSIM R", "Distribution"]
+    if "column_titles" not in kwargs:
+        kwargs["column_titles"] = list(rdpmspecsets.keys())
+    if "x_title" not in kwargs:
+        kwargs["x_title"] = "Fraction"
+
+
+
+
+    fig = make_subplots(rows=3, cols=len(rdpmspecsets), shared_yaxes=True, **kwargs)
+
+    for c_idx, (name, rdpmspecids) in enumerate(rdpmspecsets.items(), 1):
+        fig1 = plot_distance_histo(rdpmspecids, rdpmsdata, colors[2])
+        fig2 = plot_var_histo(rdpmspecids, rdpmsdata, colors[2])
+        fig3 = plot_mean_distributions(rdpmspecids, rdpmsdata, colors)
+
+
+        for trace in fig1['data']:
+            trace.update(showlegend=False)
+            fig.add_trace(trace, row=1, col=c_idx)
+            fig.update_xaxes(fig1["layout"]["xaxis"], row=1, col=c_idx)
+            fig.update_yaxes(fig1["layout"]["yaxis"], row=1, col=c_idx)
+
+        # Add traces from the second figure to the second subplot
+        for trace in fig2['data']:
+            trace.update(showlegend=False)
+            fig.add_trace(trace, row=2, col=c_idx)
+            fig.update_xaxes(fig2["layout"]["xaxis"], row=2, col=c_idx)
+            fig.update_yaxes(fig2["layout"]["yaxis"], row=2, col=c_idx)
+
+        for trace in fig3['data']:
+            if c_idx > 1:
+                trace.update(showlegend=False)
+            fig.add_trace(trace, row=3, col=c_idx)
+            fig.update_xaxes(fig3["layout"]["xaxis"], row=3, col=c_idx)
+            fig.update_xaxes(title=None, row=3, col=c_idx)
+            fig.update_yaxes(fig3["layout"]["yaxis"], row=3)
+
+    fig.update_xaxes(title=None, row=1)
+    fig.update_xaxes(title=None, row=2)
+    fig.update_yaxes(title=None, col=2)
+    fig.update_yaxes(title=None, col=3)
+
+    # Add traces from the third figure to the third subplot
+
+    fig.update_layout(
+        legend=fig3["layout"]["legend"],
+        legend2=fig3["layout"]["legend2"],
+
+    )
+    fig.update_layout(
+        legend2=dict(y=-0.05, yref="paper", yanchor="top"),
+        legend=dict(y=-0.125, yref="paper", yanchor="top"),
+
+    )
+    fig.update_layout(template=DEFAULT_TEMPLATE, width=624, height=400, font=dict(size=10),
+                      legend=dict(font=dict(size=10)),
+                      legend2=dict(font=dict(size=10)),
+                      margin=dict(l=5, r=20, t=20, b=0)
+                      )
+    for annotaion in fig.layout.annotations:
+        if annotaion.text not in rdpmspecsets:
+            fig.update_annotations(font=dict(size=10))
+        else:
+            fig.update_annotations(font=dict(size=12))
+
+    return fig
+
 
 
 def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount"):
@@ -1180,7 +1296,9 @@ if __name__ == '__main__':
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
     df["ribosomal protein"] = ((df["Gene"].str.contains('rpl|rps|Rpl|Rps', case=False)) | (
         df['ProteinFunction'].str.contains('ribosomal protein', case=False)))
-    df["small ribo"] = df["Gene"].str.contains('rpl|Rpl', case=False)
+    df["small ribo"] = df["Gene"].str.contains('rps|Rps', case=False)
+    df["large ribo"] = df["Gene"].str.contains('rpl|Rpl', case=False)
+    df["photosystem"] = df["Gene"].str.contains('psa|psb', case=False)
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
     rdpmspec = RDPMSpecData(df, design, logbase=2, control="CTRL")
     rdpmspec.normalize_array_with_kernel(kernel_size=3)
@@ -1188,8 +1306,13 @@ if __name__ == '__main__':
     rdpmspec.calc_all_scores()
     print(rdpmspec.df["Gene"].str.contains('rpl|Rpl'))
     ids = list(rdpmspec.df[rdpmspec.df["small ribo"] == True]["RDPMSpecID"])
-    fig = plot_means_and_histos(ids, rdpmspec, colors=COLOR_SCHEMES["Dolphin"])
-    fig.update_layout(template=DEFAULT_TEMPLATE)
+    ids2 = list(rdpmspec.df[rdpmspec.df["large ribo"] == True]["RDPMSpecID"])
+    ids3 = list(rdpmspec.df[rdpmspec.df["photosystem"] == True]["RDPMSpecID"])
+    d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
+    fig = multi_means_and_histo(d, rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
+
+
     fig.show()
+    fig.write_image("foo.svg")
 
 
