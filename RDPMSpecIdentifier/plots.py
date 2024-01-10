@@ -510,20 +510,26 @@ def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RDPMSpec
     )
     fig.update_layout(
         legend2=dict(y=-0.05, yref="paper", yanchor="top"),
-        legend=dict(y=-0.125, yref="paper", yanchor="top"),
+        legend=dict(y=-0.1, yref="paper", yanchor="top"),
 
     )
     fig.update_layout(template=DEFAULT_TEMPLATE, width=624, height=400, font=dict(size=10),
-                      legend=dict(font=dict(size=10)),
-                      legend2=dict(font=dict(size=10)),
+                      legend=dict(font=dict(size=8)),
+                      legend2=dict(font=dict(size=8)),
                       margin=dict(l=5, r=20, t=20, b=0)
                       )
-    for annotaion in fig.layout.annotations:
-        if annotaion.text not in rdpmspecsets:
-            fig.update_annotations(font=dict(size=10))
+    fig.update_xaxes(title=dict(font=dict(size=10)))
+    fig.update_yaxes(title=dict(font=dict(size=10)))
+    for annotation in fig.layout.annotations:
+        if annotation.text not in rdpmspecsets:
+            annotation.update(font=dict(size=10))
         else:
-            fig.update_annotations(font=dict(size=12))
+            annotation.update(font=dict(size=12))
+    fig.update_layout(
+        legend=dict(bgcolor='rgba(0,0,0,0)'),
+        legend2=dict(bgcolor='rgba(0,0,0,0)'),
 
+    )
     return fig
 
 
