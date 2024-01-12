@@ -145,7 +145,7 @@ def _distribution_settings():
             html.Div(html.H5("General", className="align-text-center"), className="col-12 justify-content-center px-0 align-items-center"),
             *_arg_and_dropdown(
                 "Template",
-                ["RDPDefault"] + [template for template in list(pio.templates) if template != "RDPDefault"],
+                ["RDPDefault", "RDPDark"] + [template for template in list(pio.templates) if template != "RDPDefault" and template != "RDPDark"],
                 "RDPDefault", "template-dd"
             ),
             *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
