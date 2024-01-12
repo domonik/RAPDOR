@@ -191,7 +191,8 @@ def plot_replicate_distribution(
     return fig
 
 
-def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID", mode: str="line", **kwargs):
+def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID",
+                               mode: str = "line", normalized: bool = True, **kwargs):
     """Plots a figure containing distributions of proteins using mean, median, min and max values of replicates
 
         Args:
@@ -201,6 +202,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
             title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
                 as a subtitle in the plot (Default: RDPMSpecID)
             mode (str): One of line or bar. Will result in a line plot or a bar plot.
+            normalized (bool): Whether to plot normalized or raw data
 
         Returns: go.Figure
 
@@ -225,11 +227,12 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
         m = len(proteins)
     if m * n < len(proteins):
         raise ValueError(f"Not enough columns ({n}) and rows ({m}) to place {len(proteins)} figures")
+    y_mode = "rel." if normalized else "raw"
     fig_subplots = make_subplots(
         rows=m, cols=n,
         shared_xaxes=True,
         x_title="Fraction",
-        y_title=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}",
+        y_title=f"{y_mode} {rdpmsdata.measure_type} {rdpmsdata.measure}",
         #row_titles=list(annotation),
         **kwargs
     )
@@ -240,7 +243,7 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
                 protein = proteins[idx]
                 xref = f"x domain" if idx == 0 else f"x{idx+1} domain"
                 yref = f"y domain" if idx == 0 else f"y{idx+1} domain"
-                array = rdpmsdata.norm_array[protein]
+                array = rdpmsdata.norm_array[protein] if normalized else rdpmsdata.kernel_array[protein]
                 if mode == "line":
                     fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
                 elif mode == "bar":
@@ -1315,7 +1318,13 @@ if __name__ == '__main__':
     ids2 = list(rdpmspec.df[rdpmspec.df["large ribo"] == True]["RDPMSpecID"])
     ids3 = list(rdpmspec.df[rdpmspec.df["photosystem"] == True]["RDPMSpecID"])
     d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
-    fig = multi_means_and_histo(d, rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
+    #fig = multi_means_and_histo(d, rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
+    fig = plot_protein_distributions(ids, rdpmspec, mode="bar", normalized=False, colors=COLOR_SCHEMES["Dolphin"])
+    import base64
+    print("Here")
+    encoded_image = base64.b64encode(fig.to_image(format="svg")).decode()
+    print("finished")
+
 
 
     fig.show()

@@ -164,7 +164,7 @@ def _distribution_settings():
 
         ],
         className=BOOTSROW,
-        id="distribution-settings"
+        id="distribution-plot-settings"
     )
     return data
 
@@ -179,7 +179,7 @@ def _font_settings():
 
         ],
         className=BOOTSROW,
-        id="distribution-settings"
+        id="distribution-plot-settings"
     )
     return data
 
@@ -195,6 +195,20 @@ def _bubble_legend_settings():
         ],
         className=BOOTSROW,
         id="bubble-legend-settings"
+    )
+    return data
+
+
+def _distribution_norm_settings():
+    data = html.Div(
+        [
+
+            html.Div(html.H5("Distribution"), className=BOOTSH5),
+            *_arg_and_dropdown("Plot type", ["Normalized", "Raw"], default="Normalized", input_id="normalize-plot")
+
+        ],
+        className=BOOTSROW,
+        id="distribution-plot-settings"
     )
     return data
 
@@ -339,7 +353,8 @@ def figure_factory_layout():
                                 [
                                     _distribution_settings(),
                                     _font_settings(),
-                                    _bubble_legend_settings()
+                                    _bubble_legend_settings(),
+                                    _distribution_norm_settings()
 
                                 ], className="col-12"
                             ),
@@ -451,9 +466,7 @@ def update_selected_proteins(rdpmsdata: RDPMSpecData, current_row_ids):
         raise PreventUpdate
     else:
         if current_row_ids is not None:
-            print(current_row_ids)
             value = list(rdpmsdata.df.loc[current_row_ids, "RDPMSpecID"])
-            print(value)
         else:
             value = dash.no_update
 
@@ -561,19 +574,23 @@ def update_selectable_columns(rdpmsdata):
     Output("download-line-width", "disabled"),
     Output("legend1-x", "value"),
     Output("legend1-y", "value"),
+    Output("d-y-tick", "value", allow_duplicate=True),
     Output("bubble-legend-settings", "style"),
+    Output("distribution-plot-settings", "style"),
     Input("protein-selector-ff", "value"),
     Input("primary-color", "data"),
     Input("secondary-color", "data"),
     Input("plot-type-radio-ff", "value"),
     Input("displayed-column-dd", "value"),
     Input("v-space", "value"),
+    Input("normalize-plot", "value"),
     State("data-store", "data"),
     State("unique-id", "data"),
     State("bubble-legend-settings", "style"),
+    State("distribution-plot-settings", "style"),
 
 )
-def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, rdpmsdata: RDPMSpecData, uid, bubble_style):
+def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, normalize, rdpmsdata: RDPMSpecData, uid, bubble_style, distribution_style):
     logger.info(f"selected keys: {keys}")
     if plot_type != 3:
         if not keys:
@@ -581,7 +598,9 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
     proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(keys)].index
     logger.info(f"selected proteins: {proteins}")
     bubble_style = bubble_style if bubble_style is not None else {}
+    distribution_style = distribution_style if distribution_style is not None else {}
     bubble_style["display"] = "none"
+    distribution_style["display"] = "none"
     colors = primary_color, secondary_color
     if rdpmsdata.norm_array is None:
         fig = empty_figure(annotation="Data not normalized yet.<br> Visit Analysis Page first.")
@@ -617,20 +636,23 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
                 colors=colors,
                 title_col=displayed_col,
                 vertical_spacing=vspace,
-                mode="bar" if rdpmsdata.categorical_fraction else "line"
+                mode="bar" if rdpmsdata.categorical_fraction else "line",
+                normalized=True if normalize == "Normalized" else False,
+
             )
             fig.update_xaxes(mirror=True)
             fig.update_yaxes(mirror=True)
+            distribution_style["display"] = "flex"
             settings = DEFAULT_DISTRIBUTION_SETTINGS
     fig.update_layout(
         margin=dict(b=70, t=20)
     )
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
-    return encoded_image, *settings, bubble_style
+    return encoded_image, *settings, bubble_style, distribution_style
 
-DEFAULT_DISTRIBUTION_SETTINGS = (5, False, 3, False, 0., 1.01)
-DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True, 0., 1.01)
-DEFAULT_DIMRED_SETTINGS = (None, True, None, True, 1.01, 0.85)
+DEFAULT_DISTRIBUTION_SETTINGS = (5, False, 3, False, 0., 1.01, None)
+DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True, 0., 1.01, dash.no_update)
+DEFAULT_DIMRED_SETTINGS = (None, True, None, True, 1.01, 0.85, dash.no_update)
 
 @callback(
     Output("download-filename", "value"),
@@ -753,19 +775,20 @@ def update_ff_download_preview(
             y=ly
         )
     )
-    if fig.data[0].type == "scatter":
-        if marker_size is not None:
-                if marker_size > 0:
-                    fig.update_traces(
-                        marker=dict(size=marker_size)
-                    )
-                else:
-                    fig.update_traces(mode="lines")
-        if line_width is not None:
-            fig.update_traces(
-                line=dict(width=max(line_width, 0)
-                          )
-            )
+    if len(fig.data) > 0:
+        if fig.data[0].type == "scatter":
+            if marker_size is not None:
+                    if marker_size > 0:
+                        fig.update_traces(
+                            marker=dict(size=marker_size)
+                        )
+                    else:
+                        fig.update_traces(mode="lines")
+            if line_width is not None:
+                fig.update_traces(
+                    line=dict(width=max(line_width, 0)
+                              )
+                )
 
     fig.update_layout(
         legend=dict(
@@ -773,12 +796,14 @@ def update_ff_download_preview(
         ),
         legend2=dict(
             font=dict(size=legend_font_size)
-        )
+        ),
+        width=img_width, height=img_height
 
     )
-    if fig.data[0].type == "bar":
-        color = pio.templates[template]["layout"]["font"]["color"]
-        fig.update_traces(error_y=dict(color=color), marker=dict(line=dict(width=1, color=color)))
+    if len(fig.data) > 0:
+        if fig.data[0].type == "bar":
+            color = pio.templates[template]["layout"]["font"]["color"]
+            fig.update_traces(error_y=dict(color=color), marker=dict(line=dict(width=1, color=color)))
     if plot_type == 3:
         legend_start = legend_start if legend_start is not None else 0.25
         legend_spread = legend_spread if legend_spread is not None else 0.125
@@ -799,7 +824,13 @@ def update_ff_download_preview(
             pass
         fig.update_xaxes(title=dict(font=dict(size=axis_font_size)))
         fig.update_yaxes(title=dict(font=dict(size=axis_font_size)))
-    encoded_image = base64.b64encode(fig.to_image(format=filetype, width=img_width, height=img_height)).decode()
+    logger.info("generating image")
+
+    img = fig.to_image(format=filetype)
+    logger.info("encoding image")
+
+    encoded_image = base64.b64encode(img).decode()
+    logger.info("image encoded")
     fig = html.Img(
         src=f'{FILEEXT[filetype]},{encoded_image}',
         style={"margin-left": "auto", "margin-right": "auto", "display": "block"}
