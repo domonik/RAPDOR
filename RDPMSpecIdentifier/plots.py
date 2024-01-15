@@ -507,6 +507,51 @@ def plot_means_and_histos(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_co
     return fig
 
 
+def rank_plot(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RDPMSpecData, colors):
+    fig = go.Figure(layout=dict(template=DEFAULT_TEMPLATE))
+    triangles = []
+    df = rdpmsdata.df.sort_values(by="Rank")
+    x = list(range(df["Rank"].min(), df.Rank.max() + 1))
+    tri_x = 25
+    tri_y = 0.1
+    for idx, (key, data) in enumerate(rdpmspecsets.items()):
+        df = df.sort_values(by="Rank")
+        data = df[df["RDPMSpecID"].isin(data)]["Rank"] - 1
+        y = np.empty(len(x))
+        y.fill(np.nan)
+        y[data] = 1.
+        fig.add_trace(
+            go.Bar(
+                x=x,
+                y=y,
+                marker_color=colors[idx],
+                marker_line=dict(width=2, color=colors[idx]),
+                name=key,
+                hovertext=df["Gene"],
+
+            )
+        )
+        tri = np.nanmedian((y * np.asarray(x)))
+        triangles.append(
+            go.Scatter(
+                x=[tri - tri_x, tri, tri + tri_x, tri - tri_x],
+                y=[0, tri_y, 0, 0],
+                mode="lines",
+                fill="toself",
+                fillcolor=colors[idx],
+                marker_color=colors[idx],
+                showlegend=False
+            )
+        )
+    fig.add_traces(triangles)
+    fig.update_layout(barmode="overlay", bargap=0, legend=dict(orientation="h", y=1.02, yanchor="bottom", x=1, xanchor="right"))
+    fig.update_xaxes(title="Rank", range=(x[0], x[-1]), showgrid=False)
+    fig.update_yaxes(range=(0, 1), showgrid=False, showticklabels=False)
+    return fig
+
+
+
+
 def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RDPMSpecData, colors, **kwargs):
     """Plots histograms of ANOSIM R and Distance as well as the distributions of the mean of multiple ids.
 
@@ -1384,21 +1429,16 @@ if __name__ == '__main__':
     rdpmspec.normalize_array_with_kernel(kernel_size=3)
     rdpmspec.calc_distances(method="Jensen-Shannon-Distance")
     rdpmspec.calc_all_scores()
+    rdpmspec.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
     print(rdpmspec.df["Gene"].str.contains('rpl|Rpl'))
     ids = list(rdpmspec.df[rdpmspec.df["small ribo"] == True]["RDPMSpecID"])
     ids2 = list(rdpmspec.df[rdpmspec.df["large ribo"] == True]["RDPMSpecID"])
     ids3 = list(rdpmspec.df[rdpmspec.df["photosystem"] == True]["RDPMSpecID"])
     d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
     #fig = multi_means_and_histo(d, rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
-    fig = plot_protein_distributions(ids[0:4], rdpmspec, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
+    #fig = plot_protein_distributions(ids[0:4], rdpmspec, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
+    fig = rank_plot(d, rdpmsdata=rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
     fig.update_layout(width=622, height=400, font=dict(size=10))
-    import base64
-    print("Here")
-    encoded_image = base64.b64encode(fig.to_image(format="svg")).decode()
-    print("finished")
-
-
-
     fig.show()
     fig.write_image("foo.svg")
 
