@@ -192,7 +192,7 @@ def plot_replicate_distribution(
 
 
 def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_col: str = "RDPMSpecID",
-                               mode: str = "line", normalized: bool = True, **kwargs):
+                               mode: str = "line", plot_type: str = "normalized", **kwargs):
     """Plots a figure containing distributions of proteins using mean, median, min and max values of replicates
 
         Args:
@@ -202,7 +202,9 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
             title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
                 as a subtitle in the plot (Default: RDPMSpecID)
             mode (str): One of line or bar. Will result in a line plot or a bar plot.
-            normalized (bool): Whether to plot normalized or raw data
+            plot_type (str): One of ("normalized", "raw", "mixed") will use normalized data as default. "mixed" will
+                plot one column of relative measure and one for the raw data. Note that mulitple columns are not
+                supported when plotting mixed data.
 
         Returns: go.Figure
 
@@ -217,55 +219,103 @@ def plot_protein_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, tit
     proteins = rdpmsdata[rdpmspecids]
 
     annotation = list(rdpmsdata.df[title_col][proteins])
+    if "horizontal_spacing" not in kwargs:
+        kwargs["horizontal_spacing"] = 0.15
     if "rows" in kwargs and "cols" in kwargs:
-        m = kwargs["rows"]
-        n = kwargs["cols"]
+        rows = kwargs["rows"]
+        cols = kwargs["cols"]
         del kwargs["rows"]
         del kwargs["cols"]
     else:
-        n = 1
-        m = len(proteins)
-    if m * n < len(proteins):
-        raise ValueError(f"Not enough columns ({n}) and rows ({m}) to place {len(proteins)} figures")
-    y_mode = "rel." if normalized else "raw"
+        cols = 2 if plot_type == "mixed" else 1
+        rows = len(proteins)
+    if rows * cols < len(proteins):
+        raise ValueError(f"Not enough columns ({cols}) and rows ({rows}) to place {len(proteins)} figures")
+    if plot_type == "normalized":
+        y_mode = "rel."
+        y_title = f"{y_mode} {rdpmsdata.measure_type} {rdpmsdata.measure}"
+        arrays = [rdpmsdata.norm_array[protein] for protein in proteins]
+    elif plot_type == "raw":
+        y_mode = "raw"
+        y_title = f"{y_mode} {rdpmsdata.measure_type} {rdpmsdata.measure}"
+        arrays = [rdpmsdata.kernel_array[protein] for protein in proteins]
+
+    elif plot_type == "mixed":
+        if cols != 2:
+            raise ValueError("Number of columns not supported for mixed plot")
+        y_title = None
+        arrays = [rdpmsdata.norm_array[protein] for protein in proteins] + [rdpmsdata.kernel_array[protein] for protein in proteins]
+        annotation += list(rdpmsdata.df[title_col][proteins])
+
+
+    else:
+        raise ValueError("Plot type not supported")
+
     fig_subplots = make_subplots(
-        rows=m, cols=n,
+        rows=rows, cols=cols,
         shared_xaxes=True,
         x_title="Fraction",
-        y_title=f"{y_mode} {rdpmsdata.measure_type} {rdpmsdata.measure}",
+        y_title=y_title,
         #row_titles=list(annotation),
         **kwargs
     )
     idx = 0
-    for p in range(m):
-        for q in range(n):
-            if idx < len(proteins):
-                protein = proteins[idx]
-                xref = f"x domain" if idx == 0 else f"x{idx+1} domain"
-                yref = f"y domain" if idx == 0 else f"y{idx+1} domain"
-                array = rdpmsdata.norm_array[protein] if normalized else rdpmsdata.kernel_array[protein]
+    for col_idx in range(cols):
+        for row_idx in range(rows):
+            if idx < len(arrays):
+                array = arrays[idx]
+                plot_idx = (row_idx) * cols + (col_idx +1) if idx != 0 else ""
+                xref = f"x{plot_idx} domain"
+                yref = f"y{plot_idx} domain"
                 if mode == "line":
                     fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
                 elif mode == "bar":
                     fig = plot_bars(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, x=rdpmsdata.fractions)
                 else:
                     raise ValueError("mode must be one of line or bar")
-                fig_subplots.add_annotation(
-                    text=annotation[idx],
-                    xref=xref,
-                    yref=yref,
-                    x=1,
-                    y=0.5,
-                    yanchor="middle",
-                    xanchor="left",
-                    showarrow=False,
-                    textangle=90
-                )
+                if plot_type != "mixed" or col_idx == 1:
+                    fig_subplots.add_annotation(
+                        text=annotation[idx],
+                        xref=xref,
+                        yref=yref,
+                        x=1,
+                        y=0.5,
+                        yanchor="middle",
+                        xanchor="left",
+                        showarrow=False,
+                        textangle=90
+                    )
                 for trace in fig["data"]:
                     if idx > 0:
                         trace['showlegend'] = False
-                    fig_subplots.add_trace(trace, row=p+1, col=q+1)
+                    fig_subplots.add_trace(trace, row=row_idx+1, col=col_idx+1)
                 idx += 1
+    if plot_type == "mixed":
+        fig_subplots.add_annotation(
+            text=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}",
+            xref="paper",
+            yref="paper",
+            x=0,
+            y=0.5,
+            yanchor="middle",
+            xanchor="right",
+            showarrow=False,
+            textangle=90,
+            xshift=-40
+        )
+        fig_subplots.add_annotation(
+            text=f"raw {rdpmsdata.measure_type} {rdpmsdata.measure}",
+            xref="paper",
+            yref="paper",
+            x=0.5,
+            y=0.5,
+            yanchor="middle",
+            xanchor="left",
+            showarrow=False,
+            textangle=90,
+            xshift=-20
+        )
+
 
     fig_subplots.update_layout(
         legend=fig["layout"]["legend"],
@@ -1319,7 +1369,8 @@ if __name__ == '__main__':
     ids3 = list(rdpmspec.df[rdpmspec.df["photosystem"] == True]["RDPMSpecID"])
     d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
     #fig = multi_means_and_histo(d, rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
-    fig = plot_protein_distributions(ids, rdpmspec, mode="bar", normalized=False, colors=COLOR_SCHEMES["Dolphin"])
+    fig = plot_protein_distributions(ids[0:4], rdpmspec, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
+    fig.update_layout(width=622, height=400, font=dict(size=10))
     import base64
     print("Here")
     encoded_image = base64.b64encode(fig.to_image(format="svg")).decode()
