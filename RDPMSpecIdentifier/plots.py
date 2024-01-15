@@ -427,21 +427,39 @@ def plot_mean_distributions(rdpmspecids, rdpmsdata: RDPMSpecData, colors, title_
             ))
             overall_means.append(mean_values)
         overall_means = np.asarray(overall_means)
-        overall_means = overall_means.mean(axis=0)
+        if not rdpmsdata.categorical_fraction:
+            overall_means = overall_means.mean(axis=0)
 
-        fig.add_trace(go.Scatter(
-            x=x,
-            y=overall_means,
-            marker=dict(color=colors[eidx]),
-            mode="lines",
-            name=f"{orig_name} mean" if title_col is not None else "",
-            legend=legend,
-            line=dict(width=2),
-            showlegend=True,
-            legendgroup=legend if title_col is None else None
+            fig.add_trace(go.Scatter(
+                x=x,
+                y=overall_means,
+                marker=dict(color=colors[eidx]),
+                mode="lines",
+                name=f"{orig_name} mean" if title_col is not None else "",
+                legend=legend,
+                line=dict(width=2),
+                showlegend=True,
+                legendgroup=legend if title_col is None else None
 
-        ))
-
+            ))
+        else:
+            x_box = np.asarray([x for _ in range(overall_means.shape[0])])
+            fig.add_trace(go.Violin(
+                y=overall_means.flatten(),
+                x=x_box.flatten(),
+                name=f"{orig_name} box" if title_col is not None else "",
+                marker=dict(color=colors[eidx]),
+                legend=legend,
+                line=dict(width=2),
+                showlegend=True,
+                legendgroup=legend if title_col is None else None,
+                side="positive" if eidx == 0 else "negative",
+                box_visible=True,
+                meanline_visible=True,
+                spanmode="hard",
+                width=0.5
+            ))
+    fig.update_layout(violingap=0, violinmode='overlay')
 
 
     fig = _update_distribution_layout(fig, names, x, i, yname=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}")
@@ -549,6 +567,8 @@ def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RDPMSpec
             fig.update_xaxes(title=None, row=3, col=c_idx)
             fig.update_yaxes(fig3["layout"]["yaxis"], row=3)
 
+
+    fig.update_layout(violingap=0, violinmode='overlay', bargap=0)
     fig.update_xaxes(title=None, row=1)
     fig.update_xaxes(title=None, row=2)
     fig.update_yaxes(title=None, col=2)
@@ -772,9 +792,10 @@ def plot_distribution(
     return fig
 
 
-def _update_distribution_layout(fig, names, x, offset , yname):
+def _update_distribution_layout(fig, names, x, offset, yname):
     fig.update_layout(hovermode="x")
-    fig.update_layout(xaxis_range=[x[0] - offset - 0.5, x[-1] + offset + 0.5])
+    if not isinstance(x[0], str):
+        fig.update_layout(xaxis_range=[x[0] - offset - 0.5, x[-1] + offset + 0.5])
     fig.update_layout(
         yaxis_title=yname,
     )
