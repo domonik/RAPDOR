@@ -10,6 +10,7 @@ from dash_extensions.enrich import Serverside, callback
 from RDPMSpecIdentifier.datastructures import RDPMSpecData
 import logging
 import traceback
+from pandas.api.types import is_numeric_dtype
 
 logger = logging.getLogger(__name__)
 
@@ -229,6 +230,79 @@ def calc_clusters(
 
 
 @callback(
+    Output("cutoff-type", "value"),
+    Output("cutoff-type", "options"),
+    Input("data-store", "data"),
+    State("cutoff-type", "value"),
+
+)
+def update_cutoff_selection(rdpmsdata: RDPMSpecData, current_selection):
+    options = [option for option in rdpmsdata.score_columns if
+               option in rdpmsdata.df and is_numeric_dtype(rdpmsdata.df[option])]
+    selection = dash.no_update
+    if len(options) > 0 and current_selection not in options:
+        selection = None
+    elif len(options) == 0:
+        options = dash.no_update
+
+    return selection, options
+
+@callback(
+    Output("cutoff-range", "min"),
+    Output("cutoff-range", "max"),
+    Output("cutoff-range", "marks"),
+    Output("cutoff-range", "value"),
+    Output("cutoff-range", "disabled"),
+    Input("cutoff-type", "value"),
+    State("data-store", "data")
+
+)
+def update_range_slider(cutoff_type, rdpmsdata: RDPMSpecData):
+    if cutoff_type is not None:
+        min_v = np.nanmin(rdpmsdata.df[cutoff_type])
+        max_v = np.nanmax(rdpmsdata.df[cutoff_type])
+        min_v = np.floor(min_v * 100) / 100
+        max_v = np.ceil(max_v * 100) / 100
+        if "p-Value" in cutoff_type:
+            min_v = min(1e-5, min_v)
+            max_v = 1
+            min_v = np.floor(np.log10(min_v))
+            max_v = np.ceil(np.log10(max_v))
+            marks = np.linspace(min_v, max_v, 5)
+            marks = np.floor(marks)
+
+            p = np.log10(0.05)
+            iidx = np.searchsorted(marks, p)
+            marks = np.insert(marks, iidx, p)
+            marks_t = {int(i) if iidx != idx else i: dict(label=f"{(10**i):.0e}", style={"color": "var(--secondary-color)"} if idx == iidx else {"color": "r-text-color"}) for idx, i in enumerate(marks)}
+            min_v = marks[0]
+            max_v = marks[-1]
+            d_max = marks[iidx]
+
+
+        else:
+            marks = np.linspace(min_v, max_v, 5)
+            d_max = marks[-1]
+            marks_t = {i: f"{i:.1f}" for i in marks}
+        logger.info(f"updating marks {marks_t} -min {min_v} -max {max_v}")
+        disabled = False
+    else:
+        min_v = None
+        max_v = None
+        marks_t = None
+        d_max = None
+        disabled = True
+    return min_v, max_v, marks_t, (min_v, d_max), disabled
+
+
+
+
+
+
+
+
+
+@callback(
     Output("cluster-graph", "figure"),
     Input("night-mode", "on"),
     Input("primary-color", "data"),
@@ -237,11 +311,12 @@ def calc_clusters(
     Input('current-row-ids', 'data'),
     Input('cluster-marker-slider', 'value'),
     Input('3d-plot', 'on'),
-
+    Input('cutoff-range', 'value'),
+    State('cutoff-type', 'value'),
     State('data-store', "data"),
     State("additional-header-dd", "value"),
 )
-def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, rdpmsdata: RDPMSpecData, add_header):
+def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, cutoff_type, rdpmsdata: RDPMSpecData, add_header):
     logger.info(f"running cluster plot triggered via - {ctx.triggered_id}")
     dim = 2 if not td_plot else 3
     if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
@@ -257,6 +332,13 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
             highlight = rdpmsdata.df.loc[selected_rows, "RDPMSpecID"]
         else:
             highlight = None
+        logger.info(f"Cutoff - {cutoff_range}")
+        if cutoff_type is None:
+            cutoff_range = None
+        else:
+            if "p-Value" in cutoff_type:
+                cutoff_range = 10 ** cutoff_range[0], 10 ** cutoff_range[1]
+
         fig = plot_dimension_reduction(
             rdpmsdata,
             dimensions=dim,
@@ -266,7 +348,9 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
             marker_max_size=marker_size,
             second_bg_color="white" if not night_mode else "#181818",
             bubble_legend_color="black" if not night_mode else "white",
-            title_col=add_header
+            title_col=add_header,
+            cutoff_range=cutoff_range,
+            cutoff_type=cutoff_type
 
         )
     if not night_mode:

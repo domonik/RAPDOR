@@ -59,6 +59,45 @@ def _get_cluster_panel(disabled: bool = False):
                                 html.Div(
                                     [
                                         html.Div(
+                                            html.Span(
+                                                [
+                                                    "Cutoff Type",
+                                                ],
+                                                style={"text-align": "center"}
+                                            ),
+                                            className="col-3 col-md-3 justify-content-center align-self-center"
+                                        ),
+                                        html.Div(
+                                            dcc.Dropdown(
+                                                [],
+                                                value=None,
+                                                className="justify-content-center",
+                                                id="cutoff-type",
+                                                clearable=True,
+
+                                            ),
+                                            className="col-7 justify-content-center text-align-center"
+                                        )
+                                    ],
+                                    className="row justify-content-center p-2"
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
+                                            html.Span("Cutoff Range", style={"text-align": "center"}),
+                                            className="col-10 col-md-3 justify-content-center align-self-center"
+                                        ),
+                                        html.Div(
+                                            dcc.RangeSlider(-1, 1, value=[0, 1], allowCross=False, id="cutoff-range",
+                                                            tooltip={"placement": "top", "always_visible": True}),
+                                            className="col-10 col-md-7 justify-content-center",
+                                        ),
+                                    ],
+                                    className="row justify-content-center p-2"
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
                                             html.Span("3D", style={"text-align": "center"}),
                                             className="col-3 col-md-3 justify-content-center align-self-center"
                                         ),

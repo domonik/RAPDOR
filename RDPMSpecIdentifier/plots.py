@@ -1089,6 +1089,8 @@ def plot_dimension_reduction(
         legend_start: float = 0.2,
         legend_spread: float = 0.1,
         title_col: str = None,
+        cutoff_range: Tuple[float, float] = None,
+        cutoff_type: str = None
 ):
     """
 
@@ -1134,7 +1136,9 @@ def plot_dimension_reduction(
             bubble_legend_color,
             legend_start,
             legend_spread,
-            title_col
+            title_col,
+            cutoff_type=cutoff_type,
+            cutoff_range=cutoff_range
         )
     elif dimensions == 3:
         fig = _plot_dimension_reduction_result3d(
@@ -1252,7 +1256,7 @@ def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 
 def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, clusters=None,
                                        highlight=None, marker_max_size: int = 40, second_bg_color: str = "white",
                                        bubble_legend_color: str = "black", legend_start: float = 0.2, legend_spread: float = 0.1,
-                                       sel_column = None
+                                       sel_column=None, cutoff_range: Tuple[float, float] = None, cutoff_type: str = None
                                        ):
     embedding = rdpmspecdata.current_embedding
     displayed_text = rdpmspecdata.df["RDPMSpecID"] if sel_column is None else rdpmspecdata.df[sel_column]
@@ -1261,6 +1265,7 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, 
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
+    cutoff_mask = np.zeros(embedding.shape[0], dtype=bool)
     data = rdpmspecdata.df["Mean Distance"]
     desired_min = 1
     min_data, max_data = np.nanmin(data), np.nanmax(data)
@@ -1319,9 +1324,15 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, 
         row=1,
         col=1
     )
-
+    if cutoff_range is not None:
+        assert cutoff_type is not None
+        indices = rdpmspecdata.df[(rdpmspecdata.df[cutoff_type] < cutoff_range[1]) & (rdpmspecdata.df[cutoff_type] >= cutoff_range[0])].index
+        cutoff_mask[indices] = 1
+    else:
+        cutoff_mask = np.ones(embedding.shape[0], dtype=bool)
 
     if highlight is not None and len(highlight) > 0:
+
         indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
 
@@ -1341,7 +1352,7 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, 
         )
 
     if np.any(clusters == -1):
-        c_mask = mask & (clusters == -1)
+        c_mask = mask & (clusters == -1) & cutoff_mask
         fig.add_trace(go.Scatter(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
@@ -1353,7 +1364,7 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, 
             row=2,
             col=1
         )
-        nmask = ~mask & (clusters == -1)
+        nmask = ~mask & (clusters == -1) & cutoff_mask
         fig.add_trace(
             go.Scatter(
                 x=embedding[nmask, :][:, 0],
@@ -1369,7 +1380,7 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, 
             col=1
         )
     for color_idx, cluster in enumerate(range(min(n_cluster, len(colors)-2))):
-        c_mask = mask & (clusters == cluster)
+        c_mask = mask & (clusters == cluster) & cutoff_mask
         fig.add_trace(go.Scatter(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
@@ -1381,7 +1392,7 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RDPMSpecData, colors=None, 
             row=2,
             col=1
         )
-        nmask = ~mask & (clusters == cluster)
+        nmask = ~mask & (clusters == cluster) & cutoff_mask
         fig.add_trace(
             go.Scatter(
                 x=embedding[nmask, :][:, 0],
