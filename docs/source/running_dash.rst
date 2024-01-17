@@ -55,7 +55,7 @@ DISPLAY mode
 ------------
 
 You can run the app in display mode. This will disable most of the buttons and is ment for displaying pre-analyzed data.
-To achieve this you need to set the environment variable :code:`RDPMS_DISPLAY_MODE=True`.
+To achieve this you need to set the environment variable :code:`RAPDOR_DISPLAY_MODE=True`.
 
 .. note::
 

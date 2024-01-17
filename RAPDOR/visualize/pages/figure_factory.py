@@ -22,8 +22,8 @@ dash.register_page(__name__, path='/figure_factory')
 logger = logging.getLogger(__name__)
 
 
-pio.templates["RDPDefault"] = DEFAULT_TEMPLATE
-pio.templates["RDPDark"] = DEFAULT_TEMPLATE_DARK
+pio.templates["RAPDORDefault"] = DEFAULT_TEMPLATE
+pio.templates["RAPDORDark"] = DEFAULT_TEMPLATE_DARK
 
 
 def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
@@ -145,10 +145,10 @@ def _distribution_settings():
             html.Div(html.H5("General", className="align-text-center"), className="col-12 justify-content-center px-0 align-items-center"),
             *_arg_and_dropdown(
                 "Template",
-                ["RDPDefault", "RDPDark"] + [template for template in list(pio.templates) if template != "RDPDefault" and template != "RDPDark"],
-                "RDPDefault", "template-dd"
+                ["RAPDORDefault", "RAPDORDark"] + [template for template in list(pio.templates) if template != "RAPDORDefault" and template != "RAPDORDark"],
+                "RAPDORDefault", "template-dd"
             ),
-            *_arg_and_dropdown("Name Col", ["RDPMSpecID"], "RDPMSpecID", "displayed-column-dd"),
+            *_arg_and_dropdown("Name Col", ["RAPDORid"], "RAPDORid", "displayed-column-dd"),
             html.Div(html.H5("Plot style"), className=BOOTSH5),
             *_args_and_name("download-width", "Width [px]", "number", 800),
             *_args_and_name("download-height", "Height [px]", "number", 500),
@@ -249,7 +249,7 @@ def _id_selector():
                 [
                     html.H5(
                         [
-                            "RDPMSpecIDs",
+                            "RAPDORids",
                             html.I(className="fas fa-question-circle fa px-2", id="ff-select-tip"),
                             dbc.Tooltip("You can also select IDS via checkboxes in the table on the analysis page",
                                         target="ff-select-tip"),
@@ -466,11 +466,11 @@ def update_selected_proteins(rdpmsdata: RAPDORData, current_row_ids):
         raise PreventUpdate
     else:
         if current_row_ids is not None:
-            value = list(rdpmsdata.df.loc[current_row_ids, "RDPMSpecID"])
+            value = list(rdpmsdata.df.loc[current_row_ids, "RAPDORid"])
         else:
             value = dash.no_update
 
-        return list(rdpmsdata.df["RDPMSpecID"]), value
+        return list(rdpmsdata.df["RAPDORid"]), value
 
 
 @callback(
@@ -540,7 +540,7 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
     else:
         pass
 
-    return m_size, line_width, grid_width, dtickx, dticky, height, vspace, xaxisw, yaxisw, "RDPDefault", 0, 0, l1x, l1y, l2x, l2y
+    return m_size, line_width, grid_width, dtickx, dticky, height, vspace, xaxisw, yaxisw, "RAPDORDefault", 0, 0, l1x, l1y, l2x, l2y
 
 
 
@@ -595,7 +595,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
     if plot_type != 3:
         if not keys:
             raise PreventUpdate
-    proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(keys)].index
+    proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RAPDORid"].isin(keys)].index
     logger.info(f"selected proteins: {proteins}")
     bubble_style = bubble_style if bubble_style is not None else {}
     distribution_style = distribution_style if distribution_style is not None else {}
@@ -611,7 +611,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
             settings = DEFAULT_WESTERNBLOT_SETTINGS
         elif plot_type == 3:
             if rdpmsdata.current_embedding is not None:
-                keys = rdpmsdata.df[rdpmsdata.df.loc[:, "RDPMSpecID"].isin(keys)].index
+                keys = rdpmsdata.df[rdpmsdata.df.loc[:, "RAPDORid"].isin(keys)].index
                 fig = _plot_dimension_reduction_result2d(
                     rdpmsdata,
                     colors=colors,

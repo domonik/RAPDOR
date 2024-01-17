@@ -24,7 +24,7 @@ MAXPERMUTATIONS = 9999
 def update_ff_ids(selected_columns, rdpmsdata):
     if selected_columns is None or selected_columns == []:
         raise PreventUpdate
-    proteins = rdpmsdata.df.iloc[list(selected_columns)]["RDPMSpecID"]
+    proteins = rdpmsdata.df.iloc[list(selected_columns)]["RAPDORid"]
 
     return proteins
 
@@ -164,14 +164,14 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
     if "tbl.page_current" in ctx.triggered_prop_ids or "tbl.sort_by" in ctx.triggered_prop_ids:
         page = page_current
         if len(data) > 0:
-            active_cell_out = {'row': 1, 'column': 1, 'column_id': 'RDPMSpecID', 'row_id': 0}
+            active_cell_out = {'row': 1, 'column': 1, 'column_id': 'RAPDORid', 'row_id': 0}
         else:
             active_cell_out = None
     elif "tbl.filter_query" in ctx.triggered_prop_ids:
         logger.info(page_current)
         page = 0
         if len(data) > 0:
-            active_cell_out = {'row': 1, 'column': 1, 'column_id': 'RDPMSpecID', 'row_id': 0}
+            active_cell_out = {'row': 1, 'column': 1, 'column_id': 'RAPDORid', 'row_id': 0}
         else:
             active_cell_out = None
     else:
@@ -533,7 +533,7 @@ def update_selectable_columns(rdpmsdata, options):
         raise PreventUpdate
     new_options = rdpmsdata.extra_df.columns
     new_options = list(new_options)
-    new_options.remove("RDPMSpecID")
+    new_options.remove("RAPDORid")
     options = dash.no_update if set(new_options) == set(options) else new_options
     return options
 

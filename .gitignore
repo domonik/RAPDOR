@@ -7,7 +7,6 @@ __pycache__/
 *$py.class
 .snakemake/
 *.plot
-RDPMSpecIdentifier.spec
 eclip/
 papers/
 *best_models/

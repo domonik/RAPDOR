@@ -79,7 +79,7 @@ def _create_table(rdpmsdata, selected_columns=None):
     selected_columns = list(set(selected_columns))
 
     if rdpmsdata is None:
-        columns = [{'name': 'RDPMSpecID', 'id': 'RDPMSpecID', 'type': 'numeric'}]
+        columns = [{'name': 'RAPDORid', 'id': 'RAPDORid', 'type': 'numeric'}]
         data = [{"empty": 1, "Empty2": 2}]
         return html.Div(dash_table.DataTable(
             data,
@@ -122,7 +122,7 @@ def _create_table(rdpmsdata, selected_columns=None):
             },
             style_cell_conditional=[
                 {
-                    'if': {'column_id': 'RDPMSpecID'},
+                    'if': {'column_id': 'RAPDORid'},
                     'textAlign': 'left',
 
                 }
@@ -190,7 +190,7 @@ def _create_table(rdpmsdata, selected_columns=None):
         },
         style_cell_conditional=[
                                    {
-                                       'if': {'column_id': 'RDPMSpecID'},
+                                       'if': {'column_id': 'RAPDORid'},
                                        'textAlign': 'left',
                                        "width": width
                                    }

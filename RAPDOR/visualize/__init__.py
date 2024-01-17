@@ -8,7 +8,7 @@ assert os.path.exists(CONFIG_FILE), "Config file does not exist"
 with open(CONFIG_FILE, "r") as handle:
     CONFIG = yaml.load(handle, Loader=yaml.SafeLoader)
 
-EXTERNEL_CONFIG_FILE = os.getenv('RDPMS_CONFIG_FILE')
+EXTERNEL_CONFIG_FILE = os.getenv('RAPDOR_CONFIG_FILE')
 if EXTERNEL_CONFIG_FILE:
     with open(EXTERNEL_CONFIG_FILE, "r") as handle:
         EXTERNEL_CONFIG = yaml.load(handle, Loader=yaml.SafeLoader)

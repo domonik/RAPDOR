@@ -51,7 +51,7 @@ def check_equality(value, other_item):
 
 
 @dataclass()
-class RDPMState:
+class RAPDORState:
     distance_method: str = None
     kernel_size: int = None
     eps: float = None
@@ -68,7 +68,7 @@ class RDPMState:
         return self.__dict__
 
     def __eq__(self, other):
-        if not isinstance(other, RDPMState):
+        if not isinstance(other, RAPDORState):
             return False
         else:
             other_dict = other.__dict__
@@ -79,7 +79,7 @@ class RDPMState:
 
 
 class RAPDORData:
-    r""" The RDPMSpec Class storing results and containing functions for analysis
+    r""" The RAPDORData Class storing results and containing functions for analysis
 
      Attributes:
         df (pd.Dataframe): the dataframe that stores intensities and additional columns per protein.
@@ -133,7 +133,7 @@ class RAPDORData:
         "contains empty replicate",
     ]
 
-    _id_columns = ["RDPMSpecID", "id"]
+    _id_columns = ["RAPDORid", "id"]
 
     # prevents setting these attributes when loading from json
     _blacklisted_fields = [
@@ -155,7 +155,7 @@ class RAPDORData:
             measure_type: str = "Protein",
             measure: str = "Intensities"
     ):
-        self.state = RDPMState()
+        self.state = RAPDORState()
         self.df = df
         self.logbase = logbase
         self.design = design
@@ -198,15 +198,15 @@ class RAPDORData:
     def __getitem__(self, item):
         """
         Args:
-            item (List[str]): RDPMSpecID list
+            item (List[str]): RAPDORid list
 
         Returns:  pd.Index
-            The index of the RDPMSpecID list matching the ordering. Note if the RDPMSpecID list is not unique the length
+            The index of the RAPDORid list matching the ordering. Note if the RAPDORid list is not unique the length
             of the returned indices will be longer than the requested list
 
         """
-        proteins = self.df[self.df.loc[:, "RDPMSpecID"].isin(item)]
-        proteins["Value"] = pd.Categorical(proteins['RDPMSpecID'], categories=item, ordered=True)
+        proteins = self.df[self.df.loc[:, "RAPDORid"].isin(item)]
+        proteins["Value"] = pd.Categorical(proteins['RAPDORid'], categories=item, ordered=True)
         indices = proteins.sort_values(by='Value').index
         return indices
 
@@ -244,7 +244,7 @@ class RAPDORData:
             sub_df = self.df[row["Name"]].to_numpy()
             rnames += row["Name"]
             l.append(sub_df)
-        self.df["RDPMSpecID"] = self.df.iloc[:, 0]
+        self.df["RAPDORid"] = self.df.iloc[:, 0]
         self.df["id"] = self.df.index
         self._data_rows = np.asarray(rnames)
         array = np.stack(l, axis=1)
@@ -846,7 +846,7 @@ class RAPDORData:
         df.to_csv(file, sep=sep, index=False)
 
     def to_jsons(self):
-        s = json.dumps(self, cls=RDPMSpecEncoder)
+        s = json.dumps(self, cls=RAPDOREncoder)
         return s
 
     def to_json(self, file: str):
@@ -871,7 +871,7 @@ class RAPDORData:
         for key, value in dict_repr.items():
             print(key)
             if key == "state":
-                dict_repr[key] = RDPMState(**value)
+                dict_repr[key] = RAPDORState(**value)
             elif key in ("df", "design", "internal_design_matrix"):
                 value = StringIO(value)
                 dict_repr[key] = pd.read_json(value).round(decimals=DECIMALS).fillna(value=np.nan)
@@ -906,7 +906,7 @@ class RAPDORData:
 
 
 
-class RDPMSpecEncoder(JSONEncoder):
+class RAPDOREncoder(JSONEncoder):
     def default(self, obj_to_encode):
         if isinstance(obj_to_encode, pd.DataFrame):
             return obj_to_encode.to_json(double_precision=15)

@@ -329,7 +329,7 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
         fig = empty_figure("Data not Calculated<br> Get Scores first")
     else:
         if selected_rows is not None and len(selected_rows) >= 1:
-            highlight = rdpmsdata.df.loc[selected_rows, "RDPMSpecID"]
+            highlight = rdpmsdata.df.loc[selected_rows, "RAPDORid"]
         else:
             highlight = None
         logger.info(f"Cutoff - {cutoff_range}")

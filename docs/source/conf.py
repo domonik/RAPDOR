@@ -6,11 +6,11 @@ import os
 import sys
 
 FPATH = os.path.abspath(__file__)
-__RDPMSPECPATH = os.path.abspath(os.path.join(FPATH, "../../"))
-__RDPMSPECPATH = os.path.abspath("../../")
-assert os.path.exists(__RDPMSPECPATH)
+__RAPDORPECPATH = os.path.abspath(os.path.join(FPATH, "../../"))
+__RAPDORPECPATH = os.path.abspath("../../")
+assert os.path.exists(__RAPDORPECPATH)
 from unittest.mock import Mock
-sys.path.insert(1, __RDPMSPECPATH)
+sys.path.insert(1, __RAPDORPECPATH)
 from RAPDOR import _version
 
 # -- Project information -----------------------------------------------------

@@ -187,14 +187,14 @@ def update_selected_id(active_cell, test_div, additional_header, rdpmsdata):
         else:
             logger.info(f"active cell is: {active_cell}")
             active_row_id = active_cell["row_id"]
-            protein = rdpmsdata.df.loc[active_row_id, "RDPMSpecID"]
+            protein = rdpmsdata.df.loc[active_row_id, "RAPDORid"]
 
     elif ctx.triggered_id == "test-div":
         logger.info(f"{test_div} - value")
         if test_div is None:
             raise PreventUpdate
         active_row_id = int(test_div)
-        protein = rdpmsdata.df.loc[active_row_id, "RDPMSpecID"]
+        protein = rdpmsdata.df.loc[active_row_id, "RAPDORid"]
     else:
         raise PreventUpdate
     protein = f"Protein {protein}"

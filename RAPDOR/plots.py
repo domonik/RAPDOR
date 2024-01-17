@@ -191,16 +191,16 @@ def plot_replicate_distribution(
     return fig
 
 
-def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_col: str = "RDPMSpecID",
+def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_col: str = "RAPDORid",
                                mode: str = "line", plot_type: str = "normalized", **kwargs):
     """Plots a figure containing distributions of proteins using mean, median, min and max values of replicates
 
         Args:
-            rapdorids (List[any]): RDPMSpecIDs that should be plotted
+            rapdorids (List[any]): RAPDORids that should be plotted
             rdpmsdata (RAPDORData): a RAPDORData object containing the IDs from rapdorids
             colors (Iterable[str]): An iterable of color strings to use for plotting
             title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
-                as a subtitle in the plot (Default: RDPMSpecID)
+                as a subtitle in the plot (Default: RAPDORid)
             mode (str): One of line or bar. Will result in a line plot or a bar plot.
             plot_type (str): One of ("normalized", "raw", "mixed") will use normalized data as default. "mixed" will
                 plot one column of relative measure and one for the raw data. Note that mulitple columns are not
@@ -377,7 +377,7 @@ def plot_mean_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_col:
     """
 
     Args:
-        rapdorids (List[any]): RDPMSpecIDs that should be plotted
+        rapdorids (List[any]): RAPDORids that should be plotted
         rdpmsdata (RAPDORData): a RAPDORData object containing the IDs from rapdorids
         colors (Iterable[str]): An iterable of color strings to use for plotting
         title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will use this column
@@ -516,7 +516,7 @@ def rank_plot(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RAPDORData, colors):
     tri_y = 0.1
     for idx, (key, data) in enumerate(rdpmspecsets.items()):
         df = df.sort_values(by="Rank")
-        data = df[df["RDPMSpecID"].isin(data)]["Rank"] - 1
+        data = df[df["RAPDORid"].isin(data)]["Rank"] - 1
         y = np.empty(len(x))
         y.fill(np.nan)
         y[data] = 1.
@@ -899,18 +899,18 @@ def plot_heatmap(distances, design: pd.DataFrame, colors=None):
     return fig
 
 
-def plot_protein_westernblots(rdpmspecids, rdpmsdata: RAPDORData, colors, title_col: str = "RDPMSpecID", vspace: float = 0.01):
+def plot_protein_westernblots(rdpmspecids, rdpmsdata: RAPDORData, colors, title_col: str = "RAPDORid", vspace: float = 0.01):
     """Plots a figure containing a pseudo westernblot of the protein distribution.
 
     This will ignore smoothing kernels and plots raw mean replicate intensities.
     It will also normalize subplot colors based on the maximum intensity.
 
     Args:
-        rdpmspecids (List[any]): RDPMSpecIDs that should be plotted
+        rdpmspecids (List[any]): RAPDORids that should be plotted
         rdpmsdata (RAPDORData): a RAPDORData object containing the IDs from rdpmspecids
         colors (Iterable[str]): An iterable of color strings to use for plotting
         title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
-            as a subtitle in the plot (Default: RDPMSpecID)
+            as a subtitle in the plot (Default: RAPDORid)
         vspace (float): Vertical space between subplots
 
     Returns: go.Figure
@@ -1098,7 +1098,7 @@ def plot_dimension_reduction(
         rdpmspecdata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object where distances
             are calculated and the array is normalized already.
         colors (Iterable[str]): An iterable of color strings to use for plotting
-        highlight (Iterable[Any]): RDPMSpecIDs to highlight in the plot
+        highlight (Iterable[Any]): RAPDORids to highlight in the plot
         show_cluster (bool): If set to true it will show clusters in different colors.
             (Only works if rdpmspecdata is clustered)
         dimensions (int): Either 2 or 3. 2 will produce a plot where the mean distance axis is represented via a marker
@@ -1160,7 +1160,7 @@ def _plot_dimension_reduction_result3d(rdpmspecdata, colors=None, clusters=None,
 
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
-    hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
+    hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RAPDORid"].astype(str)
     data = rdpmspecdata.df["Mean Distance"].to_numpy()
 
     if highlight is not None and len(highlight) > 0:
@@ -1259,9 +1259,9 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RAPDORData, colors=None, cl
                                        sel_column=None, cutoff_range: Tuple[float, float] = None, cutoff_type: str = None
                                        ):
     embedding = rdpmspecdata.current_embedding
-    displayed_text = rdpmspecdata.df["RDPMSpecID"] if sel_column is None else rdpmspecdata.df[sel_column]
+    displayed_text = rdpmspecdata.df["RAPDORid"] if sel_column is None else rdpmspecdata.df[sel_column]
     fig = make_subplots(rows=2, cols=1, row_width=[0.85, 0.15], vertical_spacing=0.0)
-    hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RDPMSpecID"].astype(str)
+    hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RAPDORid"].astype(str)
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
@@ -1442,9 +1442,9 @@ if __name__ == '__main__':
     rdpmspec.calc_all_scores()
     rdpmspec.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
     print(rdpmspec.df["Gene"].str.contains('rpl|Rpl'))
-    ids = list(rdpmspec.df[rdpmspec.df["small ribo"] == True]["RDPMSpecID"])
-    ids2 = list(rdpmspec.df[rdpmspec.df["large ribo"] == True]["RDPMSpecID"])
-    ids3 = list(rdpmspec.df[rdpmspec.df["photosystem"] == True]["RDPMSpecID"])
+    ids = list(rdpmspec.df[rdpmspec.df["small ribo"] == True]["RAPDORid"])
+    ids2 = list(rdpmspec.df[rdpmspec.df["large ribo"] == True]["RAPDORid"])
+    ids3 = list(rdpmspec.df[rdpmspec.df["photosystem"] == True]["RAPDORid"])
     d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
     #fig = multi_means_and_histo(d, rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
     #fig = plot_protein_distributions(ids[0:4], rdpmspec, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
