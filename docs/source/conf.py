@@ -11,12 +11,12 @@ __RDPMSPECPATH = os.path.abspath("../../")
 assert os.path.exists(__RDPMSPECPATH)
 from unittest.mock import Mock
 sys.path.insert(1, __RDPMSPECPATH)
-from RDPMSpecIdentifier import _version
+from RAPDOR import _version
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'RDPMSpecIdentifier'
+project = 'RAPDOR'
 copyright = '2023, Domonik'
 author = 'Domonik'
 
@@ -61,13 +61,13 @@ html_theme_options = {
     "navigation_depth": 4,
     "show_prev_next": False,
     "logo": {
-        "image_light": "RDPMSpecIdentifier_light.svg",
-        "image_dark": "RDPMSpecIdentifier_dark.svg",
+        "image_light": "RAPDOR_light.svg",
+        "image_dark": "RAPDOR.svg",
     },
     "icon_links": [
         {
             "name": "GitHub",
-            "url": "https://github.com/domonik/RDPMSpecIdentifier",
+            "url": "https://github.com/domonik/RAPDOR",
             "icon": "fab fa-github-square",
             "type": "fontawesome",
         },
@@ -100,9 +100,9 @@ autosummary_mock_imports = [
     "plotly.colors.qualitative",
     "scipy",
     "sklearn",
-    "RDPMSpecIdentifier.visualize",
-    "RDPMSpecIdentifier.qtInterface",
-    "RDPMSpecIdentifier.executables",
+    "RAPDOR.visualize",
+    "RAPDOR.qtInterface",
+    "RAPDOR.executables",
     "statsmodels",
     "dash_loading_spinners",
     "dash_daq",
@@ -110,4 +110,4 @@ autosummary_mock_imports = [
     "umap"
 ]
 
-sys.modules["RDPMSpecIdentifier.visualize.runApp"] = Mock()
+sys.modules["RAPDOR.visualize.runApp"] = Mock()

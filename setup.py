@@ -2,7 +2,7 @@ from setuptools import setup, find_packages, Extension
 import versioneer
 
 
-NAME = "RDPMSpecIdentifier"
+NAME = "RAPDOR"
 DESCRIPTION = "Package for identification of RNA dependent Proteins from mass spec data "
 
 LONGDESC = DESCRIPTION #Todo: write Readme
@@ -18,17 +18,16 @@ setup(
     author="domonik",
     author_email="dominik.rabsch@gmail.com",
     packages=find_packages(),
-    package_dir={"RDPMSpecIdentifier": "./RDPMSpecIdentifier"},
+    package_dir={"RAPDOR": "./RAPDOR"},
     license="LICENSE",
-    url="https://github.com/domonik/RDPMSpecIdentifier",
+    url="https://github.com/domonik/RAPDOR",
     description=DESCRIPTION,
     long_description=LONGDESC,
     long_description_content_type="text/markdown",
     include_package_data=True,
     package_data={
-        "RDPMSpecIdentifier.visualize": ["assets/*"],
-        "RDPMSpecIdentifier": ["tests/*.py", "tests/test_data/*", "dashConfig.yaml"],
-        "RDPMSpecIdentifier.qtInterface": ["Icon.svg", "RDPMSpecIdentifier_dark_no_text.svg", "style.css"],
+        "RAPDOR.visualize": ["assets/*"],
+        "RAPDOR": ["tests/*.py", "tests/test_data/*", "dashConfig.yaml"],
     },
     install_requires=[
         "statsmodels",
@@ -49,12 +48,12 @@ setup(
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
     scripts=[
-        "RDPMSpecIdentifier/executables.py",
+        "RAPDOR/executables.py",
         "versioneer.py"
     ],
     entry_points={
         "console_scripts": [
-            "RDPMSpecIdentifier = RDPMSpecIdentifier.executables:main"
+            "RAPDOR = RAPDOR.executables:main"
         ]
     },
 )

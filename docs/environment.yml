@@ -1,6 +1,6 @@
 
 name:
-  rdpmspecidentifier_doc
+  rapdor_doc
 channels:
   - conda-forge
   - bioconda

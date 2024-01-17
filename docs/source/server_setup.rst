@@ -13,9 +13,9 @@ Here is example python code that can be used for server setup:
 
     import os
     os.environ["RDPMS_CONFIG_FILE"] = "customConfig.yaml"
-    from RDPMSpecIdentifier.visualize.appDefinition import app
-    from RDPMSpecIdentifier.visualize.runApp import get_app_layout
-    from RDPMSpecIdentifier.datastructures import RDPMSpecData
+    from RAPDOR.visualize.appDefinition import app
+    from RAPDOR.visualize.runApp import get_app_layout
+    from RAPDOR.datastructures import RAPDORData
 
     app.layout = get_app_layout()
 
@@ -39,8 +39,8 @@ Custom Settings:
 ----------------
 
 You can change the default settings via a custom config file as specified above. Below you find the default yaml file
-that is loaded from the RDPMSpecIdentifier module. Fields are overwritte via using a custom file and setting the global
+that is loaded from the RAPDOR module. Fields are overwritte via using a custom file and setting the global
 variable :code:`RDPMS_CONFIG_FILE`.
 
-.. literalinclude:: ../../RDPMSpecIdentifier/dashConfig.yaml
+.. literalinclude:: ../../RAPDOR/dashConfig.yaml
   :language: YAML

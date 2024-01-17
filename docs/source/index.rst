@@ -1,5 +1,5 @@
 
-RDPMSpecIdentifier documentation
+RAPDOR documentation
 ================================
 .. toctree::
    :maxdepth: 1
@@ -18,7 +18,7 @@ RDPMSpecIdentifier documentation
 --------------------------------------
 
 
-RDPMSpecIdentifier
+RAPDOR
 
 --------------------------------------
 
@@ -34,7 +34,7 @@ RDPMSpecIdentifier
         Installation
         ^^^^^^^^^^^^
 
-        Get Started and Install RDPMSpecIdentifier
+        Get Started and Install RAPDOR
 
         +++
 
@@ -79,7 +79,7 @@ RDPMSpecIdentifier
         Command Line Interface
         ^^^^^^^^^^^^^^^^^^^^^^
 
-        Automatically generated CLI documentation of RDPMSpecIdentifier
+        Automatically generated CLI documentation of RAPDOR
 
 
         +++
@@ -101,7 +101,7 @@ RDPMSpecIdentifier
         Python API
         ^^^^^^^^^^^^
 
-        Automatically generated API documentation of RDPMSpecIdentifier
+        Automatically generated API documentation of RAPDOR
 
 
         +++

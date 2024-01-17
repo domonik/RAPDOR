@@ -1,7 +1,7 @@
 Using Python
 ############
 
-.. currentmodule:: RDPMSpecIdentifier.datastructures
+.. currentmodule:: RAPDOR.datastructures
 
 
 .. note::
@@ -11,15 +11,15 @@ Using Python
 Once you prepared your data as described in the :ref:`prepare your data<data-prep-tutorial>` section, you can
 use the python API to analyze the data.
 First you need to load your data in python. Note that the test data has log transformed intensities, which is specified
-via the logbase parameter in the :class:`RDPMSpecData` construction
+via the logbase parameter in the :class:`RAPDORData` construction
 
 .. code-block:: python
 
     import pandas as pd
-    from RDPMSpecIdentifier.datastructures import RDPMSpecData
-    intensities = pd.read_csv("https://raw.githubusercontent.com/domonik/RDPMSpecIdentifier/main/RDPMSpecIdentifier/tests/testData/testFile.tsv", sep="\t")
-    design = pd.read_csv("https://raw.githubusercontent.com/domonik/RDPMSpecIdentifier/main/RDPMSpecIdentifier/tests/testData/testDesign.tsv", sep="\t")
-    rdpmdata = RDPMSpecData(intensities, design, logbase=2)
+    from RAPDOR.datastructures import RAPDORData
+    intensities = pd.read_csv("https://raw.githubusercontent.com/domonik/RAPDOR/main/RAPDOR/tests/testData/testFile.tsv", sep="\t")
+    design = pd.read_csv("https://raw.githubusercontent.com/domonik/RAPDOR/main/RAPDOR/tests/testData/testDesign.tsv", sep="\t")
+    rdpmdata = RAPDORData(intensities, design, logbase=2)
 
 
 Next you want to normalize the fractions and calculate samplewise distances. This is done via a single call.

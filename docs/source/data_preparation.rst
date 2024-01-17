@@ -3,7 +3,7 @@
 Prepare Your Data
 #################
 
-No matter whether you run the RDPMSpecIdentifier as a graphical user interface (GUI), a command line tool or within python,
+No matter whether you run the RAPDOR as a graphical user interface (GUI), a command line tool or within python,
 you need to make sure your data is in the expected format.
 
 GUI and CLI

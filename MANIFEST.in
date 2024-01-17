@@ -1,7 +1,7 @@
 include versioneer.py
-include RDPMSpecIdentifier/_version.py
+include RAPDOR/_version.py
 include *.pyx
-include RDPMSpecIdentifier/dashConfig.yaml
+include RAPDOR/dashConfig.yaml
 global-include cpp/*.h
 global-include tests/*.py
 global-include *.css

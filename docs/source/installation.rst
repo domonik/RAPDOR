@@ -6,23 +6,23 @@ Linux or Windows
 ****************
 
 .. note::
-    Best practice is to install RDPMSpecIdentifier into an encapsulated environment e.g. via Conda:
+    Best practice is to install RAPDOR into an encapsulated environment e.g. via Conda:
 
     .. code-block::
 
-        conda create -n rdpmspec_env
-        conda activate rdpmspec_env
+        conda create -n rapdor_env
+        conda activate rapdor_env
         conda install python
 
 
 Pip
 ---
 
-You can install RDPMSpecIdentifier via:
+You can install RAPDOR via:
 
 .. code-block::
 
-    pip install RDPMSpecIdentifier
+    pip install RAPDOR
 
 Conda
 -----

@@ -3,9 +3,9 @@ Command Line Interface
 
 .. _cli-doc:
 
-RDPMSpecIdentifier
+RAPDOR
 ++++++++++++++++++
 
 .. argparse::
-   :ref: RDPMSpecIdentifier.executables.documentation_wrapper
-   :prog: RDPMSpecIdentifier
+   :ref: RAPDOR.executables.documentation_wrapper
+   :prog: RAPDOR

@@ -1,0 +1,716 @@
+:root {
+  --primary-color: rgb(255, 138, 221);
+    --primary-hover-color: #945080;
+    --secondary-hover-color: #945080;
+    --table-head-color: #3b3a3a;
+    --databox-color: #181818;
+    --r-text-color: #ffffff;
+    --input-background-color: #1a1a1a;
+    --table-light: #3a363d;
+    --table-dark: #222023;
+    --button-color: #3a363d;
+    --background-color: #3a3a3a;
+    --secondary-color: red;
+    --disabled-input: red;
+}
+
+
+span {
+    color: var(--r-text-color);
+}
+.container-fluid {
+    background-color: var(--background-color);
+    position: absolute;
+    min-height: 100%;
+}
+html {
+    background-color: var(--background-color);
+}
+
+body {
+        color: var(--r-text-color);
+}
+
+.headerBox {
+	text-align: center;
+}
+
+h4 {
+    text-align: center;
+    color: var(--r-text-color);
+    margin: 0;
+}
+
+a {
+    color: var(--r-text-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--primary-color);
+}
+
+.databox {
+	background-color: var(--databox-color);
+	border-radius: 10px;
+	border-color: black;
+	border-width: 2px;
+	border-style: solid;
+	padding: 2px;
+    box-shadow: 5px 5px 5px var(--table-dark);
+
+}
+
+.databox-open {
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-top: 0 solid;
+}
+
+.header-box {
+   border-radius: 0 !important;
+   border-color: transparent !important;
+    background-color: var(--table-head-color);
+    box-shadow: none !important;
+    font-size: 1.2em;
+    color: white !important;
+}
+
+.header-box a{
+    color: white;
+}
+
+.header-box a:hover{
+    color: var(--primary-color);
+}
+
+
+.Select--multi .Select-value-icon{
+    border-right: 1px solid var(--primary-color) !important;
+
+}
+.Select--multi .Select-value {
+    background-color: var(--primary-hover-color) !important;
+    border: 1px solid var(--primary-color) !important;
+    color: black;
+
+
+}
+
+.Select-value {
+    text-align: center;
+    display: flex;
+}
+
+.Select.is-focused:not(.is-open) > .Select-control {
+    box-shadow: 0px 5px 0px var(--databox-color), inset 0px 5px 0px var(--button-color); !important;
+}
+
+.Select-input input {
+    width: 0 !important;
+}
+
+
+.Select-value-label {
+    color: var(--r-text-color) !important;
+    align-self: center;
+
+}
+
+
+
+.Select-menu-outer {
+    background-color: var(--input-background-color);
+    border: 0;
+    color: var(--r-text-color);
+}
+
+
+.dropUp .Select-menu-outer {
+    top: 0;
+     -webkit-transform: translateY(-100%);
+    transform: translateY(-100%);
+}
+
+.Select {
+    position: relative;
+}
+
+.Select-Menu {
+    position: fixed !important;
+    top: 40px; /* Adjust position as needed */
+    left: 10px; /* Adjust position as needed */
+}
+
+
+.Select-control {
+    border-radius: 5px !important;
+    background-color: var(--input-background-color) !important;
+    border-color: var(--input-background-color) !important;
+    box-shadow: 0px 5px 0px var(--databox-color), inset 0px 5px 0px var(--button-color);
+
+
+}
+
+.Select-control:hover {
+    border-radius: 5px !important;
+    background-color: var(--input-background-color) !important;
+    border-color: var(--input-background-color) !important;
+    box-shadow: 0px 5px 0px var(--databox-color), inset 0px 5px 0px var(--button-color) !important;
+
+
+}
+
+
+.Select-arrow-zone{
+    background-color: var(--table-head-color) !important;
+}
+
+
+
+.VirtualizedSelectOption {
+    color: var(--r-text-color);
+    background-color: var(--table-dark) !important;
+    font-size: var(--bs-body-font-size);
+    white-space: nowrap;
+    text-overflow: ellipsis;
+ }
+
+
+
+.VirtualizedSelectFocusedOption {
+    background-color:  var(--primary-hover-color) !important;
+}
+
+.equal-height-row {
+  display: flex;
+  flex-wrap: wrap;
+}
+.equal-height-column {
+  display: flex;
+  flex-direction: column;
+}
+.equal-height-column > * {
+  flex-grow: 1;
+}
+
+tr:nth-child(even) {
+    background-color: var(--table-light);
+}
+
+tr:nth-child(odd) {
+    background-color: var(--table-dark);
+
+}
+tr:nth-child(even):hover{
+        background-color: var(--primary-hover-color) !important;
+}
+tr:nth-child(odd):hover{
+        background-color: var(--primary-hover-color) !important;
+}
+
+th {
+    background-color: var(--table-head-color) !important;
+    padding: 10px !important;
+
+
+}
+td {
+    background-color: rgba(0, 89, 255, 0) !important;
+    padding: 10px !important;
+
+}
+
+.dt-table-container__row-0 tr:first-of-type{
+    background-color: transparent !important;
+}
+
+tr:first-of-type th:first-of-type.dash-select-header  {
+  border-top-left-radius: 15px;
+}
+th:last-of-type.dash-header  {
+  border-top-right-radius: 10px;
+}
+tr:last-of-type td:first-of-type {
+  border-bottom-left-radius: 10px;
+}
+tr:last-of-type td:last-of-type {
+  border-bottom-right-radius: 10px;
+}
+
+.column-actions {
+    order: 9;
+    margin-left: 10px;
+}
+
+input {
+    color: var(--r-text-color) !important;
+    background-color: var(--input-background-color) !important;
+    border-color: var(--input-background-color) !important;
+    box-shadow: 0px 3px 0px var(--databox-color), inset 0px 3px 0px var(--button-color);
+    padding-top: 3px;
+    padding-right: 5px
+
+}
+
+th input{
+    background-color: transparent !important;
+    box-shadow: none;
+    padding-top: 0;
+    padding-right: 0;
+}
+
+.column-header-name {
+    max-width: 90%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.dash-filter input:hover{
+    color: var(--r-text-color) !important;
+
+}
+
+#tbl .dash-filter .input{
+    color: var(--r-text-color) !important;
+
+}
+
+
+
+#tbl th.dash-filter, th.expanded-row--empty-cell {
+    border-color: transparent !important;
+    border-width: 0 !important;
+}
+
+.dash-table-container .dash-spreadsheet-container .dash-spreadsheet-inner input:not([type=radio]):not([type=checkbox]):hover{
+    color: var(--primary-color) !important;
+    box-shadow: none;
+    padding-top: 0;
+    padding-right: 0;
+}
+th span{
+    color: white !important;
+}
+
+th input{
+    color: white !important;
+}
+
+.dash-header {
+    color: var(--r-text-color) !important;
+
+}
+
+.first-page, .previous-page, .next-page, .last-page {
+    border-radius: 5px;
+}
+
+.first-page:enabled path, .previous-page:enabled path, .next-page:enabled path, .last-page:enabled path {
+    fill: white;
+}
+
+.first-page:hover:enabled path, .previous-page:hover:enabled path, .next-page:hover:enabled path, .last-page:hover:enabled path {
+    fill: var(--primary-color);
+}
+
+input.current-page, input.current-page::placeholder {
+    color: var(--r-text-color) !important;
+    box-shadow: none;
+    padding-top: 0;
+    padding-right: 0;
+}
+
+.Select-control {
+    color: var(--r-text-color)
+}
+.Select-placeholder {
+    color: var(--r-text-color);
+}
+
+.btn-primary {
+    background-color: var(--table-light);
+    border-color: var(--table-head-color) !important;
+    border-width: 2px !important;
+    border-top: 2px solid var(--databox-color) !important;
+    color: var(--r-text-color);
+    box-shadow: inset 0px -5px 0px var(--button-color), 0px -5px 0px var(--databox-color);
+    padding-bottom: 10px;
+}
+
+input:disabled {
+    background-color: var(--disabled-input) !important;
+    border-color: var(--table-dark);
+}
+
+
+
+.btn-primary:disabled,
+.btn-primary[disabled] {
+    background-color: var(--table-dark);
+    border-color: var(--table-head-color) !important;
+    border-width: 2px !important;
+    border-top: 2px solid var(--databox-color) !important;
+    border-top: 2px solid var(--table-head-color) !important;
+    color: var(--table-light) !important;
+    box-shadow: inset 0px 0px 5px 1px var(--button-color) !important;
+    padding-bottom: 6px;
+    padding-top: 10px;
+}
+
+#replicate-mode .daq-booleanswitch--light__background {
+    background-color: var(--primary-color) !important;
+}
+
+.daq-booleanswitch--light__background {
+    background-color: var(--r-text-color) !important;
+}
+
+.btn-primary:hover {
+    color: var(--r-text-color);
+    background-color:  var(--primary-hover-color);
+}
+
+.btn-primary:active {
+    border-top: 2px solid var(--table-head-color) !important;
+    background-color:  var(--primary-color) !important;
+    color: var(--r-text-color) !important;
+    box-shadow: inset 0px 0px 5px 1px var(--button-color) !important;
+    padding-bottom: 6px;
+    padding-top: 10px;
+
+
+
+/*set the color you want here*/
+}
+
+.alert {
+    margin: 0;
+}
+
+.modal-content {
+    background-color: var(--databox-color);
+}
+
+.rc-slider-track {
+  background-color: var(--primary-color) !important;
+}
+
+.rc-slider-mark-text {
+    color: var(--r-text-color);
+}
+
+.rc-slider-dot-active {
+  border-color: var(--primary-color);
+    background-color: var(--primary-color);
+}
+
+.rc-slider-handle {
+  background-color: var(--primary-color) !important;
+  border-color: var(--primary-color) !important;
+}
+
+.rc-slider-handle:hover {
+  border-color: var(--primary-color) !important;
+}
+
+.rc-slider-disabled .rc-slider-track {
+  background-color: grey !important;
+}
+
+.rc-slider-disabled .rc-slider-dot-active {
+  border-color: grey;
+    background-color: grey;
+}
+
+.rc-slider-disabled  .rc-slider-handle {
+  background-color: grey !important;
+  border-color: grey !important;
+}
+
+.rc-slider-disabled .rc-slider-handle:hover {
+  border-color: grey !important;
+}
+
+
+#distribution-graph .hovertext rect {
+  fill: var(--table-dark) !important;
+}
+
+.alert-msg {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    -webkit-transform: translate(-50%, -50%);
+    transform: translate(-50%, -50%);
+    z-index: 999999 !important;
+    font-size: 1.5em;
+}
+
+.daq-colorpicker--light__container {
+    border: 0 solid !important;
+}
+
+.chrome-picker {
+    background-color: transparent !important;
+    border: 0 solid !important;
+}
+
+.dash-filter--case {
+    border-color: var(--primary-color) !important;
+}
+
+.dash-spreadsheet-container {
+    height: 90%;
+    height: calc(100% - 50px) !important;
+    max-height: none !important;
+}
+
+.previous-next-container {
+    height: 10%;
+    height: 50px !important;
+    min-height: 50px !important;
+}
+
+.previous-next-container button:hover{
+    color: var(--primary-color) !important;
+}
+
+#tbl {
+    height: 100% !important;
+}
+
+#ring-chase-tbl {
+    height: 90%;
+    height: calc(100% - 50px) !important;
+}
+
+#tbl-dropdown {
+    height: 10%;
+    height: 50px !important;
+    min-height: 50px !important;
+}
+
+
+.Select.is-focused:not(.is-open) > .Select-control {
+    box-shadow: 0px 5px 0px var(--databox-color), inset 0px 5px 0px var(--button-color) !important;
+    border-radius: 5px !important;
+    background-color: var(--input-background-color) !important;
+    border-color: var(--input-background-color) !important;
+}
+
+
+
+.custom-tab {
+    padding: 0;
+    height: 50px !important;
+    box-shadow: inset 0px -15px 20px -20px rgb(0, 0, 0);
+    border: 0 solid !important;
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+    font-size: 1.5rem;
+
+    border-bottom: 2px solid black !important;
+
+
+    background-color: var(--databox-color) !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    border-top: 2px solid black !important;
+
+}
+
+.custom-tab:last-of-type {
+    border-right: 2px solid black !important;
+
+}
+
+.custom-tab:first-of-type {
+    border-left: 2px solid black !important;
+
+}
+
+.custom-tab:hover {
+        box-shadow: inset 0px -17px 20px -20px var(--primary-color);
+
+}
+
+
+
+.custom-tab--selected {
+    z-index: 1;
+    box-sizing: content-box;
+    box-shadow: none;
+    border-bottom: 0 solid black !important;
+    border-right: 2px solid black !important;
+    border-left: 2px solid black !important;
+
+
+}
+
+.custom-tab--selected:hover {
+        box-shadow: none;
+}
+
+
+
+@media screen and (max-width:768px) {
+    .custom-tab {
+        border-bottom: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        box-shadow: none !important;
+        order: 1;
+
+    }
+    .custom-tab:hover{
+        z-index: 2;
+        box-shadow: 0px 10px 10px -3px var(--primary-color) !important;
+
+
+    }
+    .custom-tab--selected:hover{
+        box-shadow: 0 -17px 20px -17px !important;
+
+    }
+
+
+    .custom-tabs-container {
+        border-left: 2px solid black !important;
+        border-right: 2px solid black !important;
+        border-top-right-radius: 10px;
+        border-top-left-radius: 10px;
+        background-color: var(--databox-color);
+    }
+
+    .custom-tab--selected {
+        border-bottom: none !important;
+        border-left: none !important;
+        border-right: none !important;
+        order: 2;
+        box-shadow: 0 -17px 20px -17px !important;
+    }
+
+    .custom-tab:last-of-type {
+        border-right:none !important;
+
+    }
+
+    .custom-tab:first-of-type {
+        border-left: none !important;
+
+    }
+}
+
+.dbc-row-selectable input[type=checkbox],  .dbc-row-selectable input[type=radio] {
+    border: 1px solid rgb(100, 100, 100);
+    color: var(--bs-body-color);
+    font-weight: bold;
+    background-color: var(--databox-color) !important;
+    width: 1em;
+    height: 1em;
+    outline: 0;
+    padding: 0;
+    float: left;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    margin-right: 5px;
+    box-shadow: none;
+
+}
+
+.dbc-row-selectable input[type=radio] {
+    border-radius: 50%;
+    position: relative;
+}
+
+.dbc-row-selectable input[type=radio]:checked:before {
+    content: "";
+    background-color: var(--primary-color);
+    float: left;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    transform: scale(0.65);
+    border-radius: 50%;
+    -webkit-border-radius: 50%;
+    -moz-border-radius: 50%;
+}
+
+.dbc-row-selectable input[type=checkbox]:checked:before {
+    content: "✓";
+    background-color: var(--primary-color);
+
+    float: left;
+    width: 1em;
+    height: 1em;
+    line-height: 1em;
+    text-align: center;
+}
+
+
+.selected-row td{
+        background-color: var(--secondary-hover-color) !important;
+}
+
+.cell--selected {
+    border: 0px solid var(--secondary-hover-color) !important;
+}
+
+
+.dont-show {
+   visibility: hidden;
+}
+
+input[type="radio"] {
+    margin-right: 5px;
+    background-color: var(--button-color) !important;
+}
+
+input[type="radio"]:checked {
+    background-color: var(--primary-color) !important;
+}
+
+.checked-radio-item {
+    background-color: var(--primary-color) !important;
+    border: 2px solid var(--primary-color) !important;
+}
+
+.checked-radio-text {
+    color: var(--primary-color) !important;
+}
+
+.primary-color-btn{
+    background-color: var(--secondary-color) !important;
+}
+
+.secondary-color-btn{
+    background-color: var(--primary-color) !important;
+}
+
+.pages-btn {
+    background-color: transparent;
+    color: white;
+    border: none !important;
+    height: 100%;
+    width: 80px;
+}
+
+.Select.is-disabled > .Select-control {
+    background-color: var(--table-dark) !important;
+    color: var(--table-light) !important;
+}
+
+.Select-control.Select.is-disabled {
+    background-color: var(--table-dark) !important;
+    color: var(--table-light) !important;
+}
+
+.Select.is-disabled > .Select-placeholder{
+  color: red !important;
+}
+
+.Select-placeholder.Select.is-disabled {
+  color: red !important;
+}

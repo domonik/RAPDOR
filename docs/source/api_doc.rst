@@ -11,4 +11,4 @@ API Documentation
    :template: custom-module-template.rst
    :recursive:
 
-   RDPMSpecIdentifier
+   RAPDOR

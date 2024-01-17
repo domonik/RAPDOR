@@ -24,9 +24,9 @@ You can download our test data (intensities and design) that only contains a few
     :header-rows: 0
 
     * - **Intensities**
-      - :download:`testFile.tsv <https://raw.githubusercontent.com/domonik/RDPMSpecIdentifier/main/RDPMSpecIdentifier/tests/testData/testFile.tsv>`
+      - :download:`testFile.tsv <https://raw.githubusercontent.com/domonik/RAPDOR/main/RAPDOR/tests/testData/testFile.tsv>`
     * - **Design**
-      - :download:`testDesign.tsv <https://raw.githubusercontent.com/domonik/RDPMSpecIdentifier/main/RDPMSpecIdentifier/tests/testData/testDesign.tsv>`
+      - :download:`testDesign.tsv <https://raw.githubusercontent.com/domonik/RAPDOR/main/RAPDOR/tests/testData/testDesign.tsv>`
 
 
 Command Line Executables
@@ -36,7 +36,7 @@ you can run the Dash Interface via the following command:
 
 .. code-block:: bash
 
-    RDPMSpecIdentifier Dash
+    RAPDOR Dash
 
 
 Further flags (e.g. if you want to upload data already) can be found in the :ref:`CLI Documentation<cli-doc>`
