@@ -461,16 +461,16 @@ layout = figure_factory_layout()
     State("current-row-ids", "data"),
 
 )
-def update_selected_proteins(rdpmsdata: RAPDORData, current_row_ids):
-    if rdpmsdata is None:
+def update_selected_proteins(rapdordata: RAPDORData, current_row_ids):
+    if rapdordata is None:
         raise PreventUpdate
     else:
         if current_row_ids is not None:
-            value = list(rdpmsdata.df.loc[current_row_ids, "RAPDORid"])
+            value = list(rapdordata.df.loc[current_row_ids, "RAPDORid"])
         else:
             value = dash.no_update
 
-        return list(rdpmsdata.df["RAPDORid"]), value
+        return list(rapdordata.df["RAPDORid"]), value
 
 
 @callback(
@@ -550,10 +550,10 @@ def apply_default_settings(clicks, plot_type, selected_proteins):
     State("data-store", "data"),
 
 )
-def update_row_ids(values, rdpmsdata):
-    if rdpmsdata is None or values is None:
+def update_row_ids(values, rapdordata):
+    if rapdordata is None or values is None:
         raise PreventUpdate
-    proteins = rdpmsdata[values]
+    proteins = rapdordata[values]
     return list(proteins)
 
 
@@ -561,10 +561,10 @@ def update_row_ids(values, rdpmsdata):
     Output("displayed-column-dd", "options"),
     Input("data-store", "data"),
 )
-def update_selectable_columns(rdpmsdata):
-    if rdpmsdata is None:
+def update_selectable_columns(rapdordata):
+    if rapdordata is None:
         raise PreventUpdate
-    return list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns))
+    return list(set(rapdordata.extra_df) - set(rapdordata.score_columns))
 
 @callback(
     Output("current-image", "data"),
@@ -590,33 +590,33 @@ def update_selectable_columns(rdpmsdata):
     State("distribution-plot-settings", "style"),
 
 )
-def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, normalize, rdpmsdata: RAPDORData, uid, bubble_style, distribution_style):
+def update_download_state(keys, primary_color, secondary_color, plot_type, displayed_col, vspace, normalize, rapdordata: RAPDORData, uid, bubble_style, distribution_style):
     logger.info(f"selected keys: {keys}")
     if plot_type != 3:
         if not keys:
             raise PreventUpdate
-    proteins = rdpmsdata.df[rdpmsdata.df.loc[:, "RAPDORid"].isin(keys)].index
+    proteins = rapdordata.df[rapdordata.df.loc[:, "RAPDORid"].isin(keys)].index
     logger.info(f"selected proteins: {proteins}")
     bubble_style = bubble_style if bubble_style is not None else {}
     distribution_style = distribution_style if distribution_style is not None else {}
     bubble_style["display"] = "none"
     distribution_style["display"] = "none"
     colors = primary_color, secondary_color
-    if rdpmsdata.norm_array is None:
+    if rapdordata.norm_array is None:
         fig = empty_figure(annotation="Data not normalized yet.<br> Visit Analysis Page first.")
         settings = (dash.no_update for _ in DEFAULT_WESTERNBLOT_SETTINGS)
     else:
         if plot_type == 2:
-            fig = plot_protein_westernblots(keys, rdpmsdata, colors=colors, title_col=displayed_col, vspace=vspace)
+            fig = plot_protein_westernblots(keys, rapdordata, colors=colors, title_col=displayed_col, vspace=vspace)
             settings = DEFAULT_WESTERNBLOT_SETTINGS
         elif plot_type == 3:
-            if rdpmsdata.current_embedding is not None:
-                keys = rdpmsdata.df[rdpmsdata.df.loc[:, "RAPDORid"].isin(keys)].index
+            if rapdordata.current_embedding is not None:
+                keys = rapdordata.df[rapdordata.df.loc[:, "RAPDORid"].isin(keys)].index
                 fig = _plot_dimension_reduction_result2d(
-                    rdpmsdata,
+                    rapdordata,
                     colors=colors,
                     highlight=keys,
-                    clusters=rdpmsdata.df["Cluster"] if "Cluster" in rdpmsdata.df else None,
+                    clusters=rapdordata.df["Cluster"] if "Cluster" in rapdordata.df else None,
                     marker_max_size=40,
                     second_bg_color="white",
                     bubble_legend_color="black",
@@ -632,11 +632,11 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
 
         else:
             fig = plot_protein_distributions(
-                keys, rdpmsdata,
+                keys, rapdordata,
                 colors=colors,
                 title_col=displayed_col,
                 vertical_spacing=vspace,
-                mode="bar" if rdpmsdata.categorical_fraction else "line",
+                mode="bar" if rapdordata.categorical_fraction else "line",
                 plot_type=normalize.lower()
 
             )

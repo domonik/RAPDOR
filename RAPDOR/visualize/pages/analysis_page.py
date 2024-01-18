@@ -35,7 +35,7 @@ layout = html.Div(
             [
                 dcc.Tab(
                     html.Div(
-                        _get_table(rdpmsdata=None),
+                        _get_table(rapdordata=None),
                         className="row px-2 justify-content-center align-items-center",
                         id="protein-table"
                     ),

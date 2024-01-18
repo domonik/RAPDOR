@@ -14,8 +14,8 @@ intensities. However, it will not store information about how your data was anal
 
         df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
         design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-        rdpmsdata = RAPDORData(df, design, logbase=2)
-        rdpmsdata.to_csv("path_to_file", sep="\t")
+        rapdordata = RAPDORData(df, design, logbase=2)
+        rapdordata.to_csv("path_to_file", sep="\t")
 
 
 JSON

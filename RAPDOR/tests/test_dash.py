@@ -32,10 +32,10 @@ def test_csv_upload(base64design, base64intensities):
     logbase = 2
     base64design = "base64," + base64design["content"]
     base64intensities = "base64," + base64intensities["content"]
-    rdpmsdata, redirect, alert, *state3 = upload_from_csv(btn, uid, sep, base64intensities, base64design, logbase)
+    rapdordata, redirect, alert, *state3 = upload_from_csv(btn, uid, sep, base64intensities, base64design, logbase)
     assert redirect == "analysis"
     assert alert == []
-    assert isinstance(rdpmsdata.value, RAPDORData)
+    assert isinstance(rapdordata.value, RAPDORData)
     for state in state3:
         assert state is None
     #assert state2 is None

@@ -8,11 +8,11 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-def _get_table(rdpmsdata):
-    if rdpmsdata is not None:
+def _get_table(rapdordata):
+    if rapdordata is not None:
         sel_columns = []
-        for name in rdpmsdata.score_columns:
-            if name in rdpmsdata.extra_df:
+        for name in rapdordata.score_columns:
+            if name in rapdordata.extra_df:
                 sel_columns.append(name)
         logger.info(f"Initial Columns: {sel_columns}")
     else:
@@ -26,7 +26,7 @@ def _get_table(rdpmsdata):
                             dls.RingChase(
                                 [
                                     html.Div(
-                                        _create_table(rdpmsdata),
+                                        _create_table(rapdordata),
                                         className="col-12 justify-content-center h-100 dbc-row-selectable",
                                         id="data-table",
                                         style={"min-width": "100px", "overflow-x": "auto"}
@@ -73,12 +73,12 @@ def _get_table(rdpmsdata):
     return table
 
 
-def _create_table(rdpmsdata, selected_columns=None):
+def _create_table(rapdordata, selected_columns=None):
     if selected_columns is None:
         selected_columns = []
     selected_columns = list(set(selected_columns))
 
-    if rdpmsdata is None:
+    if rapdordata is None:
         columns = [{'name': 'RAPDORid', 'id': 'RAPDORid', 'type': 'numeric'}]
         data = [{"empty": 1, "Empty2": 2}]
         return html.Div(dash_table.DataTable(
@@ -130,7 +130,7 @@ def _create_table(rdpmsdata, selected_columns=None):
         ), className=" h-100"
         )
 
-    data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
+    data = rapdordata.extra_df.loc[:, rapdordata._id_columns + selected_columns]
     columns = []
     num_cols = ["shift direction"]
     for i in data.columns:

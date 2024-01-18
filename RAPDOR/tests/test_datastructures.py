@@ -29,8 +29,8 @@ def design():
 
 @pytest.fixture()
 def rdpmpecdata(intensities, design):
-    rdpmsdata = RAPDORData(intensities, design, 2)
-    return rdpmsdata
+    rapdordata = RAPDORData(intensities, design, 2)
+    return rapdordata
 
 @pytest.fixture()
 def norm_rapdordata(rdpmpecdata):
@@ -97,12 +97,12 @@ def drop_replicates(design, rnase_rep, ctrl_rep):
 def test_multi_design(rnase_rep, ctrl_rep, multi_design, multi_intensities):
     multi_design = drop_replicates(multi_design, rnase_rep, ctrl_rep)
 
-    rdpmsdata = RAPDORData(multi_intensities, multi_design, 2)
-    rdpmsdata.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
-    rdpmsdata.calc_all_scores()
-    s = rdpmsdata.to_jsons()
+    rapdordata = RAPDORData(multi_intensities, multi_design, 2)
+    rapdordata.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
+    rapdordata.calc_all_scores()
+    s = rapdordata.to_jsons()
     loaded_data = RAPDORData.from_json(s)
-    assert loaded_data == rdpmsdata
+    assert loaded_data == rapdordata
 
 
 @pytest.mark.parametrize(
@@ -120,28 +120,28 @@ def test_wrong_treatment_levels(rnase_rep, ctrl_rep, multi_design, multi_intensi
 
 def test_treatment_names(intensities, design):
     design["Treatment"] = ["Z" + t if t == "Control" else t for t in design["Treatment"]]
-    rdpmsdata = RAPDORData(intensities, design, 2, control="ZControl")
-    rdpmsdata.normalize_array_with_kernel(3)
-    rdpmsdata.calc_distances("Jensen-Shannon-Distance")
-    rdpmsdata.calc_all_scores()
-    rdpmsdata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
+    rapdordata = RAPDORData(intensities, design, 2, control="ZControl")
+    rapdordata.normalize_array_with_kernel(3)
+    rapdordata.calc_distances("Jensen-Shannon-Distance")
+    rapdordata.calc_all_scores()
+    rapdordata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
 
-    s = rdpmsdata.to_jsons()
+    s = rapdordata.to_jsons()
     loaded_data = RAPDORData.from_json(s)
-    assert loaded_data == rdpmsdata
+    assert loaded_data == rapdordata
 
 
 def test_different_columns(intensities, design):
     intensities = intensities[["id"] + [col for col in intensities.columns if "LFQ" in col]]
-    rdpmsdata = RAPDORData(intensities, design, 2)
-    rdpmsdata.normalize_array_with_kernel(3)
-    rdpmsdata.calc_distances("Jensen-Shannon-Distance")
-    rdpmsdata.calc_all_scores()
-    rdpmsdata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
+    rapdordata = RAPDORData(intensities, design, 2)
+    rapdordata.normalize_array_with_kernel(3)
+    rapdordata.calc_distances("Jensen-Shannon-Distance")
+    rapdordata.calc_all_scores()
+    rapdordata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
 
-    s = rdpmsdata.to_jsons()
+    s = rapdordata.to_jsons()
     loaded_data = RAPDORData.from_json(s)
-    assert loaded_data == rdpmsdata
+    assert loaded_data == rapdordata
 
 
 

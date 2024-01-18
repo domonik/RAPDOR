@@ -21,10 +21,10 @@ MAXPERMUTATIONS = 9999
     State('data-store', 'data'),
 
 )
-def update_ff_ids(selected_columns, rdpmsdata):
+def update_ff_ids(selected_columns, rapdordata):
     if selected_columns is None or selected_columns == []:
         raise PreventUpdate
-    proteins = rdpmsdata.df.iloc[list(selected_columns)]["RAPDORid"]
+    proteins = rapdordata.df.iloc[list(selected_columns)]["RAPDORid"]
 
     return proteins
 
@@ -124,13 +124,13 @@ def load_table_state(pathname, table_state):
     State("current-row-ids", "data"),
     State("data-store", "data")
 )
-def update_table(table_data, page_current, page_size, sort_by, filter_query, selected_columns, selected_row_ids, rdpmsdata):
-    if rdpmsdata is None or page_current is None:
+def update_table(table_data, page_current, page_size, sort_by, filter_query, selected_columns, selected_row_ids, rapdordata):
+    if rapdordata is None or page_current is None:
         raise PreventUpdate
 
     if selected_columns is None:
         selected_columns = []
-    data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
+    data = rapdordata.extra_df.loc[:, rapdordata._id_columns + selected_columns]
 
     if filter_query is not None:
         filtering_expressions = filter_query.split(' && ')
@@ -230,11 +230,11 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 #         anosim_permutations,
 #         distance_cutoff,
 #         current_sorting,
-#         rdpmsdata,
+#         rapdordata,
 #         uid
 # ):
 #     logger.info(f"{ctx.triggered_id} triggered rendering of new table")
-#     if rdpmsdata is None:
+#     if rapdordata is None:
 #         raise PreventUpdate
 #     alert = False
 #     run_cluster = dash.no_update
@@ -244,7 +244,7 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 #             cols = [col['column_id'] for col in current_sorting if col != "Rank"]
 #             asc = [col['direction'] == "asc" for col in current_sorting if col != "Rank"]
 #
-#             rdpmsdata.rank_table(cols, asc)
+#             rapdordata.rank_table(cols, asc)
 #             sel_columns += ["Rank"]
 #         except Exception as e:
 #             alert = True
@@ -259,12 +259,12 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 #
 #             if permanova_permutations is None:
 #                 permanova_permutations = 9999
-#             if rdpmsdata.permutation_sufficient_samples:
-#                 rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=1, mode="local")
+#             if rapdordata.permutation_sufficient_samples:
+#                 rapdordata.calc_permanova_p_value(permutations=permanova_permutations, threads=1, mode="local")
 #                 sel_columns += ["local PERMANOVA adj p-Value"]
 #
 #             else:
-#                 rdpmsdata.calc_permanova_p_value(permutations=permanova_permutations, threads=1, mode="global")
+#                 rapdordata.calc_permanova_p_value(permutations=permanova_permutations, threads=1, mode="global")
 #                 sel_columns += ["global PERMANOVA adj p-Value"]
 #
 #                 alert = True
@@ -278,28 +278,28 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 #                 anosim_permutations = 9999
 #             sel_columns += ["ANOSIM R"]
 #
-#             if rdpmsdata.permutation_sufficient_samples:
-#                 rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local")
+#             if rapdordata.permutation_sufficient_samples:
+#                 rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local")
 #                 sel_columns += ["local ANOSIM adj p-Value"]
 #
 #             else:
-#                 rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global")
+#                 rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global")
 #                 sel_columns += ["global ANOSIM adj p-Value"]
 #
 #                 alert = True
 #                 alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
 #                 " This might be unreliable"
 #     if ctx.triggered_id == "local-t-test-btn":
-#         if "RNase True peak pos" not in rdpmsdata.df:
-#             rdpmsdata.determine_peaks()
-#         rdpmsdata.calc_welchs_t_test(distance_cutoff=distance_cutoff)
+#         if "RNase True peak pos" not in rapdordata.df:
+#             rapdordata.determine_peaks()
+#         rapdordata.calc_welchs_t_test(distance_cutoff=distance_cutoff)
 #         sel_columns += ["CTRL Peak adj p-Value", "RNase Peak adj p-Value"]
 #
 #     if ctx.triggered_id == "score-btn":
 #         if n_clicks == 0:
 #             raise PreventUpdate
 #         else:
-#             rdpmsdata.calc_all_scores()
+#             rapdordata.calc_all_scores()
 #             run_cluster = True
 #             sel_columns += ["ANOSIM R", "Mean Distance", "shift direction", "RNase False peak pos", "RNase True peak pos", "relative fraction shift"]
 #     if alert:
@@ -314,10 +314,10 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 #         )
 #     else:
 #         alert_msg = []
-#     #tbl = _create_table(rdpmsdata, sel_columns)
+#     #tbl = _create_table(rapdordata, sel_columns)
 #     selected_columns = list(set(sel_columns))
 #
-#     data = rdpmsdata.extra_df.loc[:, rdpmsdata._id_columns + selected_columns]
+#     data = rapdordata.extra_df.loc[:, rapdordata._id_columns + selected_columns]
 #     columns = []
 #     num_cols = ["shift direction"]
 #     for i in data.columns:
@@ -352,20 +352,20 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
     State("unique-id", "data")
 
 )
-def run_scoring(n_clicks, sel_columns, rdpmsdata, uid):
+def run_scoring(n_clicks, sel_columns, rapdordata, uid):
     if n_clicks == 0:
         raise PreventUpdate
     else:
-        rdpmsdata.calc_all_scores()
+        rapdordata.calc_all_scores()
         sel_columns += ["ANOSIM R", "Mean Distance", "position strongest shift"]
-        if not rdpmsdata.categorical_fraction:
-            peak_names = rdpmsdata.score_columns[-2:]
+        if not rapdordata.categorical_fraction:
+            peak_names = rapdordata.score_columns[-2:]
             if isinstance(peak_names, np.ndarray):
                 peak_names = peak_names.tolist()
             sel_columns += ["shift direction", "relative fraction shift"]
             sel_columns += peak_names
         sel_columns = list(set(sel_columns))
-    return sel_columns, Serverside(rdpmsdata, key=uid), True
+    return sel_columns, Serverside(rapdordata, key=uid), True
 
 
 @callback(
@@ -380,7 +380,7 @@ def run_scoring(n_clicks, sel_columns, rdpmsdata, uid):
     State("unique-id", "data"),
     prevent_initial_call=True
 )
-def rank_table(btn, sel_columns, current_sorting, rdpmsdata, uid):
+def rank_table(btn, sel_columns, current_sorting, rapdordata, uid):
     alert = False
     if btn is None or btn == 0:
         raise PreventUpdate
@@ -388,7 +388,7 @@ def rank_table(btn, sel_columns, current_sorting, rdpmsdata, uid):
         cols = [col['column_id'] for col in current_sorting if col != "Rank"]
         asc = [col['direction'] == "asc" for col in current_sorting if col != "Rank"]
 
-        rdpmsdata.rank_table(cols, asc)
+        rapdordata.rank_table(cols, asc)
         sel_columns += ["Rank"]
     except Exception as e:
         alert = True
@@ -406,7 +406,7 @@ def rank_table(btn, sel_columns, current_sorting, rdpmsdata, uid):
     else:
         alert_msg = dash.no_update
 
-    return sel_columns, Serverside(rdpmsdata, key=uid), alert_msg
+    return sel_columns, Serverside(rapdordata, key=uid), alert_msg
 
 @callback(
     Output("table-selector", "value", allow_duplicate=True),
@@ -420,7 +420,7 @@ def rank_table(btn, sel_columns, current_sorting, rdpmsdata, uid):
     State("unique-id", "data"),
 
 )
-def run_anosim(n_clicks, sel_columns, anosim_permutations, rdpmsdata, uid):
+def run_anosim(n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
     alert_msg = dash.no_update
     if n_clicks is None or n_clicks == 0:
         raise PreventUpdate
@@ -443,12 +443,12 @@ def run_anosim(n_clicks, sel_columns, anosim_permutations, rdpmsdata, uid):
 
         sel_columns += ["ANOSIM R"]
 
-        if rdpmsdata.permutation_sufficient_samples:
-            rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local")
+        if rapdordata.permutation_sufficient_samples:
+            rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local")
             sel_columns += ["local ANOSIM adj p-Value"]
 
         else:
-            rdpmsdata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global")
+            rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global")
             sel_columns += ["global ANOSIM adj p-Value"]
 
             alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
@@ -463,7 +463,7 @@ def run_anosim(n_clicks, sel_columns, anosim_permutations, rdpmsdata, uid):
 
             )
     sel_columns = list(set(sel_columns))
-    return sel_columns, Serverside(rdpmsdata, key=uid), alert_msg, dash.no_update
+    return sel_columns, Serverside(rapdordata, key=uid), alert_msg, dash.no_update
 
 
 @callback(
@@ -474,10 +474,10 @@ def run_anosim(n_clicks, sel_columns, anosim_permutations, rdpmsdata, uid):
     State("data-store", "data"),
 
 )
-def set_columns_from_state(selected_columns, sel_col_state, rdpmsdata):
+def set_columns_from_state(selected_columns, sel_col_state, rapdordata):
     logger.info(f"Will update columns: {selected_columns}, col_state: {sel_col_state}")
     sel_col_state = [] if sel_col_state is None else sel_col_state
-    check = all(column in rdpmsdata.extra_df.columns for column in sel_col_state)
+    check = all(column in rapdordata.extra_df.columns for column in sel_col_state)
 
     if (selected_columns is None or len(selected_columns) == 0) and len(sel_col_state) > 0 and check:
         selected_columns = sel_col_state
@@ -496,11 +496,11 @@ def set_columns_from_state(selected_columns, sel_col_state, rdpmsdata):
     State('data-store', 'data'),
     prevent_initial_call=True
 )
-def update_columns(selected_columns, rdpmsdata):
+def update_columns(selected_columns, rapdordata):
 
     selected_columns = [] if selected_columns is None else selected_columns
 
-    data = rdpmsdata.extra_df.loc[0:1, rdpmsdata._id_columns + selected_columns]
+    data = rapdordata.extra_df.loc[0:1, rapdordata._id_columns + selected_columns]
     columns = []
     num_cols = ["shift direction"]
     for i in data.columns:
@@ -528,10 +528,10 @@ def update_columns(selected_columns, rdpmsdata):
     Input("table-selector", "options"),
 
 )
-def update_selectable_columns(rdpmsdata, options):
-    if rdpmsdata is None:
+def update_selectable_columns(rapdordata, options):
+    if rapdordata is None:
         raise PreventUpdate
-    new_options = rdpmsdata.extra_df.columns
+    new_options = rapdordata.extra_df.columns
     new_options = list(new_options)
     new_options.remove("RAPDORid")
     options = dash.no_update if set(new_options) == set(options) else new_options

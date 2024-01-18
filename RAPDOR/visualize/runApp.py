@@ -32,15 +32,15 @@ def gui_wrapper(
             df = pd.read_csv(input, sep=sep, index_col=False)
             logger.info(f"loading df:\n{df}")
             design = pd.read_csv(design_matrix, sep=sep)
-            rdpmsdata = RAPDORData(df, design, logbase=logbase)
+            rapdordata = RAPDORData(df, design, logbase=logbase)
         else:
             with open(input) as handle:
                 jsons = handle.read()
-            rdpmsdata = RAPDORData.from_json(jsons)
+            rapdordata = RAPDORData.from_json(jsons)
     else:
-        rdpmsdata = None
+        rapdordata = None
 
-    app.layout = get_app_layout(rdpmsdata)
+    app.layout = get_app_layout(rapdordata)
     app.run(debug=debug, port=port, host=host)
 
 
@@ -50,9 +50,9 @@ def _gui_wrapper(args):
     gui_wrapper(args.input, args.design_matrix, args.sep, args.logbase, args.debug, args.port, args.host)
 
 
-def get_app_layout(rdpmsdata: RAPDORData = None):
+def get_app_layout(rapdordata: RAPDORData = None):
     def return_layout():
-        content = rdpmsdata.to_jsons() if rdpmsdata is not None else None
+        content = rapdordata.to_jsons() if rapdordata is not None else None
         div = html.Div(
             [
                 dcc.Location(id='url', refresh="callback-nav"),

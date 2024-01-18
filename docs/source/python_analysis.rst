@@ -19,7 +19,7 @@ via the logbase parameter in the :class:`RAPDORData` construction
     from RAPDOR.datastructures import RAPDORData
     intensities = pd.read_csv("https://raw.githubusercontent.com/domonik/RAPDOR/main/RAPDOR/tests/testData/testFile.tsv", sep="\t")
     design = pd.read_csv("https://raw.githubusercontent.com/domonik/RAPDOR/main/RAPDOR/tests/testData/testDesign.tsv", sep="\t")
-    rdpmdata = RAPDORData(intensities, design, logbase=2)
+    rapdordata = RAPDORData(intensities, design, logbase=2)
 
 
 Next you want to normalize the fractions and calculate samplewise distances. This is done via a single call.
@@ -28,7 +28,7 @@ of size 3.
 
 .. code-block:: python
 
-    rdpmdata.normalize_and_get_distances(method="Jensen-Shannon-Distance", kernel=3)
+    rapdordata.normalize_and_get_distances(method="Jensen-Shannon-Distance", kernel=3)
 
 
 
@@ -40,8 +40,8 @@ based on the R value and the mean distance. This is done via:
 
 .. code-block:: python
 
-    rdpmdata.calc_all_scores()
-    rdpmdata.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
+    rapdordata.calc_all_scores()
+    rapdordata.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
 
 
 
@@ -50,7 +50,7 @@ a Dash webserver interface. You can learn more about it in the :ref:`server setu
 
 .. code-block:: python
 
-    rdpmdata.export_csv(file="test.tsv", sep= "\t")
-    rdpmdata.to_json(file="test.json")
+    rapdordata.export_csv(file="test.tsv", sep= "\t")
+    rapdordata.to_json(file="test.json")
 
 

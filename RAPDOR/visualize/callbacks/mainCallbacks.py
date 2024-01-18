@@ -77,17 +77,17 @@ def assign_session_identifier(uid, data, initial_data):
     State("additional-header-dd", "value"),
     State("sel-col-state", "data"),
 )
-def load_initital_state(uid, pathname, rdpmsdata: RAPDORData, selected_ad_header, sel_col_state):
+def load_initital_state(uid, pathname, rapdordata: RAPDORData, selected_ad_header, sel_col_state):
     logger.info(f" {ctx.triggered_id} triggered Setting from state")
     if uid is None:
         logger.info("user id is None. Not setting from state")
         raise PreventUpdate
-    if rdpmsdata is None:
-        logger.info("rdpmsdata is None. Not setting from state")
+    if rapdordata is None:
+        logger.info("rapdordata is None. Not setting from state")
         raise PreventUpdate
-    state = rdpmsdata.state
+    state = rapdordata.state
     logger.info(f"state: {state}")
-    if rdpmsdata.categorical_fraction:
+    if rapdordata.categorical_fraction:
         kernel_size = 0
         kernel_disabled = True
     else:
@@ -97,20 +97,20 @@ def load_initital_state(uid, pathname, rdpmsdata: RAPDORData, selected_ad_header
     if sel_col_state is None or len(sel_col_state) == 0:
         sel_columns = []
         logger.info("Table dropdown state does not match the selection, will update")
-        if "Gene" in rdpmsdata.extra_df:
+        if "Gene" in rapdordata.extra_df:
             sel_columns.append("Gene")
-        for name in rdpmsdata.score_columns:
-            if name in rdpmsdata.extra_df:
+        for name in rapdordata.score_columns:
+            if name in rapdordata.extra_df:
                 sel_columns.append(name)
         sel_columns = list(set(sel_columns))
     else:
         sel_columns = dash.no_update
-    dm = rdpmsdata.state.distance_method if rdpmsdata.state.distance_method is not None else dash.no_update
+    dm = rapdordata.state.distance_method if rapdordata.state.distance_method is not None else dash.no_update
     logger.info(f"Initially Selected Columns: {sel_columns}")
-    options = list(set(rdpmsdata.extra_df) - set(rdpmsdata.score_columns + rdpmsdata._id_columns + rdpmsdata.replicate_info))
+    options = list(set(rapdordata.extra_df) - set(rapdordata.score_columns + rapdordata._id_columns + rapdordata.replicate_info))
     logger.info(selected_ad_header)
     if selected_ad_header is None:
-        selected_ad_header = list(rdpmsdata.extra_df)[0] if "Gene" not in rdpmsdata.extra_df else "Gene"
+        selected_ad_header = list(rapdordata.extra_df)[0] if "Gene" not in rapdordata.extra_df else "Gene"
     return kernel_size, cluster_method, sel_columns, options, selected_ad_header, kernel_disabled, dm
 
 
@@ -128,20 +128,20 @@ def load_initital_state(uid, pathname, rdpmsdata: RAPDORData, selected_ad_header
     State('table-selector', 'value'),
     prevent_initial_call=True
 )
-def recompute_data(kernel_size, distance_method, rdpmsdata, uid, selected_columns):
-    if rdpmsdata is None:
+def recompute_data(kernel_size, distance_method, rapdordata, uid, selected_columns):
+    if rapdordata is None:
         raise PreventUpdate
     if uid is None:
         raise PreventUpdate
     logger.info(f"Normalization triggered via {ctx.triggered_id}")
     eps = 10 if distance_method == "KL-Divergence" else 0  # Todo: Make this optional
-    rdpmsdata: RAPDORData
-    if rdpmsdata.state.kernel_size != kernel_size or rdpmsdata.state.distance_method != distance_method:
+    rapdordata: RAPDORData
+    if rapdordata.state.kernel_size != kernel_size or rapdordata.state.distance_method != distance_method:
         logger.info(f"Normalizing using method: {distance_method} and eps: {eps}")
-        rdpmsdata.normalize_and_get_distances(method=distance_method, kernel=kernel_size, eps=eps)
+        rapdordata.normalize_and_get_distances(method=distance_method, kernel=kernel_size, eps=eps)
         selected_columns = [] if selected_columns is None else selected_columns
-        selected_columns = list(set(selected_columns) - set(rdpmsdata.score_columns))
-        return html.Div(), Serverside(rdpmsdata, key=uid), selected_columns, selected_columns, [], ""
+        selected_columns = list(set(selected_columns) - set(rapdordata.score_columns))
+        return html.Div(), Serverside(rapdordata, key=uid), selected_columns, selected_columns, [], ""
     logger.info("Data already Normalized")
     raise PreventUpdate
 
@@ -175,9 +175,9 @@ def recompute_data(kernel_size, distance_method, rdpmsdata, uid, selected_column
     State("data-store", "data"),
 
 )
-def update_selected_id(active_cell, test_div, additional_header, rdpmsdata):
+def update_selected_id(active_cell, test_div, additional_header, rapdordata):
     logger.info(f"{ctx.triggered_id} -- triggered update of selected Protein")
-    if rdpmsdata is None:
+    if rapdordata is None:
         raise PreventUpdate
     if ctx.triggered_id == "tbl" or ctx.triggered_id == "additional-header-dd":
         logger.info(f"active cell is: {active_cell}")
@@ -187,20 +187,20 @@ def update_selected_id(active_cell, test_div, additional_header, rdpmsdata):
         else:
             logger.info(f"active cell is: {active_cell}")
             active_row_id = active_cell["row_id"]
-            protein = rdpmsdata.df.loc[active_row_id, "RAPDORid"]
+            protein = rapdordata.df.loc[active_row_id, "RAPDORid"]
 
     elif ctx.triggered_id == "test-div":
         logger.info(f"{test_div} - value")
         if test_div is None:
             raise PreventUpdate
         active_row_id = int(test_div)
-        protein = rdpmsdata.df.loc[active_row_id, "RAPDORid"]
+        protein = rapdordata.df.loc[active_row_id, "RAPDORid"]
     else:
         raise PreventUpdate
     protein = f"Protein {protein}"
     if additional_header:
         if active_cell is not None:
-            additional_display = rdpmsdata.df.loc[active_row_id, additional_header]
+            additional_display = rapdordata.df.loc[active_row_id, additional_header]
             if pd.isna(additional_display):
                 additional_display = "Na"
         else:
@@ -216,8 +216,8 @@ def update_selected_id(active_cell, test_div, additional_header, rdpmsdata):
     State("data-store", "data"),
     prevent_initial_call=True,
 )
-def download_dataframe(n_clicks, rdpmsdata):
-    return dcc.send_data_frame(rdpmsdata.extra_df.to_csv, "RAPDOR.tsv", sep="\t")
+def download_dataframe(n_clicks, rapdordata):
+    return dcc.send_data_frame(rapdordata.extra_df.to_csv, "RAPDOR.tsv", sep="\t")
 
 
 
@@ -228,9 +228,9 @@ def download_dataframe(n_clicks, rdpmsdata):
     State("data-store", "data"),
     prevent_initial_call=True,
 )
-def download_json(n_clicks, rdpmsdata):
+def download_json(n_clicks, rapdordata):
     ret_val = dict(
-        content=rdpmsdata.to_jsons(),
+        content=rapdordata.to_jsons(),
         filename="RAPDOR.json"
     )
 

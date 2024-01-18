@@ -32,38 +32,38 @@ logger = logging.getLogger(__name__)
     prevent_initial_call=True
 
 )
-def update_distribution_plot(key, recomp, primary_color, secondary_color, replicate_mode, night_mode, raw, rdpmsdata):
+def update_distribution_plot(key, recomp, primary_color, secondary_color, replicate_mode, night_mode, raw, rapdordata):
     logger.info(f"{ctx.triggered_id} triggered update of distribution plot")
     colors = primary_color, secondary_color
-    if key is None or rdpmsdata is None:
+    if key is None or rapdordata is None:
         if key is None:
             fig = empty_figure(
                 "No row selected.<br>Click on a row in the table",
                 "black" if not night_mode else "white"
             )
 
-        elif rdpmsdata is None:
+        elif rapdordata is None:
             fig = empty_figure(
                 "There is no data uploaded yet.<br> Please go to the Data upload Page",
                 "black" if not night_mode else "white"
             )
     else:
-        array = rdpmsdata.norm_array[key] if not raw else rdpmsdata.kernel_array[key]
+        array = rapdordata.norm_array[key] if not raw else rapdordata.kernel_array[key]
         mode = "raw" if raw else "rel."
-        yname = f"{mode} {rdpmsdata.measure_type} {rdpmsdata.measure}"
+        yname = f"{mode} {rapdordata.measure_type} {rapdordata.measure}"
         i = 0
-        if rdpmsdata.state.kernel_size is not None:
-            i = int(np.floor(rdpmsdata.state.kernel_size / 2))
+        if rapdordata.state.kernel_size is not None:
+            i = int(np.floor(rapdordata.state.kernel_size / 2))
         if replicate_mode:
-            fig = plot_replicate_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, yname=yname)
+            fig = plot_replicate_distribution(array, rapdordata.internal_design_matrix, offset=i, colors=colors, yname=yname)
         else:
-            if rdpmsdata.categorical_fraction:
-                fig = plot_bars(array, rdpmsdata.internal_design_matrix, x=rdpmsdata.fractions, offset=i,
+            if rapdordata.categorical_fraction:
+                fig = plot_bars(array, rapdordata.internal_design_matrix, x=rapdordata.fractions, offset=i,
                                 colors=colors, yname=yname)
                 if night_mode:
                     fig.update_traces(error_y=dict(color="white"), marker=dict(line=dict(width=1, color="white")))
             else:
-                fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, show_outliers=True, yname=yname)
+                fig = plot_distribution(array, rapdordata.internal_design_matrix, offset=i, colors=colors, show_outliers=True, yname=yname)
         if not night_mode:
             fig.layout.template = DEFAULT_TEMPLATE
         else:
@@ -94,15 +94,15 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
     State("data-store", "data")
 
 )
-def update_westernblot(key, kernel_size, primary_color, secondary_color, night_mode, rdpmsdata):
+def update_westernblot(key, kernel_size, primary_color, secondary_color, night_mode, rapdordata):
     colors = primary_color, secondary_color
     if key is None:
         return empty_figure()
-    if rdpmsdata is None:
+    if rapdordata is None:
         raise PreventUpdate
     else:
-        array = rdpmsdata.array[rdpmsdata.df.index.get_loc(key)]
-        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, colors=colors, vspace=0)
+        array = rapdordata.array[rapdordata.df.index.get_loc(key)]
+        fig = plot_barcode_plot(array, rapdordata.internal_design_matrix, colors=colors, vspace=0)
         fig.update_yaxes(showticklabels=False, showgrid=False, showline=False)
         fig.update_xaxes(showgrid=False, showticklabels=False, title="", showline=False)
         fig.update_traces(showscale=False)
@@ -142,15 +142,15 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
     State("data-store", "data")
 
 )
-def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, distance_method, rdpmsdata):
+def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, distance_method, rapdordata):
     colors = primary_color, secondary_color
     if key is None:
         raise PreventUpdate
-    if rdpmsdata is None:
+    if rapdordata is None:
         raise PreventUpdate
     else:
-        distances = rdpmsdata.distances[key]
-        fig = plot_heatmap(distances, rdpmsdata.internal_design_matrix, colors=colors)
+        distances = rapdordata.distances[key]
+        fig = plot_heatmap(distances, rapdordata.internal_design_matrix, colors=colors)
         fig.update_layout(
             margin={"t": 0, "b": 0, "l": 0, "r": 0}
         )
@@ -195,16 +195,16 @@ def calc_clusters(
         db_min_samples,
         k_clusters,
         k_random_state,
-        rdpmsdata: RAPDORData,
+        rapdordata: RAPDORData,
         uid
 ):
     logger.info(f"{ctx.triggered_id} - triggered cluster-callback")
-    if rdpmsdata is None:
+    if rapdordata is None:
         raise PreventUpdate
     try:
 
-        if rdpmsdata.cluster_features is None:
-            rdpmsdata.calc_distribution_features()
+        if rapdordata.cluster_features is None:
+            rapdordata.calc_distribution_features()
             logger.info("Calculated Cluster Features")
             logger.info("Running Dimension Reduction - because cluster features changed")
         if cluster_method is not None:
@@ -216,12 +216,12 @@ def calc_clusters(
                 kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
             else:
                 raise NotImplementedError("Method Not Implemented")
-            if rdpmsdata.state.cluster_method != cluster_method or rdpmsdata.state.cluster_args != kwargs:
+            if rapdordata.state.cluster_method != cluster_method or rapdordata.state.cluster_args != kwargs:
                 logger.info("Running Clustering")
-                clusters = rdpmsdata.cluster_data(method=cluster_method, **kwargs, )
+                clusters = rapdordata.cluster_data(method=cluster_method, **kwargs, )
         else:
-            rdpmsdata.remove_clusters()
-        return Serverside(rdpmsdata, key=uid), True
+            rapdordata.remove_clusters()
+        return Serverside(rapdordata, key=uid), True
 
     except ValueError as e:
         logger.error(traceback.format_exc())
@@ -236,9 +236,9 @@ def calc_clusters(
     State("cutoff-type", "value"),
 
 )
-def update_cutoff_selection(rdpmsdata: RAPDORData, current_selection):
-    options = [option for option in rdpmsdata.score_columns if
-               option in rdpmsdata.df and is_numeric_dtype(rdpmsdata.df[option])]
+def update_cutoff_selection(rapdordata: RAPDORData, current_selection):
+    options = [option for option in rapdordata.score_columns if
+               option in rapdordata.df and is_numeric_dtype(rapdordata.df[option])]
     selection = dash.no_update
     if len(options) > 0 and current_selection not in options:
         selection = None
@@ -257,10 +257,10 @@ def update_cutoff_selection(rdpmsdata: RAPDORData, current_selection):
     State("data-store", "data")
 
 )
-def update_range_slider(cutoff_type, rdpmsdata: RAPDORData):
+def update_range_slider(cutoff_type, rapdordata: RAPDORData):
     if cutoff_type is not None:
-        min_v = np.nanmin(rdpmsdata.df[cutoff_type])
-        max_v = np.nanmax(rdpmsdata.df[cutoff_type])
+        min_v = np.nanmin(rapdordata.df[cutoff_type])
+        max_v = np.nanmax(rapdordata.df[cutoff_type])
         min_v = np.floor(min_v * 100) / 100
         max_v = np.ceil(max_v * 100) / 100
         if "p-Value" in cutoff_type:
@@ -316,20 +316,20 @@ def update_range_slider(cutoff_type, rdpmsdata: RAPDORData):
     State('data-store', "data"),
     State("additional-header-dd", "value"),
 )
-def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, cutoff_type, rdpmsdata: RAPDORData, add_header):
+def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, cutoff_type, rapdordata: RAPDORData, add_header):
     logger.info(f"running cluster plot triggered via - {ctx.triggered_id}")
     dim = 2 if not td_plot else 3
     if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
         raise PreventUpdate
     colors = [color, color2]
-    if rdpmsdata is None:
+    if rapdordata is None:
         raise PreventUpdate
 
     if not plotting:
         fig = empty_figure("Data not Calculated<br> Get Scores first")
     else:
         if selected_rows is not None and len(selected_rows) >= 1:
-            highlight = rdpmsdata.df.loc[selected_rows, "RAPDORid"]
+            highlight = rapdordata.df.loc[selected_rows, "RAPDORid"]
         else:
             highlight = None
         logger.info(f"Cutoff - {cutoff_range}")
@@ -340,11 +340,11 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
                 cutoff_range = 10 ** cutoff_range[0], 10 ** cutoff_range[1]
 
         fig = plot_dimension_reduction(
-            rdpmsdata,
+            rapdordata,
             dimensions=dim,
             colors=colors,
             highlight=highlight,
-            show_cluster=True if "Cluster" in rdpmsdata.df else False,
+            show_cluster=True if "Cluster" in rapdordata.df else False,
             marker_max_size=marker_size,
             second_bg_color="white" if not night_mode else "#181818",
             bubble_legend_color="black" if not night_mode else "white",

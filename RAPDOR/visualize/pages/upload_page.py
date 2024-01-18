@@ -286,12 +286,12 @@ def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase)
         design_content = base64.b64decode(design_content).decode()
         df = pd.read_csv(StringIO(intensities_content), sep=sep)
         design = pd.read_csv(StringIO(design_content), sep=sep)
-        rdpmsdata = RAPDORData(df, design, logbase=None if logbase == 0 else logbase)
-        rdpmsdata = Serverside(rdpmsdata, key=uid)
+        rapdordata = RAPDORData(df, design, logbase=None if logbase == 0 else logbase)
+        rapdordata = Serverside(rapdordata, key=uid)
         redirect = "analysis"
         alert = []
     except Exception as e:
-        rdpmsdata = dash.no_update
+        rapdordata = dash.no_update
         redirect = dash.no_update
         logger.exception("Data is not in expected format")
         alert = html.Div(
@@ -303,4 +303,4 @@ def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase)
             className="p-2 align-items-center, alert-msg",
 
         )
-    return rdpmsdata, redirect, alert, None, None, None
+    return rapdordata, redirect, alert, None, None, None

@@ -191,15 +191,15 @@ def plot_replicate_distribution(
     return fig
 
 
-def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_col: str = "RAPDORid",
+def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid",
                                mode: str = "line", plot_type: str = "normalized", **kwargs):
     """Plots a figure containing distributions of proteins using mean, median, min and max values of replicates
 
         Args:
             rapdorids (List[any]): RAPDORids that should be plotted
-            rdpmsdata (RAPDORData): a RAPDORData object containing the IDs from rapdorids
+            rapdordata (RAPDORData): a RAPDORData object containing the IDs from rapdorids
             colors (Iterable[str]): An iterable of color strings to use for plotting
-            title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
+            title_col (str): Name of a column that is present of the dataframe in rapdordata. Will add this column
                 as a subtitle in the plot (Default: RAPDORid)
             mode (str): One of line or bar. Will result in a line plot or a bar plot.
             plot_type (str): One of ("normalized", "raw", "mixed") will use normalized data as default. "mixed" will
@@ -212,13 +212,13 @@ def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_c
             rapdorids.
 
             """
-    if rdpmsdata.state.kernel_size is not None:
-        i = int(rdpmsdata.state.kernel_size // 2)
+    if rapdordata.state.kernel_size is not None:
+        i = int(rapdordata.state.kernel_size // 2)
     else:
         i = 0
-    proteins = rdpmsdata[rapdorids]
+    proteins = rapdordata[rapdorids]
 
-    annotation = list(rdpmsdata.df[title_col][proteins])
+    annotation = list(rapdordata.df[title_col][proteins])
     if "horizontal_spacing" not in kwargs:
         kwargs["horizontal_spacing"] = 0.15
     if "rows" in kwargs and "cols" in kwargs:
@@ -233,19 +233,19 @@ def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_c
         raise ValueError(f"Not enough columns ({cols}) and rows ({rows}) to place {len(proteins)} figures")
     if plot_type == "normalized":
         y_mode = "rel."
-        y_title = f"{y_mode} {rdpmsdata.measure_type} {rdpmsdata.measure}"
-        arrays = [rdpmsdata.norm_array[protein] for protein in proteins]
+        y_title = f"{y_mode} {rapdordata.measure_type} {rapdordata.measure}"
+        arrays = [rapdordata.norm_array[protein] for protein in proteins]
     elif plot_type == "raw":
         y_mode = "raw"
-        y_title = f"{y_mode} {rdpmsdata.measure_type} {rdpmsdata.measure}"
-        arrays = [rdpmsdata.kernel_array[protein] for protein in proteins]
+        y_title = f"{y_mode} {rapdordata.measure_type} {rapdordata.measure}"
+        arrays = [rapdordata.kernel_array[protein] for protein in proteins]
 
     elif plot_type == "mixed":
         if cols != 2:
             raise ValueError("Number of columns not supported for mixed plot")
         y_title = None
-        arrays = [rdpmsdata.norm_array[protein] for protein in proteins] + [rdpmsdata.kernel_array[protein] for protein in proteins]
-        annotation += list(rdpmsdata.df[title_col][proteins])
+        arrays = [rapdordata.norm_array[protein] for protein in proteins] + [rapdordata.kernel_array[protein] for protein in proteins]
+        annotation += list(rapdordata.df[title_col][proteins])
 
 
     else:
@@ -268,9 +268,9 @@ def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_c
                 xref = f"x{plot_idx} domain"
                 yref = f"y{plot_idx} domain"
                 if mode == "line":
-                    fig = plot_distribution(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors)
+                    fig = plot_distribution(array, rapdordata.internal_design_matrix, offset=i, colors=colors)
                 elif mode == "bar":
-                    fig = plot_bars(array, rdpmsdata.internal_design_matrix, offset=i, colors=colors, x=rdpmsdata.fractions)
+                    fig = plot_bars(array, rapdordata.internal_design_matrix, offset=i, colors=colors, x=rapdordata.fractions)
                 else:
                     raise ValueError("mode must be one of line or bar")
                 if plot_type != "mixed" or col_idx == 1:
@@ -292,7 +292,7 @@ def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_c
                 idx += 1
     if plot_type == "mixed":
         fig_subplots.add_annotation(
-            text=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}",
+            text=f"rel. {rapdordata.measure_type} {rapdordata.measure}",
             xref="paper",
             yref="paper",
             x=0,
@@ -304,7 +304,7 @@ def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_c
             xshift=-40
         )
         fig_subplots.add_annotation(
-            text=f"raw {rdpmsdata.measure_type} {rdpmsdata.measure}",
+            text=f"raw {rapdordata.measure_type} {rapdordata.measure}",
             xref="paper",
             yref="paper",
             x=0.5,
@@ -325,12 +325,12 @@ def plot_protein_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_c
     return fig_subplots
 
 
-def plot_var_histo(rapdorids, rdpmsdata: RAPDORData, color: str = DEFAULT_COLORS["primary"], var_measure: str = "ANOSIM R", bins: int=10):
+def plot_var_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_COLORS["primary"], var_measure: str = "ANOSIM R", bins: int=10):
     fig = go.Figure()
-    proteins = rdpmsdata[rapdorids]
-    x = rdpmsdata.df.loc[proteins][var_measure]
-    x_min = rdpmsdata.df[var_measure].min()
-    x_max = rdpmsdata.df[var_measure].max()
+    proteins = rapdordata[rapdorids]
+    x = rapdordata.df.loc[proteins][var_measure]
+    x_min = rapdordata.df[var_measure].min()
+    x_max = rapdordata.df[var_measure].max()
     fig.add_trace(
         go.Histogram(
             x=x,
@@ -349,12 +349,12 @@ def plot_var_histo(rapdorids, rdpmsdata: RAPDORData, color: str = DEFAULT_COLORS
     return fig
 
 
-def plot_distance_histo(rapdorids, rdpmsdata: RAPDORData, color: str = DEFAULT_COLORS["secondary"], bins: int = 10):
+def plot_distance_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_COLORS["secondary"], bins: int = 10):
     fig = go.Figure()
-    proteins = rdpmsdata[rapdorids]
-    x = rdpmsdata.df.loc[proteins]["Mean Distance"]
-    x_min = rdpmsdata.df["Mean Distance"].min()
-    x_max = rdpmsdata.df["Mean Distance"].max()
+    proteins = rapdordata[rapdorids]
+    x = rapdordata.df.loc[proteins]["Mean Distance"]
+    x_min = rapdordata.df["Mean Distance"].min()
+    x_max = rapdordata.df["Mean Distance"].max()
     fig.add_trace(
         go.Histogram(
             x=x,
@@ -367,40 +367,40 @@ def plot_distance_histo(rapdorids, rdpmsdata: RAPDORData, color: str = DEFAULT_C
             ),
         )
     )
-    fig.update_xaxes(title=rdpmsdata.state.distance_method, range=[x_min, x_max])
+    fig.update_xaxes(title=rapdordata.state.distance_method, range=[x_min, x_max])
     fig.update_yaxes(title="Freq.")
     return fig
 
 
 
-def plot_mean_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_col: str = None):
+def plot_mean_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col: str = None):
     """
 
     Args:
         rapdorids (List[any]): RAPDORids that should be plotted
-        rdpmsdata (RAPDORData): a RAPDORData object containing the IDs from rapdorids
+        rapdordata (RAPDORData): a RAPDORData object containing the IDs from rapdorids
         colors (Iterable[str]): An iterable of color strings to use for plotting
-        title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will use this column
+        title_col (str): Name of a column that is present of the dataframe in rapdordata. Will use this column
             as names for the mean distributions. Set to None if Names should not be displayed.
 
     Returns:
 
     """
-    if rdpmsdata.state.kernel_size is not None:
-        i = int(rdpmsdata.state.kernel_size // 2)
+    if rapdordata.state.kernel_size is not None:
+        i = int(rapdordata.state.kernel_size // 2)
     else:
         i = 0
     fig = go.Figure()
-    proteins = rdpmsdata[rapdorids]
+    proteins = rapdordata[rapdorids]
     if title_col is not None:
-        annotation = list(rdpmsdata.df[title_col][proteins])
+        annotation = list(rapdordata.df[title_col][proteins])
     else:
         annotation = ["" for _ in range(len(proteins))]
 
-    indices = rdpmsdata.indices
-    levels = rdpmsdata.treatment_levels
-    x = rdpmsdata.fractions
-    x = x[i: rdpmsdata.norm_array.shape[-1] + i]
+    indices = rapdordata.indices
+    levels = rapdordata.treatment_levels
+    x = rapdordata.fractions
+    x = x[i: rapdordata.norm_array.shape[-1] + i]
 
     names = []
     for eidx, (orig_name, idx) in enumerate(zip(levels, indices)):
@@ -409,7 +409,7 @@ def plot_mean_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_col:
         names.append(name)
         overall_means = []
         for pidx, protein in enumerate(proteins):
-            subdata = rdpmsdata.norm_array[protein]
+            subdata = rapdordata.norm_array[protein]
             mean_values = np.nanmean(subdata[idx,], axis=0)
             showlegend = False if title_col is None else True
             color = _color_to_calpha(colors[eidx], 0.25)
@@ -427,7 +427,7 @@ def plot_mean_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_col:
             ))
             overall_means.append(mean_values)
         overall_means = np.asarray(overall_means)
-        if not rdpmsdata.categorical_fraction:
+        if not rapdordata.categorical_fraction:
             overall_means = overall_means.mean(axis=0)
 
             fig.add_trace(go.Scatter(
@@ -462,11 +462,11 @@ def plot_mean_distributions(rapdorids, rdpmsdata: RAPDORData, colors, title_col:
     fig.update_layout(violingap=0, violinmode='overlay')
 
 
-    fig = _update_distribution_layout(fig, names, x, i, yname=f"rel. {rdpmsdata.measure_type} {rdpmsdata.measure}")
+    fig = _update_distribution_layout(fig, names, x, i, yname=f"rel. {rapdordata.measure_type} {rapdordata.measure}")
     return fig
 
 
-def plot_means_and_histos(rapdorids, rdpmsdata: RAPDORData, colors, title_col: str = None, **kwargs):
+def plot_means_and_histos(rapdorids, rapdordata: RAPDORData, colors, title_col: str = None, **kwargs):
     if "row_heights" not in kwargs:
         kwargs["row_heights"] = [0.5, 0.25, 0.25]
     if "vertical_spacing" not in kwargs:
@@ -474,9 +474,9 @@ def plot_means_and_histos(rapdorids, rdpmsdata: RAPDORData, colors, title_col: s
 
     fig = make_subplots(rows=3, cols=1, **kwargs)
 
-    fig1 = plot_mean_distributions(rapdorids, rdpmsdata, colors, title_col)
-    fig2 = plot_distance_histo(rapdorids, rdpmsdata, colors[0])
-    fig3 = plot_var_histo(rapdorids, rdpmsdata, colors[1])
+    fig1 = plot_mean_distributions(rapdorids, rapdordata, colors, title_col)
+    fig2 = plot_distance_histo(rapdorids, rapdordata, colors[0])
+    fig3 = plot_var_histo(rapdorids, rapdordata, colors[1])
     for trace in fig1['data']:
         fig.add_trace(trace, row=1, col=1)
         fig.update_xaxes(fig1["layout"]["xaxis"], row=1)
@@ -507,10 +507,10 @@ def plot_means_and_histos(rapdorids, rdpmsdata: RAPDORData, colors, title_col: s
     return fig
 
 
-def rank_plot(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RAPDORData, colors):
+def rank_plot(rdpmspecsets: Dict[str, Iterable], rapdordata: RAPDORData, colors):
     fig = go.Figure(layout=dict(template=DEFAULT_TEMPLATE))
     triangles = []
-    df = rdpmsdata.df.sort_values(by="Rank")
+    df = rapdordata.df.sort_values(by="Rank")
     x = list(range(df["Rank"].min(), df.Rank.max() + 1))
     tri_x = 25
     tri_y = 0.1
@@ -552,13 +552,13 @@ def rank_plot(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RAPDORData, colors):
 
 
 
-def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RAPDORData, colors, **kwargs):
+def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, **kwargs):
     """Plots histograms of ANOSIM R and Distance as well as the distributions of the mean of multiple ids.
 
     Args:
         rdpmspecsets (dict of str: List): a dictionary containing a key that will appear in the plot as column header.
-            The values of the dictionary must be a list that contains ids from the RAPDORData used in rdpmsdata.
-        rdpmsdata (RAPDORData): a RAPDORData object containing the IDs from rdpmspecids
+            The values of the dictionary must be a list that contains ids from the RAPDORData used in rapdordata.
+        rapdordata (RAPDORData): a RAPDORData object containing the IDs from rdpmspecids
         colors (Iterable[str]): An iterable of color strings to use for plotting. Muste have length 3. Will use the
             first two colors for the distribution and the third for the histograms.
         **kwargs: Will be passed to the make_subplots call of plotly
@@ -573,7 +573,7 @@ def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RAPDORDa
     if "horizontal_spacing" not in kwargs:
         kwargs["horizontal_spacing"] = 0.02
     if "row_titles" not in kwargs:
-        distance = "JSD" if rdpmsdata.state.distance_method == "Jensen-Shannon-Distance" else "Distance"
+        distance = "JSD" if rapdordata.state.distance_method == "Jensen-Shannon-Distance" else "Distance"
         kwargs["row_titles"] = [distance, "ANOSIM R", "Distribution"]
     if "column_titles" not in kwargs:
         kwargs["column_titles"] = list(rdpmspecsets.keys())
@@ -586,9 +586,9 @@ def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rdpmsdata: RAPDORDa
     fig = make_subplots(rows=3, cols=len(rdpmspecsets), shared_yaxes=True, **kwargs)
 
     for c_idx, (name, rdpmspecids) in enumerate(rdpmspecsets.items(), 1):
-        fig1 = plot_distance_histo(rdpmspecids, rdpmsdata, colors[2])
-        fig2 = plot_var_histo(rdpmspecids, rdpmsdata, colors[2])
-        fig3 = plot_mean_distributions(rdpmspecids, rdpmsdata, colors)
+        fig1 = plot_distance_histo(rdpmspecids, rapdordata, colors[2])
+        fig2 = plot_var_histo(rdpmspecids, rapdordata, colors[2])
+        fig3 = plot_mean_distributions(rdpmspecids, rapdordata, colors)
 
 
         for trace in fig1['data']:
@@ -899,7 +899,7 @@ def plot_heatmap(distances, design: pd.DataFrame, colors=None):
     return fig
 
 
-def plot_protein_westernblots(rdpmspecids, rdpmsdata: RAPDORData, colors, title_col: str = "RAPDORid", vspace: float = 0.01):
+def plot_protein_westernblots(rdpmspecids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid", vspace: float = 0.01):
     """Plots a figure containing a pseudo westernblot of the protein distribution.
 
     This will ignore smoothing kernels and plots raw mean replicate intensities.
@@ -907,9 +907,9 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RAPDORData, colors, title_
 
     Args:
         rdpmspecids (List[any]): RAPDORids that should be plotted
-        rdpmsdata (RAPDORData): a RAPDORData object containing the IDs from rdpmspecids
+        rapdordata (RAPDORData): a RAPDORData object containing the IDs from rdpmspecids
         colors (Iterable[str]): An iterable of color strings to use for plotting
-        title_col (str): Name of a column that is present of the dataframe in rdpmsdata. Will add this column
+        title_col (str): Name of a column that is present of the dataframe in rapdordata. Will add this column
             as a subtitle in the plot (Default: RAPDORid)
         vspace (float): Vertical space between subplots
 
@@ -920,8 +920,8 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RAPDORData, colors, title_
 
     """
 
-    proteins = rdpmsdata[rdpmspecids]
-    annotation = rdpmsdata.df[title_col][proteins].repeat(2)
+    proteins = rapdordata[rdpmspecids]
+    annotation = rapdordata.df[title_col][proteins].repeat(2)
     fig_subplots = make_subplots(rows=len(proteins) * 2, cols=1, shared_xaxes=True, x_title="Fraction",
                                  row_titles=list(annotation), vertical_spacing=0.0,
                                  specs=[
@@ -935,8 +935,8 @@ def plot_protein_westernblots(rdpmspecids, rdpmsdata: RAPDORData, colors, title_
 
                                  )
     for idx, protein in enumerate(proteins, 1):
-        array = rdpmsdata.array[protein]
-        fig = plot_barcode_plot(array, rdpmsdata.internal_design_matrix, colors=colors, fractions=rdpmsdata.fractions)
+        array = rapdordata.array[protein]
+        fig = plot_barcode_plot(array, rapdordata.internal_design_matrix, colors=colors, fractions=rapdordata.fractions)
         for i_idx, trace in enumerate(fig["data"]):
             fig_subplots.add_trace(trace, row=(idx * 2) + i_idx - 1, col=1)
     fig = fig_subplots
@@ -1448,7 +1448,7 @@ if __name__ == '__main__':
     d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
     #fig = multi_means_and_histo(d, rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
     #fig = plot_protein_distributions(ids[0:4], rdpmspec, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
-    fig = rank_plot(d, rdpmsdata=rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
+    fig = rank_plot(d, rapdordata=rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
     fig.update_layout(width=622, height=400, font=dict(size=10))
     fig.show()
     fig.write_image("foo.svg")
