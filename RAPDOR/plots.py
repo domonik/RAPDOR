@@ -374,7 +374,8 @@ def plot_distance_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_
 
 
 def plot_mean_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col: str = None):
-    """
+    """Plots means of  distributions of the ids specified. Plots a Violin plot if fraction is categorical
+
 
     Args:
         rapdorids (List[any]): RAPDORids that should be plotted
@@ -383,7 +384,7 @@ def plot_mean_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col
         title_col (str): Name of a column that is present of the dataframe in rapdordata. Will use this column
             as names for the mean distributions. Set to None if Names should not be displayed.
 
-    Returns:
+    Returns: go.Figure()
 
     """
     if rapdordata.state.kernel_size is not None:
@@ -556,7 +557,7 @@ def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rapdordata: RAPDORD
     """Plots histograms of ANOSIM R and Distance as well as the distributions of the mean of multiple ids.
 
     Args:
-        rdpmspecsets (dict of str: List): a dictionary containing a key that will appear in the plot as column header.
+        rdpmspecsets (dict): a dictionary containing a key that will appear in the plot as column header.
             The values of the dictionary must be a list that contains ids from the RAPDORData used in rapdordata.
         rapdordata (RAPDORData): a RAPDORData object containing the IDs from rdpmspecids
         colors (Iterable[str]): An iterable of color strings to use for plotting. Muste have length 3. Will use the
@@ -1092,7 +1093,7 @@ def plot_dimension_reduction(
         cutoff_range: Tuple[float, float] = None,
         cutoff_type: str = None
 ):
-    """
+    """Plots a dimension reduction using relative distribution change, relative fraction shift and the Mean Distance
 
     Args:
         rdpmspecdata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object where distances
@@ -1112,6 +1113,10 @@ def plot_dimension_reduction(
         legend_spread (float): spread of the bubble legend (This has no effect if dimensions is 3)
         title_col (str): Will display names from that column in the rdpmspecdata for highlighted proteins
             (This has no effect if dimensions is 3)
+        cutoff_type (str): column in the dataframe of :class:`~RAPDOR.datastructures.RAPDORData` used for cutoff. Muste
+            be numerical
+        cutoff_range (Iterable[float): uses index one as lower bound and index two as upper bound for data to display in
+            the plot
 
     Returns: go.Figure()
 
