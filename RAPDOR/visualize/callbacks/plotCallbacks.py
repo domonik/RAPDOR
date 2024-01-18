@@ -237,6 +237,8 @@ def calc_clusters(
 
 )
 def update_cutoff_selection(rapdordata: RAPDORData, current_selection):
+    if rapdordata is None:
+        raise PreventUpdate
     options = [option for option in rapdordata.score_columns if
                option in rapdordata.df and is_numeric_dtype(rapdordata.df[option])]
     selection = dash.no_update
