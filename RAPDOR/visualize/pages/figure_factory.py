@@ -204,7 +204,7 @@ def _distribution_norm_settings():
         [
 
             html.Div(html.H5("Distribution"), className=BOOTSH5),
-            *_arg_and_dropdown("Plot type", ["Normalized", "Raw"], default="Normalized", input_id="normalize-plot")
+            *_arg_and_dropdown("Plot type", ["Normalized", "Raw", "Mixed"], default="Normalized", input_id="normalize-plot")
 
         ],
         className=BOOTSROW,
@@ -637,7 +637,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
                 title_col=displayed_col,
                 vertical_spacing=vspace,
                 mode="bar" if rdpmsdata.categorical_fraction else "line",
-                normalized=True if normalize == "Normalized" else False,
+                plot_type=normalize.lower()
 
             )
             fig.update_xaxes(mirror=True)
