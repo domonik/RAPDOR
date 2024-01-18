@@ -170,8 +170,9 @@ def plot_replicate_distribution(
     fig = go.Figure()
     names = []
     values = []
+    j_val = max([len(name) for name in indices.keys()])
     for eidx, (name, idx) in enumerate(indices.items()):
-        name = f"{name}".ljust(15, " ")
+        name = f"{name}".ljust(j_val, " ")
         legend = f"legend{eidx + 1}"
         names.append(name)
         for row_idx in idx:
@@ -404,8 +405,10 @@ def plot_mean_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col
     x = x[i: rapdordata.norm_array.shape[-1] + i]
 
     names = []
+    j_val = max([len(name) for name in indices.keys()])
+
     for eidx, (orig_name, idx) in enumerate(zip(levels, indices)):
-        name = f"{orig_name}".ljust(10, " ")
+        name = f"{orig_name}".ljust(j_val, " ")
         legend = f"legend{eidx + 1}"
         names.append(name)
         overall_means = []
@@ -665,8 +668,10 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
     indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
     x = x[offset: subdata.shape[1] + offset]
     names = []
+    j_val = max([len(name) for name in indices.keys()])
+
     for eidx, (name, idx) in enumerate(indices.items()):
-        name = f"{name}".ljust(10, " ")
+        name = f"{name}".ljust(j_val, " ")
         legend = f"legend{eidx + 1}"
         names.append(name)
         mean_values = np.nanmean(subdata[idx,], axis=0)
@@ -769,8 +774,9 @@ def plot_distribution(
     errors = []
     x = list(range(offset+1, subdata.shape[1] + offset+1))
     names = []
+    j_val = max([len(name) for name in indices.keys()])
     for eidx, (name, idx) in enumerate(indices.items()):
-        name = f"{name}".ljust(10, " ")
+        name = f"{name}".ljust(j_val, " ")
         legend=f"legend{eidx+1}"
         names.append(name)
         median_values = np.nanmedian(subdata[idx,], axis=0)
