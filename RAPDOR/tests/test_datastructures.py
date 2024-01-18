@@ -28,14 +28,14 @@ def design():
 
 
 @pytest.fixture()
-def rdpmpecdata(intensities, design):
+def rapdordata(intensities, design):
     rapdordata = RAPDORData(intensities, design, 2)
     return rapdordata
 
 @pytest.fixture()
-def norm_rapdordata(rdpmpecdata):
-    rdpmpecdata.normalize_and_get_distances("Jensen-Shannon-Distance", 3, eps=0)
-    return rdpmpecdata
+def norm_rapdordata(rapdordata):
+    rapdordata.normalize_and_get_distances("Jensen-Shannon-Distance", 3, eps=0)
+    return rapdordata
 
 @pytest.fixture()
 def scored_rapdordata(norm_rapdordata):
@@ -154,20 +154,20 @@ def test_different_columns(intensities, design):
         (False, None, None, False, None, None)
     ]
 )
-def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, distance_cutoff, rdpmpecdata):
+def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, distance_cutoff, rapdordata):
     if normalize:
-        rdpmpecdata.normalize_array_with_kernel(kernel_size)
+        rapdordata.normalize_array_with_kernel(kernel_size)
     if distance:
-        rdpmpecdata.calc_distances(distance)
+        rapdordata.calc_distances(distance)
     if permanova:
-        rdpmpecdata.calc_all_scores()
-        rdpmpecdata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
+        rapdordata.calc_all_scores()
+        rapdordata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
 
 
-        rdpmpecdata.calc_permanova_p_value(10, threads=1, distance_cutoff=distance_cutoff)
-    s = rdpmpecdata.to_jsons()
+        rapdordata.calc_permanova_p_value(10, threads=1, distance_cutoff=distance_cutoff)
+    s = rapdordata.to_jsons()
     loaded_data = RAPDORData.from_json(s)
-    assert loaded_data == rdpmpecdata
+    assert loaded_data == rapdordata
 
 # @pytest.mark.parametrize(
 #     "cluster_method,feature_kernel_size",
@@ -200,5 +200,5 @@ def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, 
 #     assert loaded_data == scored_rapdordata
 
 
-def test_to_json(rdpmpecdata):
-    rdpmpecdata.to_jsons()
+def test_to_json(rapdordata):
+    rapdordata.to_jsons()

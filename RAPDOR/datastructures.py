@@ -926,21 +926,21 @@ def _analysis_executable_wrapper(args):
     rapdor = RAPDORData.from_files(args.input, args.design_matrix, sep=args.sep, logbase=args.logbase)
     kernel_size = args.kernel_size if args.kernel_size > 0 else 0
     rapdor.normalize_and_get_distances(args.distance_method, kernel_size, args.eps)
-    rdpmspec.calc_all_scores()
+    rapdor.calc_all_scores()
     if args.distance_method is not None:
         if not args.global_permutation:
             if args.distance_method.upper() == "PERMANOVA":
-                rdpmspec.calc_permanova_p_value(args.permutations, args.num_threads, mode="local")
+                rapdor.calc_permanova_p_value(args.permutations, args.num_threads, mode="local")
             elif args.distance_method.upper() == "ANOSIM":
-                rdpmspec.calc_anosim_p_value(args.permutations, args.num_threads, mode="local")
+                rapdor.calc_anosim_p_value(args.permutations, args.num_threads, mode="local")
         else:
             if args.distance_method.upper() == "PERMANOVA":
-                rdpmspec.calc_permanova_p_value(args.permutations, args.num_threads, mode="global")
+                rapdor.calc_permanova_p_value(args.permutations, args.num_threads, mode="global")
             elif args.distance_method.upper() == "ANOSIM":
-                rdpmspec.calc_anosim_p_value(args.permutations, args.num_threads, mode="global")
-    rdpmspec.export_csv(args.output, str(args.sep))
+                rapdor.calc_anosim_p_value(args.permutations, args.num_threads, mode="global")
+    rapdor.export_csv(args.output, str(args.sep))
     if args.json is not None:
-        rdpmspec.to_json(args.json)
+        rapdor.to_json(args.json)
 
 
 if __name__ == '__main__':
@@ -949,21 +949,21 @@ if __name__ == '__main__':
     sdf = df
     sdf.index = sdf.index.astype(str)
     design = pd.read_csv("../testData/rdeep_design_normalized.tsv", sep="\t")
-    rdpmspec = RAPDORData(sdf, design)
-    rdpmspec.normalize_and_get_distances("jensenshannon", 3)
-    rdpmspec.calc_all_scores()
-    rdpmspec.calc_cluster_features(kernel_range=3)
-    clusters = rdpmspec.cluster_data()
-    embedding = rdpmspec.reduce_dim()
+    rapdor = RAPDORData(sdf, design)
+    rapdor.normalize_and_get_distances("jensenshannon", 3)
+    rapdor.calc_all_scores()
+    rapdor.calc_cluster_features(kernel_range=3)
+    clusters = rapdor.cluster_data()
+    embedding = rapdor.reduce_dim()
     import plotly.graph_objs as go
     from plotly.colors import qualitative
     from RAPDOR.plots import plot_dimension_reduction_result
 
-    fig = plot_dimension_reduction_result(embedding, rdpmspec, colors=qualitative.Light24 + qualitative.Dark24,
+    fig = plot_dimension_reduction_result(embedding, rapdor, colors=qualitative.Light24 + qualitative.Dark24,
                                           clusters=clusters, name="bla")
     fig.show()
     exit()
-    rdpmspec.calc_anosim_p_value(100, threads=2, mode="global")
-    rdpmspec.calc_permanova_p_value(100, threads=2, mode="global")
-    rdpmspec.rank_table(["ANOSIM R"], ascending=(True,))
-    # rdpmspec.calc_welchs_t_test()
+    rapdor.calc_anosim_p_value(100, threads=2, mode="global")
+    rapdor.calc_permanova_p_value(100, threads=2, mode="global")
+    rapdor.rank_table(["ANOSIM R"], ascending=(True,))
+    # rapdor.calc_welchs_t_test()

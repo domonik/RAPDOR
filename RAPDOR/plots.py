@@ -508,14 +508,14 @@ def plot_means_and_histos(rapdorids, rapdordata: RAPDORData, colors, title_col: 
     return fig
 
 
-def rank_plot(rdpmspecsets: Dict[str, Iterable], rapdordata: RAPDORData, colors):
+def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors):
     fig = go.Figure(layout=dict(template=DEFAULT_TEMPLATE))
     triangles = []
     df = rapdordata.df.sort_values(by="Rank")
     x = list(range(df["Rank"].min(), df.Rank.max() + 1))
     tri_x = 25
     tri_y = 0.1
-    for idx, (key, data) in enumerate(rdpmspecsets.items()):
+    for idx, (key, data) in enumerate(rapdorsets.items()):
         df = df.sort_values(by="Rank")
         data = df[df["RAPDORid"].isin(data)]["Rank"] - 1
         y = np.empty(len(x))
@@ -553,13 +553,13 @@ def rank_plot(rdpmspecsets: Dict[str, Iterable], rapdordata: RAPDORData, colors)
 
 
 
-def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, **kwargs):
+def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, **kwargs):
     """Plots histograms of ANOSIM R and Distance as well as the distributions of the mean of multiple ids.
 
     Args:
-        rdpmspecsets (dict): a dictionary containing a key that will appear in the plot as column header.
+        rapdorsets (dict): a dictionary containing a key that will appear in the plot as column header.
             The values of the dictionary must be a list that contains ids from the RAPDORData used in rapdordata.
-        rapdordata (RAPDORData): a RAPDORData object containing the IDs from rdpmspecids
+        rapdordata (RAPDORData): a RAPDORData object containing the IDs from rapdorids
         colors (Iterable[str]): An iterable of color strings to use for plotting. Muste have length 3. Will use the
             first two colors for the distribution and the third for the histograms.
         **kwargs: Will be passed to the make_subplots call of plotly
@@ -577,19 +577,19 @@ def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rapdordata: RAPDORD
         distance = "JSD" if rapdordata.state.distance_method == "Jensen-Shannon-Distance" else "Distance"
         kwargs["row_titles"] = [distance, "ANOSIM R", "Distribution"]
     if "column_titles" not in kwargs:
-        kwargs["column_titles"] = list(rdpmspecsets.keys())
+        kwargs["column_titles"] = list(rapdorsets.keys())
     if "x_title" not in kwargs:
         kwargs["x_title"] = "Fraction"
 
 
 
 
-    fig = make_subplots(rows=3, cols=len(rdpmspecsets), shared_yaxes=True, **kwargs)
+    fig = make_subplots(rows=3, cols=len(rapdorsets), shared_yaxes=True, **kwargs)
 
-    for c_idx, (name, rdpmspecids) in enumerate(rdpmspecsets.items(), 1):
-        fig1 = plot_distance_histo(rdpmspecids, rapdordata, colors[2])
-        fig2 = plot_var_histo(rdpmspecids, rapdordata, colors[2])
-        fig3 = plot_mean_distributions(rdpmspecids, rapdordata, colors)
+    for c_idx, (name, rapdorids) in enumerate(rapdorsets.items(), 1):
+        fig1 = plot_distance_histo(rapdorids, rapdordata, colors[2])
+        fig2 = plot_var_histo(rapdorids, rapdordata, colors[2])
+        fig3 = plot_mean_distributions(rapdorids, rapdordata, colors)
 
 
         for trace in fig1['data']:
@@ -640,7 +640,7 @@ def multi_means_and_histo(rdpmspecsets: Dict[str, Iterable], rapdordata: RAPDORD
     fig.update_xaxes(title=dict(font=dict(size=10)))
     fig.update_yaxes(title=dict(font=dict(size=10)))
     for annotation in fig.layout.annotations:
-        if annotation.text not in rdpmspecsets:
+        if annotation.text not in rapdorsets:
             annotation.update(font=dict(size=10))
         else:
             annotation.update(font=dict(size=12))
@@ -900,15 +900,15 @@ def plot_heatmap(distances, design: pd.DataFrame, colors=None):
     return fig
 
 
-def plot_protein_westernblots(rdpmspecids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid", vspace: float = 0.01):
+def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid", vspace: float = 0.01):
     """Plots a figure containing a pseudo westernblot of the protein distribution.
 
     This will ignore smoothing kernels and plots raw mean replicate intensities.
     It will also normalize subplot colors based on the maximum intensity.
 
     Args:
-        rdpmspecids (List[any]): RAPDORids that should be plotted
-        rapdordata (RAPDORData): a RAPDORData object containing the IDs from rdpmspecids
+        rapdorids (List[any]): RAPDORids that should be plotted
+        rapdordata (RAPDORData): a RAPDORData object containing the IDs from rapdorids
         colors (Iterable[str]): An iterable of color strings to use for plotting
         title_col (str): Name of a column that is present of the dataframe in rapdordata. Will add this column
             as a subtitle in the plot (Default: RAPDORid)
@@ -917,11 +917,11 @@ def plot_protein_westernblots(rdpmspecids, rapdordata: RAPDORData, colors, title
     Returns: go.Figure
 
         A plotly figure containing a pseudo westernblot of the protein distribution  for each protein identified via the
-        rdpmspecids.
+        rapdorids.
 
     """
 
-    proteins = rapdordata[rdpmspecids]
+    proteins = rapdordata[rapdorids]
     annotation = rapdordata.df[title_col][proteins].repeat(2)
     fig_subplots = make_subplots(rows=len(proteins) * 2, cols=1, shared_xaxes=True, x_title="Fraction",
                                  row_titles=list(annotation), vertical_spacing=0.0,
@@ -1079,7 +1079,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
 
 
 def plot_dimension_reduction(
-        rdpmspecdata: RAPDORData,
+        rapdordata: RAPDORData,
         colors: Iterable[str] = None,
         highlight: Iterable[Any] = None,
         show_cluster: bool = False,
@@ -1096,12 +1096,12 @@ def plot_dimension_reduction(
     """Plots a dimension reduction using relative distribution change, relative fraction shift and the Mean Distance
 
     Args:
-        rdpmspecdata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object where distances
+        rapdordata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object where distances
             are calculated and the array is normalized already.
         colors (Iterable[str]): An iterable of color strings to use for plotting
         highlight (Iterable[Any]): RAPDORids to highlight in the plot
         show_cluster (bool): If set to true it will show clusters in different colors.
-            (Only works if rdpmspecdata is clustered)
+            (Only works if rapdordata is clustered)
         dimensions (int): Either 2 or 3. 2 will produce a plot where the mean distance axis is represented via a marker
             size. If 3, it will add another axis and return a three-dimensional figure
         marker_max_size (int): maximum marker size for highest mean distance (This has no effect if dimensions is 3)
@@ -1111,7 +1111,7 @@ def plot_dimension_reduction(
         legend_start (float): start position of the bubble legend in relative coordinates
             (This has no effect if dimensions is 3)
         legend_spread (float): spread of the bubble legend (This has no effect if dimensions is 3)
-        title_col (str): Will display names from that column in the rdpmspecdata for highlighted proteins
+        title_col (str): Will display names from that column in the rapdordata for highlighted proteins
             (This has no effect if dimensions is 3)
         cutoff_type (str): column in the dataframe of :class:`~RAPDOR.datastructures.RAPDORData` used for cutoff. Muste
             be numerical
@@ -1123,16 +1123,16 @@ def plot_dimension_reduction(
     """
     colors = COLORS + list(colors)
     if highlight is not None:
-        highlight = rdpmspecdata[highlight]
+        highlight = rapdordata[highlight]
     if show_cluster:
-        clusters = rdpmspecdata.df["Cluster"]
+        clusters = rapdordata.df["Cluster"]
     else:
         clusters = None
 
     if dimensions == 2:
 
         fig = _plot_dimension_reduction_result2d(
-            rdpmspecdata,
+            rapdordata,
             colors,
             clusters,
             highlight,
@@ -1147,7 +1147,7 @@ def plot_dimension_reduction(
         )
     elif dimensions == 3:
         fig = _plot_dimension_reduction_result3d(
-                rdpmspecdata,
+                rapdordata,
                 colors=colors,
                 clusters=clusters,
                 highlight=highlight
@@ -1157,19 +1157,19 @@ def plot_dimension_reduction(
     return fig
 
 
-def _plot_dimension_reduction_result3d(rdpmspecdata, colors=None, clusters=None, highlight=None):
-    embedding = rdpmspecdata.current_embedding
+def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, highlight=None):
+    embedding = rapdordata.current_embedding
 
     fig = go.Figure()
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
 
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
-    hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RAPDORid"].astype(str)
-    data = rdpmspecdata.df["Mean Distance"].to_numpy()
+    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
+    data = rapdordata.df["Mean Distance"].to_numpy()
 
     if highlight is not None and len(highlight) > 0:
-        indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
+        indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
     if n_cluster > len(colors)-2:
         fig.add_annotation(
@@ -1258,20 +1258,20 @@ def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 
     return fig
 
 
-def _plot_dimension_reduction_result2d(rdpmspecdata: RAPDORData, colors=None, clusters=None,
+def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clusters=None,
                                        highlight=None, marker_max_size: int = 40, second_bg_color: str = "white",
                                        bubble_legend_color: str = "black", legend_start: float = 0.2, legend_spread: float = 0.1,
                                        sel_column=None, cutoff_range: Tuple[float, float] = None, cutoff_type: str = None
                                        ):
-    embedding = rdpmspecdata.current_embedding
-    displayed_text = rdpmspecdata.df["RAPDORid"] if sel_column is None else rdpmspecdata.df[sel_column]
+    embedding = rapdordata.current_embedding
+    displayed_text = rapdordata.df["RAPDORid"] if sel_column is None else rapdordata.df[sel_column]
     fig = make_subplots(rows=2, cols=1, row_width=[0.85, 0.15], vertical_spacing=0.0)
-    hovertext = rdpmspecdata.df.index.astype(str) + ": " + rdpmspecdata.df["RAPDORid"].astype(str)
+    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
     cutoff_mask = np.zeros(embedding.shape[0], dtype=bool)
-    data = rdpmspecdata.df["Mean Distance"]
+    data = rapdordata.df["Mean Distance"]
     desired_min = 1
     min_data, max_data = np.nanmin(data), np.nanmax(data)
 
@@ -1331,14 +1331,14 @@ def _plot_dimension_reduction_result2d(rdpmspecdata: RAPDORData, colors=None, cl
     )
     if cutoff_range is not None:
         assert cutoff_type is not None
-        indices = rdpmspecdata.df[(rdpmspecdata.df[cutoff_type] < cutoff_range[1]) & (rdpmspecdata.df[cutoff_type] >= cutoff_range[0])].index
+        indices = rapdordata.df[(rapdordata.df[cutoff_type] < cutoff_range[1]) & (rapdordata.df[cutoff_type] >= cutoff_range[0])].index
         cutoff_mask[indices] = 1
     else:
         cutoff_mask = np.ones(embedding.shape[0], dtype=bool)
 
     if highlight is not None and len(highlight) > 0:
 
-        indices = np.asarray([rdpmspecdata.df.index.get_loc(idx) for idx in highlight])
+        indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
 
     if n_cluster > len(colors)-2:
@@ -1441,19 +1441,19 @@ if __name__ == '__main__':
     df["large ribo"] = df["Gene"].str.contains('rpl|Rpl', case=False)
     df["photosystem"] = df["Gene"].str.contains('psa|psb', case=False)
     design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-    rdpmspec = RAPDORData(df, design, logbase=2, control="CTRL")
-    rdpmspec.normalize_array_with_kernel(kernel_size=3)
-    rdpmspec.calc_distances(method="Jensen-Shannon-Distance")
-    rdpmspec.calc_all_scores()
-    rdpmspec.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
-    print(rdpmspec.df["Gene"].str.contains('rpl|Rpl'))
-    ids = list(rdpmspec.df[rdpmspec.df["small ribo"] == True]["RAPDORid"])
-    ids2 = list(rdpmspec.df[rdpmspec.df["large ribo"] == True]["RAPDORid"])
-    ids3 = list(rdpmspec.df[rdpmspec.df["photosystem"] == True]["RAPDORid"])
+    rapdor = RAPDORData(df, design, logbase=2, control="CTRL")
+    rapdor.normalize_array_with_kernel(kernel_size=3)
+    rapdor.calc_distances(method="Jensen-Shannon-Distance")
+    rapdor.calc_all_scores()
+    rapdor.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
+    print(rapdor.df["Gene"].str.contains('rpl|Rpl'))
+    ids = list(rapdor.df[rapdor.df["small ribo"] == True]["RAPDORid"])
+    ids2 = list(rapdor.df[rapdor.df["large ribo"] == True]["RAPDORid"])
+    ids3 = list(rapdor.df[rapdor.df["photosystem"] == True]["RAPDORid"])
     d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
-    #fig = multi_means_and_histo(d, rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
-    #fig = plot_protein_distributions(ids[0:4], rdpmspec, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
-    fig = rank_plot(d, rapdordata=rdpmspec, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
+    #fig = multi_means_and_histo(d, rapdor, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
+    #fig = plot_protein_distributions(ids[0:4], rapdor, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
+    fig = rank_plot(d, rapdordata=rapdor, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
     fig.update_layout(width=622, height=400, font=dict(size=10))
     fig.show()
     fig.write_image("foo.svg")
