@@ -17,7 +17,7 @@ papers/
 *_dp_calulations.*
 *_dp_calculations.c
 *_dp_calculations.html
-
+/filesystem*
 # C extensions
 *.so
 
