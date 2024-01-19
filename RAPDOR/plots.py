@@ -405,7 +405,7 @@ def plot_mean_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col
     x = x[i: rapdordata.norm_array.shape[-1] + i]
 
     names = []
-    j_val = max([len(name) for name in indices.keys()])
+    j_val = max([len(name) for name in levels])
 
     for eidx, (orig_name, idx) in enumerate(zip(levels, indices)):
         name = f"{orig_name}".ljust(j_val, " ")
