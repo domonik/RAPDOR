@@ -118,7 +118,7 @@ def distribution_panel(name):
                     html.Div(
                         [
                             html.Div(
-                                dcc.Graph(id="westernblot-graph", style={"height": "70px"}, figure=empty_figure()),
+                                dcc.Graph(id="westernblot-graph", style={"height": "70px"}, figure=empty_figure(), config={'displayModeBar':False}),
                                 className="col-12"
                             ),
                             html.Div("Fraction", className="col-12 pt-0", style={"text-align": "center", "font-size": "20px"})

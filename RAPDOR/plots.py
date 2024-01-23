@@ -60,7 +60,7 @@ DEFAULT_TEMPLATE.update(
             "font": dict(color="black"),
             "xaxis": dict(linecolor="black", showline=True, mirror=True),
             "yaxis": dict(linecolor="black", showline=True, mirror=True),
-            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black"))
+            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black", tickfont=dict(color="black")))
         }
     }
 )
@@ -74,7 +74,7 @@ DEFAULT_TEMPLATE_DARK.update(
             "paper_bgcolor": "#181818",
             "plot_bgcolor": " rgba(0,0,0,0)",
             "font": dict(color="white"),
-            "coloraxis": dict(colorbar=dict(outlinewidth=0)),
+            "coloraxis": dict(colorbar=dict(outlinewidth=0, tickfont=dict(color="white"))),
             "xaxis": dict(linecolor="white", showline=True),
             "yaxis": dict(linecolor="white", showline=True),
 
@@ -906,7 +906,7 @@ def plot_heatmap(distances, design: pd.DataFrame, colors=None):
     return fig
 
 
-def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid", vspace: float = 0.01):
+def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid", vspace: float = 0.01, scale_max: bool = True):
     """Plots a figure containing a pseudo westernblot of the protein distribution.
 
     This will ignore smoothing kernels and plots raw mean replicate intensities.
@@ -943,7 +943,7 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
                                  )
     for idx, protein in enumerate(proteins, 1):
         array = rapdordata.array[protein]
-        fig = plot_barcode_plot(array, rapdordata.internal_design_matrix, colors=colors, fractions=rapdordata.fractions)
+        fig = plot_barcode_plot(array, rapdordata.internal_design_matrix, colors=colors, fractions=rapdordata.fractions, scale_max=scale_max)
         for i_idx, trace in enumerate(fig["data"]):
             fig_subplots.add_trace(trace, row=(idx * 2) + i_idx - 1, col=1)
     fig = fig_subplots
@@ -979,6 +979,13 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
     v = 1 / len(proteins)
     for idx in range(len(proteins) * 2):
         fig.update_xaxes(showgrid=False, showline=True, linewidth=2, side="top" if not idx % 2 else "bottom", row=idx + 1, col=1)
+        if scale_max:
+            show = True if idx % 2 else False
+            ticklabelpos = "outside"
+        else:
+            show = True
+            ticklabelpos = "inside"
+
         fig.data[idx].colorbar.update(
             len=v,
             yref="paper",
@@ -986,9 +993,11 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
             yanchor="top",
             nticks=3,
             x=1. + 0.05 if idx % 2 else 1.,
-            showticklabels=True if idx % 2 else False,
+            showticklabels=show,
             thickness=0.05,
-            thicknessmode="fraction"
+            thicknessmode="fraction",
+            ticklabelposition=ticklabelpos,
+            tickfont=dict(color=None)
 
 
         )
@@ -1004,7 +1013,7 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
 
 
 
-def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float = 0.025, fractions=None):
+def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float = 0.025, fractions=None, scale_max: bool = True):
     """Creates a Westernblot like plot from the mean of protein intensities
 
     Args:
@@ -1043,8 +1052,11 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
             xs.append(fractions)
         names.append(name)
         means.append(mean_values)
+    m_val = [np.max(a) for a in means]
 
-    m_val = max([np.max(a) for a in means])
+    if scale_max:
+        m_val = max(m_val)
+        m_val = [m_val, m_val]
     for idx, (x, y, z) in enumerate(zip(xs, ys, means)):
 
         fig.add_trace(
@@ -1053,14 +1065,14 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
                 y=y,
                 z=z,
                 colorscale=scale[idx],
-                name = names[idx],
+                name=names[idx],
                 hovertemplate='<b>Fraction: %{x}</b><br><b>Protein Intensity: %{z:.2e}</b> ',
 
             ),
             row=idx+1, col=1
         )
-    fig.data[0].update(zmin=0, zmax=m_val)
-    fig.data[1].update(zmin=0, zmax=m_val)
+    fig.data[0].update(zmin=0, zmax=m_val[0])
+    fig.data[1].update(zmin=0, zmax=m_val[1])
     fig.update_xaxes(showticklabels=False, row=1, col=1)
     fig.update_yaxes(showgrid=False, mirror=True, showline=True, linecolor="black", linewidth=2)
     fig.update_xaxes(showgrid=False, mirror=True, showline=True, linecolor="black", linewidth=2)
@@ -1079,7 +1091,6 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
         yanchor="top",
 
     )
-
 
     return fig
 

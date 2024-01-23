@@ -607,7 +607,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
         settings = (dash.no_update for _ in DEFAULT_WESTERNBLOT_SETTINGS)
     else:
         if plot_type == 2:
-            fig = plot_protein_westernblots(keys, rapdordata, colors=colors, title_col=displayed_col, vspace=vspace)
+            fig = plot_protein_westernblots(keys, rapdordata, colors=colors, title_col=displayed_col, vspace=vspace, scale_max=False)
             settings = DEFAULT_WESTERNBLOT_SETTINGS
         elif plot_type == 3:
             if rapdordata.current_embedding is not None:
