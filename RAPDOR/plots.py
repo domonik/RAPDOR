@@ -354,8 +354,8 @@ def plot_distance_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_
     fig = go.Figure()
     proteins = rapdordata[rapdorids]
     x = rapdordata.df.loc[proteins]["Mean Distance"]
-    x_min = rapdordata.df["Mean Distance"].min()
-    x_max = rapdordata.df["Mean Distance"].max()
+    x_min = rapdordata.df["Mean Distance"].min() - 1e-10
+    x_max = rapdordata.df["Mean Distance"].max() + 1e-10
     fig.add_trace(
         go.Histogram(
             x=x,
