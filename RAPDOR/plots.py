@@ -7,6 +7,7 @@ from plotly.colors import qualitative
 from RAPDOR.datastructures import RAPDORData
 import plotly.io as pio
 import copy
+from scipy.stats import spearmanr
 
 DEFAULT_COLORS = {"primary": "rgb(138, 255, 172)", "secondary": "rgb(255, 138, 221)"}
 
@@ -631,22 +632,11 @@ def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORDat
 
     )
     fig.update_layout(
-        legend2=dict(y=-0.05, yref="paper", yanchor="top"),
-        legend=dict(y=-0.1, yref="paper", yanchor="top"),
+        legend2=dict(y=-0.05, yref="paper", yanchor="top", font=None),
+        legend=dict(y=-0.1, yref="paper", yanchor="top", font=None),
 
     )
-    fig.update_layout(template=DEFAULT_TEMPLATE, width=624, height=400, font=dict(size=10),
-                      legend=dict(font=dict(size=8)),
-                      legend2=dict(font=dict(size=8)),
-                      margin=dict(l=5, r=20, t=20, b=0)
-                      )
-    fig.update_xaxes(title=dict(font=dict(size=10)))
-    fig.update_yaxes(title=dict(font=dict(size=10)))
-    for annotation in fig.layout.annotations:
-        if annotation.text not in rapdorsets:
-            annotation.update(font=dict(size=10))
-        else:
-            annotation.update(font=dict(size=12))
+
     fig.update_layout(
         legend=dict(bgcolor='rgba(0,0,0,0)'),
         legend2=dict(bgcolor='rgba(0,0,0,0)'),
@@ -1448,6 +1438,229 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     return fig
 
 
+def _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titles, y_0, x_0):
+    fig.add_trace(
+        go.Bar(
+            x=[np.nan],
+            y=[np.nan],
+            showlegend=True,
+            name="Same Treatment",
+            marker=dict(color=colors[0])
+        )
+    )
+    fig.add_trace(
+        go.Bar(
+            x=[np.nan],
+            y=[np.nan],
+            showlegend=True,
+            name="Different Treatment",
+            marker=dict(color=colors[1])
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            mode="lines",
+            x=[np.nan],
+            y=[np.nan],
+            showlegend=True,
+            name="Median",
+            line=dict(width=1, dash="dot", color="black")
+        )
+    )
+    r_y = {treatment: [] for treatment in rapdordata.treatment_levels}
+    c_x = {treatment: [] for treatment in rapdordata.treatment_levels}
+
+    for annotation in fig.layout.annotations:
+        if annotation.text in column_titles:
+            text, treatment = annotation.text.split("#-")
+            c_x[treatment].append(annotation.x)
+
+            annotation.update(
+                y=y_0,
+                text=text[1:],
+                yanchor="top"
+            )
+
+        elif annotation.text in row_titles:
+            text, treatment = annotation.text.split("#-")
+            r_y[treatment].append(annotation.y)
+            annotation.update(
+                x=x_0,
+                text=text[1:],
+                xanchor="right"
+            )
+        else:
+            pass
+    for treatment, y_s in r_y.items():
+        fig.add_annotation(
+            text=treatment,
+            x=x_0,
+            y=np.mean(y_s),
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="middle",
+            textangle=90,
+            showarrow=False,
+        )
+        fig.add_shape(type="line",
+                      x0=x_0, y0=y_s[0], x1=x_0, y1=y_s[-1], xref="paper", yref="paper", line_color="black"
+                      )
+
+    for treatment, x_s in c_x.items():
+        fig.add_annotation(
+            text=treatment,
+            x=np.mean(x_s),
+            y=y_0,
+            xref="paper",
+            yref="paper",
+            xanchor="center",
+            yanchor="bottom",
+            showarrow=False,
+        )
+        fig.add_shape(type="line",
+                      x0=x_s[0], y0=y_0, x1=x_s[-1], y1=y_0, xref="paper", yref="paper", line_color="black"
+                      )
+
+    fig.update_layout(
+        legend=dict(
+            x=1, y=1, yanchor="top", xanchor="right", xref="paper", yref="paper", #itemsizing="constant"
+        )
+    )
+    fig.update_xaxes(showgrid=True)
+    fig.update_layout(
+        template=DEFAULT_TEMPLATE,
+        width=624,
+        height=400,
+    )
+    return fig
+
+
+def _sample_spearman(rapdordata: RAPDORData, colors: Iterable[str], x_0 = 1.1, y_0 = 1.15, **kwargs):
+    names = [f"{row['Replicate']}#-{row['Treatment']}" for idx, row in rapdordata.internal_design_matrix.iterrows()]
+    column_titles = [f"c{name}" for name in names[:-1]]
+    row_titles = [f"r{name}" for name in names[1:]]
+    defaults = {
+        "vertical_spacing": 0.05,
+        "horizontal_spacing": 0.03,
+        "shared_xaxes": True,
+        "shared_yaxes": True,
+        "x_title": "Spearman R",
+        "y_title": f"# of {rapdordata.measure_type}s"
+    }
+    for key, value in defaults.items():
+        if key not in kwargs:
+            kwargs[key] = value
+    array = rapdordata.kernel_array
+    array = array.reshape(array.shape[1], array.shape[0], -1)
+    n, p, f = array.shape
+    fig = make_subplots(rows=n - 1, cols=n - 1,
+                        column_titles=column_titles, row_titles=row_titles, **kwargs
+                        )
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            # Calculate Pearson correlation coefficient between vectors i and j
+            mask = np.isnan(array[i]) | np.isnan(array[j])
+            mask = ~mask
+            spears = np.empty(p)
+            for protein in range(p):
+                sub_i = array[i][protein]
+                sub_j = array[j][protein]
+                if np.any(np.isnan(sub_i) | np.isnan(sub_j)):
+                    pearson_coefficient = np.nan
+                else:
+                    pearson_coefficient, _ = spearmanr(sub_i, sub_j)
+                # pearson_coefficient = data.distances[protein][i][j]
+                spears[protein] = pearson_coefficient
+            same = rapdordata.internal_design_matrix.iloc[i]["Treatment"] == rapdordata.internal_design_matrix.iloc[j]["Treatment"]
+            fig.add_trace(
+                go.Histogram(
+                    x=spears, showlegend=False,
+                    marker=dict(color=colors[0] if same else colors[1]),
+                    xbins=dict(start=-1, end=1, size=0.01)
+                ), row=j, col=i + 1
+            )
+            m = np.nanmedian(spears)
+            fig.add_vline(
+                x=m,
+                line_color="black",
+                line_width=1,
+                row=j,
+                col=i + 1,
+                line_dash="dot",
+            )
+    fig = _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titles, y_0, x_0)
+
+    return fig
+
+
+def _sample_jsd_histograms(rapdordata: RAPDORData, colors: Iterable[str], x_0 = 1.1, y_0 = 1.15, **kwargs):
+    names = [f"{row['Replicate']}#-{row['Treatment']}" for idx, row in rapdordata.internal_design_matrix.iterrows()]
+    column_titles = [f"c{name}" for name in names[:-1]]
+    row_titles = [f"r{name}" for name in names[1:]]
+    defaults = {
+        "vertical_spacing": 0.05,
+        "horizontal_spacing": 0.03,
+        "shared_xaxes": "all",
+        "shared_yaxes": "all",
+        "x_title": "Jensen-Shannon-Distance",
+        "y_title": f"# of {rapdordata.measure_type}s"
+    }
+    for key, value in defaults.items():
+        if key not in kwargs:
+            kwargs[key] = value
+    p, n, f = rapdordata.norm_array.shape
+    fig = make_subplots(rows=n - 1, cols=n - 1,
+                        column_titles=column_titles, row_titles=row_titles, **kwargs
+                        )
+    for i in range(n):
+        for j in range(i + 1, n):
+            jsds = np.empty(p)
+            for protein in range(p):
+                jsd = rapdordata.distances[protein][i][j]
+                jsds[protein] = jsd
+            same = rapdordata.internal_design_matrix.iloc[i]["Treatment"] == rapdordata.internal_design_matrix.iloc[j]["Treatment"]
+            fig.add_trace(
+                go.Histogram(
+                    x=jsds, showlegend=False,
+                    marker=dict(color=colors[0] if same else colors[1]),
+                    xbins=dict(start=0, end=1, size=0.01)
+                ), row=j, col=i + 1
+            )
+            m = np.nanmedian(jsds)
+            fig.add_vline(
+                x=m,
+                line_color="black",
+                line_width=1,
+                row=j,
+                col=i + 1,
+                line_dash="dot",
+            )
+    fig = _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titles, y_0, x_0)
+    return fig
+
+
+def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman", colors: Iterable[str] = COLOR_SCHEMES["Flamingo"], **kwargs):
+    """ Plots the distribution of jensen-shannon-distance/spearman R for all pairwise samples
+
+    Args:
+        rapdordata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object
+        method: either spearman or jensen-shannon-distance (jsd).
+        colors: colors to use for plotting
+        **kwargs: will be passed to the plotly make_subplots call
+
+    Returns:
+
+    """
+    if method == "spearman":
+        return _sample_spearman(rapdordata, colors, **kwargs)
+    elif method == "jensen-shannon-distance" or method == "jsd":
+        return _sample_jsd_histograms(rapdordata, colors, **kwargs)
+    else:
+        raise ValueError(f"Mode {method} not supported")
+
+
 
 if __name__ == '__main__':
     from RAPDOR.datastructures import RAPDORData
@@ -1470,8 +1683,9 @@ if __name__ == '__main__':
     d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
     #fig = multi_means_and_histo(d, rapdor, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
     #fig = plot_protein_distributions(ids[0:4], rapdor, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
-    fig = rank_plot(d, rapdordata=rapdor, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
-    fig.update_layout(width=622, height=400, font=dict(size=10))
+    fig = plot_sample_histogram(rapdor, method="jsd")
+    fig.show()
+    fig = plot_sample_histogram(rapdor)
     fig.show()
     fig.write_image("foo.svg")
 
