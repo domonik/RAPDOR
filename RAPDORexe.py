@@ -40,5 +40,5 @@ if __name__ == '__main__':
     address = f"http://{host}:{port}"
     thread = threading.Thread(target=open_browser, args=(address, 5))
     thread.start()
-    app.run(debug=False, port=49372, host="127.0.0.1", threaded=True)
+    app.run(debug=False, port=port, host=host, threaded=True)
     thread.join()
