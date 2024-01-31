@@ -13,9 +13,12 @@ from unittest.mock import Mock
 sys.path.insert(1, __RAPDORPECPATH)
 from RAPDOR import _version
 
+IMG_LIGHT = os.path.join(__RAPDORPECPATH, "RAPDOR", "visualize", "assets", "RAPDOR_light.svg")
+IMG_DARK = os.path.join(__RAPDORPECPATH, "RAPDOR", "visualize", "assets", "RAPDOR.svg")
+
+
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
-
 project = 'RAPDOR'
 copyright = '2023, Domonik'
 author = 'Domonik'
@@ -61,8 +64,8 @@ html_theme_options = {
     "navigation_depth": 4,
     "show_prev_next": False,
     "logo": {
-        "image_light": "RAPDOR_light.svg",
-        "image_dark": "RAPDOR.svg",
+        "image_light": IMG_LIGHT,
+        "image_dark": IMG_DARK,
     },
     "icon_links": [
         {
