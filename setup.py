@@ -40,7 +40,6 @@ setup(
         "scikit-learn",
         "dash_loading_spinners",
         "kaleido",
-        "PyQt5",
         "dash_daq",
         "dash_extensions",
         "pyYAML"

@@ -109,7 +109,6 @@ autosummary_mock_imports = [
     "statsmodels",
     "dash_loading_spinners",
     "dash_daq",
-    "PyQt5",
     "umap"
 ]
 
