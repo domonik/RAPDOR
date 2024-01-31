@@ -19,4 +19,5 @@ jobs:
     - run: pyinstaller RAPDORexe.spec
     - uses: actions/upload-artifact@v2
       with:
+        name:  RAPDOR_${{ matrix.os }}
         path: dist/*
