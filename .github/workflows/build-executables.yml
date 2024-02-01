@@ -35,13 +35,16 @@ jobs:
 
     - name: rename dist
       shell: bash
+      if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
       run: |
         mv dist/RAPDOR dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         zip -r dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}.zip dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
 
-    - name: Chmod +x (Linux and Mac only)
-      if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
-      run: chmod +x dist/RAPDOR/RAPDOR
+    - name: rename dist and zip on Windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        Move-Item -Path dist/RAPDOR -Destination dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
+        Compress-Archive -Path dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }} -DestinationPath dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}.zip
 
     - name: Upload artifact
       uses: actions/upload-artifact@v2
