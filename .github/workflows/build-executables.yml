@@ -33,6 +33,11 @@ jobs:
       shell: bash
       run: echo "version=$(python -c "import versioneer; print(versioneer.get_version())")" >> $GITHUB_OUTPUT
 
+    - name: rename dist
+      shell: bash
+      run: |
+        mv dist/RAPDOR dist/RAPDOR_v{{ steps.version.outputs.version }}_${{ matrix.os }}
+        zip -r dist/RAPDOR_v{{ steps.version.outputs.version }}_${{ matrix.os }}.zip dist/RAPDOR_v{{ steps.version.outputs.version }}_${{ matrix.os }}
 
     - name: Chmod +x (Linux and Mac only)
       if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
@@ -43,5 +48,14 @@ jobs:
       with:
         name: RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         path: dist/*
+
+    - name: Release nightly
+      uses: softprops/action-gh-release@v1
+      with:
+        prerelease: true
+        name: nightly
+        tag_name: nightly
+        files: dist/RAPDOR_v{{ steps.version.outputs.version }}_${{ matrix.os }}.zip
+        fail_on_unmatched_files: true
 
 
