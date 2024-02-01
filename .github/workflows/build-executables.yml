@@ -1,8 +1,7 @@
 on:
   push:
-    branches: [ main, dev ]
-  pull_request:
-    branches: [ main, dev ]
+    branches: [ dev ]
+
 
 permissions:
   contents: write
@@ -44,20 +43,14 @@ jobs:
       run: |
         mv dist/RAPDOR dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         cd dist
-        zip -r RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}.zip RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
+        zip -r RAPDOR_nightly_${{ matrix.os }}.zip RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         cd ..
 
     - name: rename dist and zip on Windows
       if: matrix.os == 'windows-latest'
       run: |
         Move-Item -Path dist/RAPDOR -Destination dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
-        Compress-Archive -Path dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }} -DestinationPath dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}.zip
-
-    - name: Upload artifact
-      uses: actions/upload-artifact@v2
-      with:
-        name: RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
-        path: dist/*
+        Compress-Archive -Path dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }} -DestinationPath dist/RAPDOR_nightly_${{ matrix.os }}.zip
 
     - name: Release nightly
       uses: softprops/action-gh-release@v1
@@ -65,7 +58,8 @@ jobs:
         prerelease: true
         name: nightly
         tag_name: nightly
-        files: dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}.zip
+        target_commitish: dev
+        files: dist/RAPDOR_nightly_${{ matrix.os }}.zip
         fail_on_unmatched_files: true
 
 
