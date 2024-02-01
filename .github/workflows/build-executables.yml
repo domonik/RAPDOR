@@ -15,6 +15,8 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -28,7 +30,7 @@ jobs:
 
     - name: Extract version from versioneer
       id: version
-      run: echo "version=$(python -c "import RAPDOR; print(RAPDOR.__version__)")" >> $GITHUB_OUTPUT
+      run: echo "version=$(python -c "import versioneer; print(versioneer.get_version())")" >> $GITHUB_OUTPUT
 
 
     - name: Chmod +x (Linux and Mac only)

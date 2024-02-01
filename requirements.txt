@@ -12,3 +12,4 @@ dash_daq
 dash_extensions
 pyYAML
 pyinstaller
+versioneer
