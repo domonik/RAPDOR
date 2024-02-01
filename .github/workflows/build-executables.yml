@@ -26,14 +26,19 @@ jobs:
         pip install -r requirements.txt pyinstaller
         pyinstaller RAPDORexe.spec
 
-    - name: Chmod +x (Linux only)
+    - name: Extract version from versioneer
+      id: extract_version
+      run: echo "::set-output name=version::$(python -c "import RAPDOR; print(RAPDOR.__version__)")"
+
+
+    - name: Chmod +x (Linux and Mac only)
       if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
       run: chmod +x dist/RAPDOR/RAPDOR
 
     - name: Upload artifact
       uses: actions/upload-artifact@v2
       with:
-        name: RAPDOR_${{ matrix.os }}
+        name: RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         path: dist/*
 
 
