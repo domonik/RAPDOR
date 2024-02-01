@@ -30,6 +30,7 @@ jobs:
 
     - name: Extract version from versioneer
       id: version
+      shell: bash
       run: echo "version=$(python -c "import versioneer; print(versioneer.get_version())")" >> $GITHUB_OUTPUT
 
 
