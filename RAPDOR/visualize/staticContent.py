@@ -15,14 +15,14 @@ FILEDIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(FILEDIR, "assets")
 LOGO = os.path.join(ASSETS_DIR, "RAPDOR.svg")
 LIGHT_LOGO = os.path.join(ASSETS_DIR, "RAPDOR.svg")
-encoded_img = base64.b64encode(open(LOGO, 'rb').read())
-IMG_TEXT = open(LOGO, 'r').read()
+IMG_TEXT = open(LOGO, 'r').read().replace("\n", "").replace("\r\n", "")
 color = "fill:#ff8add"
 res = re.finditer(color, IMG_TEXT)
 COLOR_IDX = [result.start() for result in res]
 c2 = "fill:#8affac"
 res2 = re.finditer(c2, IMG_TEXT)
 C2STARTS = [result.start() for result in res2]
+encoded_img = base64.b64encode(IMG_TEXT.encode())
 
 logger = logging.getLogger("RAPDOR")
 
