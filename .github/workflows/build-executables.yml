@@ -1,5 +1,7 @@
 on:
   push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -10,14 +12,27 @@ jobs:
         os: ['windows-latest', 'ubuntu-20.04', 'macos-latest']
 
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
       with:
         python-version: 3.9
 
-    - run: pip install -r requirements.txt pyinstaller
-    - run: pyinstaller RAPDORexe.spec
-    - uses: actions/upload-artifact@v2
+    - name: Install dependencies and build
+      run: |
+        pip install -r requirements.txt pyinstaller
+        pyinstaller RAPDORexe.spec
+
+    - name: Chmod +x (Linux only)
+      if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
+      run: chmod +x dist/RAPDOR/RAPDOR
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v2
       with:
-        name:  RAPDOR_${{ matrix.os }}
+        name: RAPDOR_${{ matrix.os }}
         path: dist/*
+
+
