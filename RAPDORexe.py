@@ -26,6 +26,7 @@ from RAPDOR.visualize.runApp import get_app_layout
 from queue import Queue
 import logging
 import logging.handlers
+from multiprocessing import freeze_support   # <---add this
 
 logger = logging.getLogger("RAPDOR")
 logger.addHandler(logging.StreamHandler())
@@ -344,7 +345,7 @@ class MyReceiver(QObject):
 def main():
     port = 49372
     host = "127.0.0.1"
-
+    freeze_support()
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     use = True

@@ -11,5 +11,6 @@ kaleido
 dash_daq
 dash_extensions
 pyYAML
+PyQt5
 pyinstaller
 versioneer
