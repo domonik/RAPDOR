@@ -14,6 +14,7 @@ package_imports = [
 rdpsroot = os.path.join(os.getcwd(), "RAPDOR")
 
 datas = [
+    ("exestyle.css", ".")
 ]
 for package, files in package_imports:
     if package != "RAPDOR":
