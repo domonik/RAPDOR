@@ -14,7 +14,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['windows-latest', 'ubuntu-20.04', 'macos-latest']
+        os: ['windows-latest', 'ubuntu-20.04', 'macos-latest', "ubuntu-22.04"]
 
     steps:
     - name: Checkout code
@@ -39,7 +39,7 @@ jobs:
 
     - name: rename dist
       shell: bash
-      if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest'
+      if: matrix.os == 'ubuntu-20.04' || matrix.os == 'macos-latest' || matrix.os == 'ubuntu-22.04'
       run: |
         mv dist/RAPDOR dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         cd dist
