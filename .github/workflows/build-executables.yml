@@ -18,6 +18,8 @@ jobs:
           fetch-depth: 0
       - name: del-tag
         run: |
+          RELEASE_ID=$(curl -s -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/nightly" | jq -r '.id')
+          curl -X DELETE -H "Authorization: token ${GITHUB_TOKEN}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/${RELEASE_ID}"
           git push --delete origin nightly
           git tag --delete nightly
     
