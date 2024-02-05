@@ -1,3 +1,4 @@
+name: nightly-release
 on:
   push:
     branches: [ dev ]
