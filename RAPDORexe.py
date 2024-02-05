@@ -345,10 +345,14 @@ class MyReceiver(QObject):
 def main():
     port = 49372
     host = "127.0.0.1"
+    print("Freezing support")
+
     freeze_support()
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     use = True
+    print("Searching for a non used-local port")
+
     while use:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -362,9 +366,11 @@ def main():
                 # something else raised the socket.error exception
                 print(e)
         finally: s.close()
-
+    print("Configuring application")
     app = QApplication(sys.argv)
     ex = RAPDORGUI(default_port=port, default_host=host)
+    print("application configured")
+
     ex.show()
     sys.exit(app.exec_())
 
