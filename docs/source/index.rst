@@ -10,12 +10,7 @@ RAPDOR documentation
    api_doc
    cli
 
---------------------------------------
 
-
-**Version**: |release|
-
---------------------------------------
 
 
 RAPDOR

@@ -1,0 +1,41 @@
+{% if versions %}
+  <select id="versionDropdown" onchange="redirectToSelected()" onload="loadLastSelected()">
+    <option value="" disabled selected>Select version</option>
+    {%- for item in versions %}
+      <option value="{{ item.url }}">{{ item.name }}</option>
+    {%- endfor %}
+  </select>
+
+  <script>
+    function redirectToSelected() {
+      var dropdown = document.getElementById("versionDropdown");
+      var selectedName = dropdown.options[dropdown.selectedIndex].text; // Get the displayed name
+
+      // Save the selected name in local storage
+      localStorage.setItem('lastSelectedName', selectedName);
+
+      // Redirect to the selected URL
+      window.location.href = dropdown.value;
+    }
+
+    function loadLastSelected() {
+      // Load the last selected name from local storage
+      var lastSelectedName = localStorage.getItem('lastSelectedName');
+      if (lastSelectedName) {
+        var dropdown = document.getElementById("versionDropdown");
+
+        // Set the dropdown's value to the last selected name
+        for (var i = 0; i < dropdown.options.length; i++) {
+          if (dropdown.options[i].text === lastSelectedName) {
+            dropdown.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
+    // Call the loadLastSelected function when the page has fully loaded
+    versionDropdown
+    document.addEventListener('DOMContentLoaded', loadLastSelected);
+  </script>
+{% endif %}

@@ -11,3 +11,4 @@ Tutorial
     python_analysis
     export
     server_setup
+    executable

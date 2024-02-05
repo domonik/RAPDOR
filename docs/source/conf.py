@@ -43,7 +43,8 @@ extensions = [
     "sphinx_rtd_theme",
     'sphinxarg.ext',
     'sphinx_design',
-    'sphinx_copybutton'
+    'sphinx_copybutton',
+    "sphinx_multiversion",
 ]
 
 autosummary_generate = True
@@ -67,6 +68,8 @@ html_theme_options = {
         "image_light": IMG_LIGHT,
         "image_dark": IMG_DARK,
     },
+    "navbar_start": ["navbar-logo"],
+    "navbar_persistent": ["search-button", "versions.html"],
     "icon_links": [
         {
             "name": "GitHub",
@@ -111,5 +114,8 @@ autosummary_mock_imports = [
     "dash_daq",
     "umap"
 ]
+
+smv_tag_whitelist = r'^.*$'
+smv_branch_whitelist = r'^(main|dev)$'
 
 sys.modules["RAPDOR.visualize.runApp"] = Mock()
