@@ -9,7 +9,21 @@ permissions:
 
 
 jobs:
+  delete-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: del-tag
+        run: |
+          git push --delete origin nightly
+          git tag --delete nightly
+    
+
   build:
+    needs: delete-tag
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
