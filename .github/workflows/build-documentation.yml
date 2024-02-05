@@ -5,8 +5,11 @@ env:
 
 on:
   workflow_run:
-    workflows: [ nightlyRelease, taggedRelease ]
-    types: [ completed ]
+    workflows:
+      - nightlyRelease
+    types:
+      - completed
+
 
 
 # Allows you to run this workflow manually from the Actions tab
