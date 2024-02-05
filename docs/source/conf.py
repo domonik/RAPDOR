@@ -116,6 +116,6 @@ autosummary_mock_imports = [
 ]
 
 smv_tag_whitelist = r'^.*$'
-smv_branch_whitelist = r'^(main)$'
+smv_branch_whitelist = r'^(fo)$'
 
 sys.modules["RAPDOR.visualize.runApp"] = Mock()

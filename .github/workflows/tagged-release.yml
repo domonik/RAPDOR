@@ -1,4 +1,4 @@
-
+name: "taggedRelease"
 on:
   push:
     tags:

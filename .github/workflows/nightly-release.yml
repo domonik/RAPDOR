@@ -1,4 +1,4 @@
-name: nightly-release
+name: nightlyRelease
 on:
   push:
     branches: [ dev ]
