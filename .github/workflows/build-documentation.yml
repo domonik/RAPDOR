@@ -1,0 +1,61 @@
+name: build-github-pages
+env:
+  GITHUB_ACTOR: domonik
+  GITHUB_REPOSITORY: domonik/RAPDOR
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  build_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.9
+
+
+      - name: create environment with mamba
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          channels: conda-forge,defaults
+          auto-activate-base: false
+          activate-environment: rapdor_doc
+          environment-file: docs/environment.yml
+
+      - name: Render Rmd files
+        run: |
+          eval "$(conda shell.bash hook)"
+          conda activate rapdor_doc
+          cd docs
+          sphinx-multiversion ./source/ build/html
+          bash fix_superindex.sh
+          cd ..
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v2
+        with:
+          # Upload entire repository
+          path: 'docs/build/html'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v2
