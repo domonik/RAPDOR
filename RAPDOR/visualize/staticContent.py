@@ -42,7 +42,7 @@ def _header_layout():
                             ] + [
                                 dbc.ListGroupItem(
                                     "Help",
-                                    href="https://RAPDOR.readthedocs.io/en/latest/dashboard.html"
+                                    href="https://domonik.github.io/RAPDOR/"
                                 )
                             ]
                         ),
