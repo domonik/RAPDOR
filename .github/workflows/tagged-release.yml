@@ -45,14 +45,14 @@ jobs:
       run: |
         mv dist/RAPDOR dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         cd dist
-        zip -r RAPDOR_nightly_${{ matrix.os }}.zip RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
+        zip -r RAPDORv${{ steps.version.outputs.version }}_${{ matrix.os }}.zip RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         cd ..
 
     - name: rename dist and zip on Windows
       if: matrix.os == 'windows-latest'
       run: |
         Move-Item -Path dist/RAPDOR -Destination dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
-        Compress-Archive -Path dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }} -DestinationPath dist/RAPDOR_nightly_${{ matrix.os }}.zip
+        Compress-Archive -Path dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }} -DestinationPath dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}.zip
 
     - name: Release nightly
       uses: softprops/action-gh-release@v1
