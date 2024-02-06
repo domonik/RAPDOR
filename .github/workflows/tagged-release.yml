@@ -57,7 +57,7 @@ jobs:
     - name: Release nightly
       uses: softprops/action-gh-release@v1
       with:
-        files: dist/RAPDOR_nightly_${{ matrix.os }}.zip
+        files: dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}.zip
         fail_on_unmatched_files: true
 
 
