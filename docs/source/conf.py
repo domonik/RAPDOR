@@ -69,7 +69,7 @@ html_theme_options = {
         "image_dark": IMG_DARK,
     },
     "navbar_start": ["navbar-logo"],
-    "navbar_persistent": ["search-button", "versions.html"],
+    "navbar_center": ["versions", "navbar-nav"],
     "icon_links": [
         {
             "name": "GitHub",
