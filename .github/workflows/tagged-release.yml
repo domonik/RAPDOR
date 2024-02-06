@@ -45,7 +45,7 @@ jobs:
       run: |
         mv dist/RAPDOR dist/RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         cd dist
-        zip -r RAPDORv${{ steps.version.outputs.version }}_${{ matrix.os }}.zip RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
+        zip -r RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}.zip RAPDOR_v${{ steps.version.outputs.version }}_${{ matrix.os }}
         cd ..
 
     - name: rename dist and zip on Windows
