@@ -1377,12 +1377,28 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
             col=1
         )
         nmask = ~mask & (clusters == -1) & cutoff_mask
+        texts = displayed_text[nmask]
+        embx = embedding[nmask, :][:, 0]
+        emby = embedding[nmask, :][:, 1]
+        for idx, text in enumerate(texts):
+            fig.add_annotation(
+                text=text,
+                x=embx[idx],
+                y=emby[idx],
+                xanchor="center",
+                yanchor="middle",
+                showarrow=False,
+                xref="x2",
+                yref="y2",
+
+            )
+
+
         fig.add_trace(
             go.Scatter(
-                x=embedding[nmask, :][:, 0],
-                y=embedding[nmask, :][:, 1],
-                mode="markers+text",
-                text=displayed_text[nmask],
+                x=embx,
+                y=emby,
+                mode="markers",
                 hovertext=hovertext[nmask],
                 marker=dict(color=colors[-2], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
                 name="Not Clustered",
@@ -1675,11 +1691,16 @@ if __name__ == '__main__':
     rapdor.normalize_array_with_kernel(kernel_size=3)
     rapdor.calc_distances(method="Jensen-Shannon-Distance")
     rapdor.calc_all_scores()
+    rapdor.calc_distribution_features()
     rapdor.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
     print(rapdor.df["Gene"].str.contains('rpl|Rpl'))
     ids = list(rapdor.df[rapdor.df["small ribo"] == True]["RAPDORid"])
     ids2 = list(rapdor.df[rapdor.df["large ribo"] == True]["RAPDORid"])
     ids3 = list(rapdor.df[rapdor.df["photosystem"] == True]["RAPDORid"])
+    plt = plot_dimension_reduction(rapdor, colors=COLOR_SCHEMES["Dolphin"], highlight=ids  )
+    plt.show()
+    exit()
+
     d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
     #fig = multi_means_and_histo(d, rapdor, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
     #fig = plot_protein_distributions(ids[0:4], rapdor, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
