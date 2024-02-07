@@ -59,7 +59,7 @@ def _header_layout():
                         dcc.Link("Upload", href="/", className="px-2"),
                         dcc.Link("Analysis", href="/analysis", className="px-2"),
                         dcc.Link("Figure Factory", href="/figure_factory", className="px-2", style={"white-space": "nowrap"}),
-                        dcc.Link("Help", href="https://RAPDOR.readthedocs.io/en/latest/dashboard.html",
+                        dcc.Link("Help", href="https://domonik.github.io/RAPDOR/",
                                  className="px-2", target="_blank"),
                         ],
                         className=" col-3 d-lg-flex d-none align-items-center"
