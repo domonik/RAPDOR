@@ -1381,17 +1381,18 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
         embx = embedding[nmask, :][:, 0]
         emby = embedding[nmask, :][:, 1]
         for idx, text in enumerate(texts):
-            fig.add_annotation(
-                text=text,
-                x=embx[idx],
-                y=emby[idx],
-                xanchor="center",
-                yanchor="middle",
-                showarrow=False,
-                xref="x2",
-                yref="y2",
+            if not pd.isna(text):
+                fig.add_annotation(
+                    text=text,
+                    x=embx[idx],
+                    y=emby[idx],
+                    xanchor="center",
+                    yanchor="middle",
+                    showarrow=False,
+                    xref="x2",
+                    yref="y2",
 
-            )
+                )
 
 
         fig.add_trace(
