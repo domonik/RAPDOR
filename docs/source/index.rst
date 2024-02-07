@@ -24,6 +24,8 @@ RAPDOR
         :img-top: ../source/_static/DownloadIcon.svg
         :class-card: on-background border rounded border-light
         :class-header: text-center font-weight-bold
+        :class-img-top: w-50
+
 
 
         Installation
@@ -44,6 +46,8 @@ RAPDOR
         :img-top: ../source/_static/TutorialIcon.svg
         :class-card: on-background border rounded border-light
         :class-header: text-center font-weight-bold
+        :class-img-top: w-50
+
 
 
 
@@ -68,6 +72,8 @@ RAPDOR
         :img-top: ../source/_static/ConsoleIcon.svg
         :class-card: on-background border rounded border-light
         :class-header: text-center font-weight-bold
+        :class-img-top: w-50
+
 
 
 
@@ -90,6 +96,8 @@ RAPDOR
         :img-top: ../source/_static/PythonIcon.svg
         :class-card: on-background border rounded border-light
         :class-header: text-center font-weight-bold
+        :class-img-top: w-50
+
 
 
 

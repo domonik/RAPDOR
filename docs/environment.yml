@@ -12,7 +12,7 @@ dependencies:
     - sphinxcontrib-napoleon
     - sphinx-argparse
     - sphinx_rtd_theme
-    - pydata-sphinx-theme
+    - pydata-sphinx-theme==0.15.1
     - pytest-sphinx
     - docutils
     - doc8

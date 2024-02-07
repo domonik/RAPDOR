@@ -70,6 +70,7 @@ html_theme_options = {
     },
     "navbar_start": ["navbar-logo"],
     "navbar_center": ["versions", "navbar-nav"],
+
     "icon_links": [
         {
             "name": "GitHub",
