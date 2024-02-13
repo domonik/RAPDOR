@@ -194,7 +194,7 @@ def plot_replicate_distribution(
 
 
 def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid",
-                               mode: str = "line", plot_type: str = "normalized", **kwargs):
+                               mode: str = "line", plot_type: str = "normalized", zoom_fractions: int = 2, **kwargs):
     """Plots a figure containing distributions of proteins using mean, median, min and max values of replicates
 
         Args:
@@ -223,14 +223,28 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
     annotation = list(rapdordata.df[title_col][proteins])
     if "horizontal_spacing" not in kwargs:
         kwargs["horizontal_spacing"] = 0.15
+    if "shared_xaxes" not in kwargs:
+        if plot_type == "zoomed":
+            kwargs["shared_xaxes"] = False
+        else:
+            kwargs["shared_xaxes"] = True
+    if "column_titles" not in kwargs:
+        if plot_type == "zoomed":
+            kwargs["column_titles"] = [None, "Zoom to strongest shift"]
     if "rows" in kwargs and "cols" in kwargs:
         rows = kwargs["rows"]
         cols = kwargs["cols"]
         del kwargs["rows"]
         del kwargs["cols"]
     else:
-        cols = 2 if plot_type == "mixed" else 1
+        if plot_type == "zoomed":
+            cols = 2
+        elif plot_type == "mixed":
+            cols = 2
+        else:
+            cols = 1
         rows = len(proteins)
+    x1s = None
     if rows * cols < len(proteins):
         raise ValueError(f"Not enough columns ({cols}) and rows ({rows}) to place {len(proteins)} figures")
     if plot_type == "normalized":
@@ -248,24 +262,41 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
         y_title = None
         arrays = [rapdordata.norm_array[protein] for protein in proteins] + [rapdordata.kernel_array[protein] for protein in proteins]
         annotation += list(rapdordata.df[title_col][proteins])
-
-
+    elif plot_type == "zoomed":
+        arrays = [rapdordata.norm_array[protein] for protein in proteins] * 3
+        y_title = f"rel. {rapdordata.measure_type} {rapdordata.measure}"
+        annotation += list(rapdordata.df[title_col][proteins])
+        x1s = [rapdordata.df.loc[protein]["position strongest shift"] for protein in proteins]
+        if rapdordata.categorical_fraction:
+            raise ValueError("This plot type is not supported for categorical fractions")
     else:
         raise ValueError("Plot type not supported")
 
     fig_subplots = make_subplots(
         rows=rows, cols=cols,
-        shared_xaxes=True,
         x_title="Fraction",
         y_title=y_title,
         #row_titles=list(annotation),
         **kwargs
     )
     idx = 0
+    clipmaxes = []
     for col_idx in range(cols):
         for row_idx in range(rows):
             if idx < len(arrays):
                 array = arrays[idx]
+                if x1s and col_idx == 0:
+                    ma = x1s[idx] - i + zoom_fractions
+                    mi = x1s[idx] - 1 - i - zoom_fractions
+                    ma = min(ma, array.shape[-1])
+                    mi = max(mi, 0)
+                    wmax = np.nanmax(array[:, mi:ma])
+                    wmin = np.nanmin(array[:, mi:ma])
+                    margin = (wmax - wmin) * 0.025
+                    wmax = wmax + margin
+                    wmin = wmin - margin
+                    clipmaxes.append((wmin, wmax))
+
                 plot_idx = (row_idx) * cols + (col_idx +1) if idx != 0 else ""
                 xref = f"x{plot_idx} domain"
                 yref = f"y{plot_idx} domain"
@@ -275,7 +306,7 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                     fig = plot_bars(array, rapdordata.internal_design_matrix, offset=i, colors=colors, x=rapdordata.fractions)
                 else:
                     raise ValueError("mode must be one of line or bar")
-                if plot_type != "mixed" or col_idx == 1:
+                if plot_type not in ("mixed", "zoomed") or col_idx == 1:
                     fig_subplots.add_annotation(
                         text=annotation[idx],
                         xref=xref,
@@ -317,6 +348,13 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
             textangle=90,
             xshift=-20
         )
+
+    if plot_type == "zoomed":
+        for idx, entry in enumerate(x1s):
+            clipmax= clipmaxes[idx]
+            fig_subplots.update_xaxes(range=[entry-zoom_fractions, entry+zoom_fractions], row=idx+1, col=2)
+            fig_subplots.update_yaxes(row=idx+1, col=2, range=clipmax)
+
 
 
     fig_subplots.update_layout(
@@ -1681,13 +1719,13 @@ def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman", colo
 
 if __name__ == '__main__':
     from RAPDOR.datastructures import RAPDORData
-    df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
+    df = pd.read_csv("../testData/sanitized_df.tsv", sep="\t")
     df["ribosomal protein"] = ((df["Gene"].str.contains('rpl|rps|Rpl|Rps', case=False)) | (
         df['ProteinFunction'].str.contains('ribosomal protein', case=False)))
     df["small ribo"] = df["Gene"].str.contains('rps|Rps', case=False)
     df["large ribo"] = df["Gene"].str.contains('rpl|Rpl', case=False)
     df["photosystem"] = df["Gene"].str.contains('psa|psb', case=False)
-    design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
+    design = pd.read_csv("../testData/sanitized_design.tsv", sep="\t")
     rapdor = RAPDORData(df, design, logbase=2, control="CTRL")
     rapdor.normalize_array_with_kernel(kernel_size=3)
     rapdor.calc_distances(method="Jensen-Shannon-Distance")
@@ -1695,10 +1733,13 @@ if __name__ == '__main__':
     rapdor.calc_distribution_features()
     rapdor.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
     print(rapdor.df["Gene"].str.contains('rpl|Rpl'))
-    ids = list(rapdor.df[rapdor.df["small ribo"] == True]["RAPDORid"])
+    ids = list(rapdor.df[rapdor.df["small ribo"] == True]["RAPDORid"])[0:5]
     ids2 = list(rapdor.df[rapdor.df["large ribo"] == True]["RAPDORid"])
     ids3 = list(rapdor.df[rapdor.df["photosystem"] == True]["RAPDORid"])
-    plt = plot_dimension_reduction(rapdor, colors=COLOR_SCHEMES["Dolphin"], highlight=ids  )
+    ids = []
+    ids += list(rapdor.df[rapdor.df["old_locus_tag"].str.contains("sll1388|slr0711")]["RAPDORid"])
+    #plt = plot_dimension_reduction(rapdor, colors=COLOR_SCHEMES["Dolphin"], highlight=ids  )
+    plt = plot_protein_distributions(ids, rapdor, colors=COLOR_SCHEMES["Dolphin"], plot_type="zoomed")
     plt.show()
     exit()
 

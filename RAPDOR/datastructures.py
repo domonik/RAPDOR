@@ -392,12 +392,19 @@ class RAPDORData:
         else:
             raise ValueError(f"Peak determination failed due to bug in source code")
         test = rel2
+        if self.categorical_fraction:
+            positions = np.argmax(test, axis=-1)
+            positions += self.state.kernel_size // 2
+            positions = self.fractions[positions]
+        else:
+            i = self.state.kernel_size // 2
+            t = ((test == np.max(test, axis=-1, keepdims=True)) * self.fractions[i:-i])
+            positions = t.sum(axis=-1) / np.count_nonzero(t, axis=-1)
+            positions = np.floor(positions).astype(int)
+        # Get the middle occurrence index
 
-        positions = np.argmax(test, axis=-1)
 
-        positions += self.state.kernel_size // 2
-
-        self.df["position strongest shift"] = self.fractions[positions]
+        self.df["position strongest shift"] = positions
 
     def calc_mean_distance(self):
         rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
@@ -944,11 +951,11 @@ def _analysis_executable_wrapper(args):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv("../testData/rdeep_counts_normalized.tsv", sep="\t", index_col=0)
+    df = pd.read_csv("../testData/sanitized_df.tsv", sep="\t", index_col=0)
     # sdf = df[[col for col in df.columns if "LFQ" in col]]
     sdf = df
     sdf.index = sdf.index.astype(str)
-    design = pd.read_csv("../testData/rdeep_design_normalized.tsv", sep="\t")
+    design = pd.read_csv("../testData/sanitized_design.tsv", sep="\t")
     rapdor = RAPDORData(sdf, design)
     rapdor.normalize_and_get_distances("jensenshannon", 3)
     rapdor.calc_all_scores()
