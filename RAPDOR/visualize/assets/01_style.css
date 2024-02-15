@@ -14,6 +14,15 @@
     --disabled-input: red;
 }
 
+.rtooltip {
+        position: absolute;
+        z-index: 9999;
+        padding: 5px !important;
+        box-shadow: None !important;
+
+    }
+
+
 
 span {
     color: var(--r-text-color);

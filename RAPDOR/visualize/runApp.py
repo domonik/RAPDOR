@@ -72,6 +72,7 @@ def get_app_layout(rapdordata: RAPDORData = None):
                 html.Div(id="placeholder4"),
                 html.Div(id="placeholder5"),
                 html.Div(id="placeholder6"),
+                html.Div(id="placeholder7"),
                 html.Div(id="display-alert"),
 
                 html.Div(
@@ -107,4 +108,4 @@ if __name__ == '__main__':
     logger.setLevel(logging.INFO)
     design = "testData/testDesign.tsv"
     logbase = 2
-    gui_wrapper(file, design, host="127.0.0.1", port=8090, debug=False, logbase=logbase)
+    gui_wrapper(file, design, host="127.0.0.1", port=8090, debug=True, logbase=logbase)

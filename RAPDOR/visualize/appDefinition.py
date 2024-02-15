@@ -103,3 +103,15 @@ clientside_callback(
         Input("analysis-tabs", "value"),
     ],
 )
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="displayToolTip",
+
+    ),
+    [Output("placeholder7", "children")],
+    [
+        Input("tbl", "data"),
+    ],
+)

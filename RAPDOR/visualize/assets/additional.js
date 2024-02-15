@@ -28,7 +28,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
         styleSelectedTableRow: function (proteinKey, tbl_data) {
             const key = proteinKey.split("Protein ")[1];
-            console.log("Searching for the Protein Key:" + key)
             try {
                 var tables = document.getElementById("tbl").querySelectorAll("table");
 
@@ -42,10 +41,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 rows[i].classList.remove('selected-row');
 
                 // Check if the first column value (cells[0]) matches the custom key
-                //console.log(cells[1].children[0].textContent)
                 if (cells.length > 0 && cells[1].children[0].textContent === key) {
                     // You've found a match, you can do something with it
-                    console.log("Found a match at row " + (i + 1));
                     rows[i].classList.add("selected-row")
                 }
             }
@@ -61,8 +58,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const fill = "fill:" + style;
             const fill2 = "fill:" + style2;
             if (svgImage) {
-                console.log(fill2_starts)
-                console.log(fill2)
+
                 const base64EncodedSvg = svgImage.getAttribute('src').replace(/^data:image\/svg\+xml;base64,/, '');
                 const decodedSvg = atob(base64EncodedSvg);
                 var modifiedSvg = decodedSvg;
@@ -87,11 +83,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
         rgbToHex: function rgbToHex(rgbString) {
-            console.log(rgbString + "--------------------------")
             const match = rgbString.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
 
             if (!match) {
-                console.log(rgbString + "+++++++++++++++++")
 
                 throw new Error('Invalid RGB string format');
             }
@@ -112,6 +106,70 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             const newString = inputString.slice(0, startIndex) + replacement + inputString.slice(endIndex);
 
             return newString;
+        },
+
+        displayToolTip: function displayEllipsies(input_trigger) {
+            var elements = document.querySelectorAll('.column-header-name');
+            console.log(elements)
+            elements.forEach(function (element) {
+                    element.addEventListener('mouseover', function (event) {
+                        if (element.scrollWidth > element.clientWidth) {
+                            console.log(element.scrollWidth)
+                            console.log(element.clientWidth)
+
+                            var fullText = element.textContent;
+                            var tooltip = document.createElement('div');
+                            tooltip.textContent = fullText;
+                            tooltip.classList.add('rtooltip');
+                            tooltip.classList.add('databox');
+                            document.body.appendChild(tooltip);
+
+                            var x = event.pageX + 10; // Add 10px offset to avoid covering the mouse pointer
+                            var y = event.pageY + 10;
+                            tooltip.style.top = y + 'px';
+                            tooltip.style.left = x + 'px';
+                            tooltip.style.display = "block";
+                        }
+                    });
+
+                    element.addEventListener('mouseout', function (event) {
+                        var tooltip = document.querySelector('.rtooltip');
+                        if (tooltip) {
+                            tooltip.remove();
+                        }
+                    });
+                })
+            var elements = document.querySelectorAll('.dash-cell');
+            elements.forEach(function (element) {
+                    element.addEventListener('mouseover', function (event) {
+                        if (element.scrollWidth > element.clientWidth) {
+                            console.log(element.scrollWidth)
+                            console.log(element.clientWidth)
+
+                            var fullText = element.childNodes[0].textContent;
+                            var tooltip = document.createElement('div');
+                            tooltip.textContent = fullText;
+                            tooltip.classList.add('rtooltip');
+                            tooltip.classList.add('databox');
+                            document.body.appendChild(tooltip);
+
+                            var x = event.pageX + 10; // Add 10px offset to avoid covering the mouse pointer
+                            var y = event.pageY + 10;
+                            tooltip.style.top = y + 'px';
+                            tooltip.style.left = x + 'px';
+                            tooltip.style.display = "block";
+                        }
+                    });
+
+                    element.addEventListener('mouseout', function (event) {
+                        var tooltip = document.querySelector('.rtooltip');
+                        if (tooltip) {
+                            tooltip.remove();
+                        }
+                    });
+                })
+
+            return ""
         },
 
 
@@ -149,9 +207,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
         nightMode: function changeMode(on, primaryColor, secondaryColor) {
-            console.log("Running night mode function")
             var r = document.querySelector(':root');
-            console.log(primaryColor)
             r.style.setProperty('--primary-color', primaryColor)
             r.style.setProperty('--secondary-color', secondaryColor)
 
@@ -170,7 +226,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--secondary-hover-color', darker2);
                 var table_head = this.function2(primaryColor, 0.05);
                 r.style.setProperty('--table-head-color', table_head);
-                console.log("Setup Night Mode")
 
 
             } else {
@@ -188,7 +243,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--secondary-hover-color', lighter2);
                 r.style.setProperty('--disabled-input', "#a6a6a6")
 
-                console.log("Setup Day Mode")
 
 
 
@@ -222,16 +276,13 @@ document.addEventListener('click', (event) => {
 
     // Check if the clicked element is a <div> inside a <td>
     if (clickedElement.tagName === 'DIV' && clickedElement.closest('td')) {
-        console.log('Clicked element is a <div> inside a <td>');
         const parent = clickedElement.parentNode;
         parent.focus();
         // Add your code to handle the click on the <div> inside the <td>
     } else if (clickedElement.tagName === 'INPUT' && clickedElement.closest('td')) {
         const parent = clickedElement.parentNode.nextElementSibling;
-        console.log("parent", parent)
         document.activeElement.blur()
     }
-    console.log(clickedElement);
 })
 //
 //
@@ -263,3 +314,5 @@ addEventListener("dragover", (event) => {
 var btn = document.getElementById("reset-rows-btn")
 var container = document.getElementsByClassName("previous-next-container")[0];
 container.insertBefore(btn, container.firstChild);
+
+
