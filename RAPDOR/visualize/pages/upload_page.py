@@ -50,7 +50,8 @@ def from_csv(disabled: bool = False):
                 )
 
             ],
-            className="row justify-content-center p-2"
+            className="row justify-content-center p-2",
+            id = "intensities-row",
         ),
         html.Div(
             [

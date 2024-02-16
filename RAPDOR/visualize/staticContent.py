@@ -24,6 +24,15 @@ res2 = re.finditer(c2, IMG_TEXT)
 C2STARTS = [result.start() for result in res2]
 encoded_img = base64.b64encode(IMG_TEXT.encode())
 
+TUTORIALRAPDOR = os.path.join(ASSETS_DIR, "RAPDORRaptor.svg")
+TUTORIALIMGTEXT = open(TUTORIALRAPDOR, 'r').read().replace("\n", "").replace("\r\n", "")
+ENCODEDTUTIMG = base64.b64encode(TUTORIALIMGTEXT.encode())
+res = re.finditer(color, TUTORIALIMGTEXT)
+TCSTARTS = [result.start() for result in res]
+res2 = re.finditer(c2, TUTORIALIMGTEXT)
+TC2STARTS = [result.start() for result in res2]
+
+
 logger = logging.getLogger("RAPDOR")
 
 
@@ -51,15 +60,17 @@ def _header_layout():
                     ),
                     dcc.Store(id="fill-start", data=COLOR_IDX),
                     dcc.Store(id="black-start", data=C2STARTS),
+                    dcc.Store(id="t-fill-start", data=TCSTARTS),
+                    dcc.Store(id="t-black-start", data=TC2STARTS),
                     html.Div(
                         html.Button("Pages", id="open-offcanvas", n_clicks=0, className="align-self-start pages-btn"),
-                        className="col-2 d-lg-none d-flex align-items-center"
+                        className="col-1 d-lg-none d-flex align-items-center"
                     ),
                     html.Div([
                         dcc.Link("Upload", href="/", className="px-2"),
                         dcc.Link("Analysis", href="/analysis", className="px-2"),
                         dcc.Link("Figure Factory", href="/figure_factory", className="px-2", style={"white-space": "nowrap"}),
-                        dcc.Link("Help", href="https://domonik.github.io/RAPDOR/",
+                        dcc.Link("Docs", href="https://domonik.github.io/RAPDOR/",
                                  className="px-2", target="_blank"),
                         ],
                         className=" col-3 d-lg-flex d-none align-items-center"
@@ -67,7 +78,7 @@ def _header_layout():
                     html.Div(
                         html.Img(src=svg, style={"width": "20%", "min-width": "150px"}, className="p-0",
                                  id="flamingo-svg"),
-                        className="col-md-6 col-9 justify-content-center justify-conent-md-start", id="logo-container"
+                        className="col-md-6 col-7 justify-content-center justify-conent-md-start", id="logo-container"
                     ),
                     html.Div(
                         daq.BooleanSwitch(
@@ -80,8 +91,15 @@ def _header_layout():
                             persistence=True
 
                         ),
-                        className="col-1 col-md-3 d-flex justify-content-end justify-self-end"
+                        className="col-1 col-md-2 d-flex justify-content-end justify-self-end"
+                    ),
+                    html.Div(
+                        html.Button("Tutorial", id="tut-btn", style={"z-index": "10000"},
+                                    className="px-2 btn-secondary", ),
+                        className="col-2 col-sm-1 justify-content-center justify-self-end d-flex align-items-center"
+
                     )
+
 
 
                 ],
@@ -117,9 +135,58 @@ def _footer():
                     className="text-end")
             ],
             className="col-12 col-md-4 flex-column justify-content-end align-items-end"
-        )
+        ),
+
+
     ]
     return footer
+
+
+def _tutorial_raptor():
+    svg = 'data:image/svg+xml;base64,{}'.format(ENCODEDTUTIMG.decode())
+    content = [
+        html.Div(
+            html.Button("Skip Tutorial", className="btn-secondary", style={"pointer-events": "all"}, id="tut-end"
+                        ),
+            className="justify-self-start mr-auto d-flex"
+        ),
+        html.Div(
+            [
+                html.Div(
+                    [
+                        html.Div(
+                            [
+                                html.Div("tetx", id="tut-text", className="col-12")
+                            ],
+                            className="row w-100"
+                        ),
+                        html.Div(
+                            [
+                                html.Div(html.Button("Previous",className="btn-secondary"),  id="tut-prev", className="col-3 d-flex p-2 justify-content-start"),
+                                html.Div(html.Button("Next", className="btn-secondary"), id="tut-next",  className="col-3 p-2 d-flex justify-content-end")
+                            ],
+                            className="row w-100 justify-content-around"
+                        ),
+
+                    ],
+
+                    className="dialog-1 d-flex align-content-center flex-wrap px-4 ",
+                    style={"pointer-events": "all"}
+
+                ),
+
+            ],
+
+            className="col-lg-4 col-12"
+        ),
+        html.Div(
+            html.Img(src=svg, className="tutorial-rapdor-svg p-0",
+                     id="tutorial-rapdor-svg", ),
+            className="tutorial-rapdor col-lg-3 col-6 d-flex p-0 m-0", id="TutorialRapdor"
+        ),
+
+    ]
+    return content
 
 
 VERSION = RAPDOR.__version__

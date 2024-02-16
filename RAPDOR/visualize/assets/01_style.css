@@ -22,6 +22,45 @@
 
     }
 
+.overlay {
+        position: fixed;
+        pointer-events: none;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 150%;
+        background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black */
+        z-index: 9999; /* Ensure it's above other elements */
+    }
+
+.highlighted {
+    z-index: 10000;
+    position: relative;
+    border: 2px solid var(--primary-color) !important;
+    border-radius: 2px;
+
+}
+
+.tutorial-rapdor {
+    bottom: 0px;
+    overflow: hidden;
+}
+
+.tutorial-rapdor-svg {
+    width: 150% !important;
+    position: relative;
+}
+
+.speech-bubble {
+        bottom:0;
+        background-color: #ffffff;
+        border: 2px solid #007bff; /* Change color as needed */
+        border-radius: 10px;
+        padding: 20px;
+        width: 100%; /* Adjust width as needed */
+    }
+
+
 
 
 span {
@@ -722,4 +761,25 @@ input[type="radio"]:checked {
 
 .Select-placeholder.Select.is-disabled {
   color: red !important;
+}
+
+.dialog-1{
+  	width: 95%;
+    min-height: 100px;
+  	background-color: var(--table-light);
+  	position: relative;
+  	border-radius: 20px;
+    border: black solid 2px;
+}
+
+.right-point{
+	width: 0;
+	height: 0;
+	border-left: 2vh solid transparent;
+	border-right: 2vh solid transparent;
+	border-top: 10vh solid red;
+	position: relative;
+	top: 45%;
+	left: 100%;
+	transform: rotate(-60deg);
 }

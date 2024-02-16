@@ -50,6 +50,36 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
 
         },
+        styleTutorial: function (style2, style, fill_starts, fill2_starts) {
+            const svgImage = document.getElementById('tutorial-rapdor-svg');
+            style = this.rgbToHex(style)
+            style2 = this.rgbToHex(style2)
+            const fill = "fill:" + style;
+            const fill2 = "fill:" + style2;
+            if (svgImage) {
+
+                const base64EncodedSvg = svgImage.getAttribute('src').replace(/^data:image\/svg\+xml;base64,/, '');
+                const decodedSvg = atob(base64EncodedSvg);
+                var modifiedSvg = decodedSvg;
+
+                // Iterate over each index in fill_starts and apply substrReplace
+                fill_starts.forEach(fill_start => {
+                    modifiedSvg = this.substrReplace(modifiedSvg, fill_start, fill);
+                });
+                fill2_starts.forEach(fill_start => {
+                    modifiedSvg = this.substrReplace(modifiedSvg, fill_start, fill2);
+                });
+                // if (!on) {
+                //     modifiedSvg = this.substrReplace(modifiedSvg, black_start, "fill:#000000");
+                //
+                // } else {
+                //     modifiedSvg = this.substrReplace(modifiedSvg, black_start, "fill:#f2f2f2");
+                //
+                // }
+                svgImage.setAttribute('src', 'data:image/svg+xml;base64,' + btoa(modifiedSvg));
+            }
+            return ""
+        },
 
         styleFlamingo: function (style2, style, fill_starts, fill2_starts) {
             const svgImage = document.getElementById('flamingo-svg');
@@ -249,14 +279,77 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
             }
             return ""
+        },
+        activateTutorial: function (btn, skip_btn) {
+            const tutRow = document.getElementById('tut-overlay');
+            const overlay = document.getElementById('tut-row');
+            tutRow.classList.toggle('d-none');
+            overlay.classList.toggle('d-none');
+            return ""
+
+        },
+        tutorialStep: function (next, previous) {
+            var ts = sessionStorage.getItem("tutorial-step");
+            if (ts === null || ts === undefined) {
+                // Set ts to zero
+                ts = 0;
+            }
+            var highlightedElements = document.querySelectorAll('.highlighted');
+            console.log(highlightedElements)
+            highlightedElements.forEach(function (element) {
+                element.classList.remove('highlighted');
+            });
+            ts = parseInt(ts);
+            console.log(ts)
+            if (this.tutorialSteps.hasOwnProperty(ts)) {
+                // Key ts exists in this.tutorialSteps
+                var [highlightID, page, text] = this.tutorialSteps[ts];
+                ts = ts + 1
+                sessionStorage.setItem("tutorial-step", ts);
+
+
+                if (highlightID) {
+                    console.log("highlighting")
+                    var highlight = document.getElementById(highlightID);
+                    console.log(highlight)
+                    if (highlight) {
+                        highlight.classList.toggle('highlighted');
+                    }
+
+                }
+                if (page) {
+                    //window.location.href = page
+
+
+                }
+            } else {
+                // Key ts does not exist in this.tutorialSteps
+                sessionStorage.setItem("tutorial-step", 0);
+            }
+
+
+            return 5
+
+        },
+        tutorialSteps: {
+            0: [null, ".", null],
+            1: ["intensities-row", null, null]
         }
 
     }
 
 });
 
+
+
 document.addEventListener('keydown', (event) => {
     const currentInput = document.getElementsByClassName("dash-cell focused")[0];
+    console.log(currentInput)
+    if (!currentInput) {
+    // Break the code execution
+    return ""
+    // You may want to add any further actions here
+    }
     const currentTr = currentInput.parentNode;
     switch (event.key) {
         case "ArrowUp":

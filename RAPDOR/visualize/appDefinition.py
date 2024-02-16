@@ -69,6 +69,53 @@ clientside_callback(
 clientside_callback(
     ClientsideFunction(
         namespace="clientside",
+        function_name="styleTutorial",
+
+    ),
+    [Output("placeholder8", "children")],
+    [
+        Input("primary-color", "data"),
+        Input("secondary-color", "data"),
+    ],
+    [
+        State("t-fill-start", "data"),
+        State("t-black-start", "data")
+    ]
+)
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="activateTutorial",
+
+    ),
+    [Output("placeholder9", "children")],
+    [
+        Input("tut-btn", "n_clicks"),
+        Input("tut-end", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+
+)
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
+        function_name="tutorialStep",
+
+    ),
+    [Output("placeholder10", "children")],
+    [
+        Input("tut-next", "n_clicks"),
+        Input("tut-prev", "n_clicks"),
+    ],
+    prevent_initial_call=True,
+
+)
+
+clientside_callback(
+    ClientsideFunction(
+        namespace="clientside",
         function_name="styleSelectedTableRow",
 
     ),

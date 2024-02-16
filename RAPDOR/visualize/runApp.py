@@ -5,7 +5,7 @@ from RAPDOR.datastructures import RAPDORData
 from RAPDOR.visualize.appDefinition import app
 import dash_extensions.enrich
 from RAPDOR.visualize.colorSelection import _color_theme_modal
-from RAPDOR.visualize.staticContent import _header_layout, _footer
+from RAPDOR.visualize.staticContent import _header_layout, _footer, _tutorial_raptor
 import logging
 
 from RAPDOR.visualize import DISPLAY
@@ -67,12 +67,16 @@ def get_app_layout(rapdordata: RAPDORData = None):
                 dcc.Store(id="table-state", storage_type="session"),
                 dcc.Store(id="primary-color", storage_type="session", data="rgb(138, 255, 172)"),
                 dcc.Store(id="secondary-color", storage_type="session", data="rgb(255, 138, 221)"),
+
                 html.Div(id="placeholder2"),
                 html.Div(id="placeholder3"),
                 html.Div(id="placeholder4"),
                 html.Div(id="placeholder5"),
                 html.Div(id="placeholder6"),
                 html.Div(id="placeholder7"),
+                html.Div(id="placeholder8"),
+                html.Div(id="placeholder9"),
+                html.Div(id="placeholder10"),
                 html.Div(id="display-alert"),
 
                 html.Div(
@@ -90,6 +94,17 @@ def get_app_layout(rapdordata: RAPDORData = None):
                         "border-style": "solid",
                     },
                 ),
+                html.Div(
+                    _tutorial_raptor(),
+                    style={"pointer-events": "None", "z-index": "10000"},
+                    className="row p-0 m-0 justify-content-end fixed-bottom d-none",
+                    id="tut-row"
+
+                ),
+                html.Div(
+                    id="tut-overlay",
+                    className="overlay d-none"
+                )
 
 
             ],
