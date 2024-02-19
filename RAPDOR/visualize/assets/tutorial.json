@@ -13,5 +13,8 @@
   "This is the distribution graph. It shows the distribution of your exerimental data along the fraction dimension",
   "You can see the distribution of the different replicates via triggering the left slider. The right slider is used to display raw data. Raw data is the original data from the intensities file and not normalized along the fraction dimension. Feel free to try the different combinations now.",
   "At the bottom of the distribution-panel is a pseudo-westernblot of the means of the raw data.",
-  "This Table is used to select which distribution needs to be displayed in the distribution graph."
+  "This Table is used to select which distribution needs to be displayed in the distribution graph. You can click on the table in order to select the corresponding distribution. Via the dropdown at the bottom you can select which columns will be displayed in the table above. These columns correspond to non-data columns from your initial intensities file",
+  "Feel free to select some rows now and get familiar with the control",
+  "This is the settings panel. If you don´t have pre-analyzed data, you need to adjust these according to your needs.",
+  "Here you can change the color schema via the dropdown menu."
 ]

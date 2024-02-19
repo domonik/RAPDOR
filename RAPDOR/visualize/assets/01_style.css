@@ -24,7 +24,7 @@
 
 .overlay {
         position: fixed;
-        pointer-events: none;
+        pointer-events: all;
         top: 0;
         left: 0;
         width: 100%;
@@ -44,8 +44,6 @@
     box-shadow: 0 0 10000px 10000px rgba(0, 0, 0, 0.8) !important;
     z-index: 998 !important;
 
-
-
 }
 
 .highlighted-no-shadow {
@@ -55,8 +53,12 @@
 
 }
 
+.modal {
+    z-index: 10001 !important;
+}
+
 .tut-selectable {
-        z-index: 10000;
+        z-index: 10000 !important;
 }
 
 .tutorial-rapdor {
@@ -782,7 +784,7 @@ input[type="radio"]:checked {
 }
 
 .dialog-1{
-  	width: 95%;
+  	width: 100%;
     min-height: 100px;
   	background-color: var(--table-light);
   	position: relative;
@@ -790,14 +792,3 @@ input[type="radio"]:checked {
     border: black solid 2px;
 }
 
-.right-point{
-	width: 0;
-	height: 0;
-	border-left: 2vh solid transparent;
-	border-right: 2vh solid transparent;
-	border-top: 10vh solid red;
-	position: relative;
-	top: 45%;
-	left: 100%;
-	transform: rotate(-60deg);
-}

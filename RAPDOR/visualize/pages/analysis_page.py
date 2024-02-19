@@ -39,7 +39,7 @@ layout = html.Div(
                         className="row px-2 justify-content-center align-items-center",
                         id="protein-table"
                     ),
-                    label="Table", className="custom-tab", selected_className='custom-tab--selected'
+                    label="Table", className="custom-tab", selected_className='custom-tab--selected', id="table-tab"
                 ),
                 dcc.Tab(
                     html.Div(

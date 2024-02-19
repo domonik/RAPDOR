@@ -145,39 +145,46 @@ def _footer():
 def _tutorial_raptor():
     svg = 'data:image/svg+xml;base64,{}'.format(ENCODEDTUTIMG.decode())
     content = [
-        html.Div(
-            html.Button("Skip Tutorial", className="btn-secondary", style={"pointer-events": "all"}, id="tut-end"
-                        ),
-            className="justify-self-start mr-auto d-flex"
-        ),
+
         html.Div(
             [
                 html.Div(
                     [
                         html.Div(
+                            html.Div(
+                                html.Button("Close", className="btn-secondary w-100",
+                                            style={"pointer-events": "all"}, id="tut-end"
+                                            ),
+                                className="justify-self-end d-flex p-2 col-2"
+                            ),
+                            className="row justify-content-end px-4"
+
+                        ),
+                        html.Div(
+
                             [
-                                html.Div("text", id="tut-text", className="col-12")
+                                html.Div("text", id="tut-text", className="col-12 p-2")
                             ],
-                            className="row w-100"
+                            className="row px-4"
                         ),
                         html.Div(
                             [
-                                html.Div(html.Button("Previous",className="btn-secondary"),  id="tut-prev", className="col-3 d-flex p-2 justify-content-start"),
-                                html.Div(html.Button("Next", className="btn-secondary"), id="tut-next",  className="col-3 p-2 d-flex justify-content-end")
+                                html.Div(html.Button("Previous",className="btn-secondary w-100"),  id="tut-prev", className="col-3 d-flex p-2"),
+                                html.Div(html.Button("Next", className="btn-secondary w-100"), id="tut-next",  className="col-3 p-2 d-flex ")
                             ],
-                            className="row w-100 justify-content-around"
+                            className="row justify-content-between px-4"
                         ),
 
                     ],
 
-                    className="dialog-1 d-flex align-content-center flex-wrap px-4 ",
+                    className="dialog-1",
                     style={"pointer-events": "all"}
 
                 ),
 
             ],
 
-            className="col-lg-4 col-12"
+            className="col-lg-4 col-12 align-self-center"
         ),
         html.Div(
             html.Img(src=svg, className="tutorial-rapdor-svg p-0",

@@ -195,8 +195,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             elements.forEach(function (element) {
                     element.addEventListener('mouseover', function (event) {
                         if (element.scrollWidth > element.clientWidth) {
-                            console.log(element.scrollWidth)
-                            console.log(element.clientWidth)
 
                             var fullText = element.childNodes[0].textContent;
                             var tooltip = document.createElement('div');
@@ -332,30 +330,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 }
             }
         },
-        waitForDOMContentLoaded: function () {
-            // Create a promise to wait for DOMContentLoaded event
-            return new Promise(function (resolve, reject) {
-                document.addEventListener('DOMContentLoaded', function () {
-                    console.log('DOM content loaded');
-                    // Resolve the promise when DOMContentLoaded event fires
-                    resolve();
-                });
-            });
-        },
+
 
         toggleTutOverlay: function (){
             const overlay = document.getElementById('tut-overlay');
             const tutRow = document.getElementById('tut-row');
-            console.log(overlay)
             tutRow.classList.toggle('d-none');
             overlay.classList.toggle('d-none');
             overlay.classList.toggle('shadow');
+            this.resizeTutorial()
         },
 
 
         activateTutorial: function (btn, skip_btn, url) {
             var tutFlag = sessionStorage.getItem("tutorial-flag");
-            console.log(tutFlag, "tutFlag")
             if (dash_clientside.callback_context.triggered[0].prop_id === "url.pathname") {
                 if (tutFlag === null || tutFlag === undefined) {
                     return ""
@@ -364,15 +352,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             }
             this.toggleTutOverlay()
 
-            console.log("context", dash_clientside.callback_context)
             if (dash_clientside.callback_context.triggered[0].prop_id === "tut-end.n_clicks") {
                 var highlightedElements = document.querySelectorAll('.highlighted');
-                console.log(highlightedElements)
                 sessionStorage.removeItem("tutorial-flag");
+                this.removeHighlights()
+                this.resizeTutorial()
 
-                highlightedElements.forEach(function (element) {
-                    element.classList.remove('highlighted');
-                });
             } else {
                 sessionStorage.setItem("tutorial-flag", 1);
                 this.loadTutorialStep(0);
@@ -385,7 +370,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             if (highlightIDs && attempts < 5) {
                 highlightIDs.forEach(function (highlightID) {
                     var highlight = document.getElementById(highlightID);
-                    console.log(highlight, highlightID);
                     if (highlight) {
                         if (highlightID === highlightIDs[0]) {
                             highlight.classList.add('highlighted');
@@ -413,7 +397,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
         removeHighlights: function () {
             var highlightedElements = document.querySelectorAll('.highlighted, .highlighted-no-shadow');
-            console.log(highlightedElements)
             highlightedElements.forEach(function (element) {
                 element.classList.remove('highlighted');
                 element.classList.remove('tut-selectable');
@@ -438,7 +421,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             ts = ts + step;
 
 
-            console.log(ts)
             if (this.tutorialSteps.length > ts) {
                 var [highlightID, page, selectable, runFunction] = this.tutorialSteps[ts];
                 if (page) {
@@ -454,16 +436,13 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 if (runFunction){
                     runFunction()
                 }
-                console.log(highlightID, page)
                 var text = document.getElementById("tut-text");
                 var textFS = this.textForStep(ts)
-                console.log(textFS, "text")
 
                 text.textContent = textFS
 
 
                 if (highlightID) {
-                    console.log("highlighting")
                     overlay.classList.remove('shadow');
 
                     this.highlightDiv(highlightID, selectable);
@@ -477,11 +456,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 sessionStorage.setItem("tutorial-step", ts);
                 sessionStorage.removeItem("tutorial-flag");
                 this.toggleTutOverlay();
+                this.resizeTutorial()
+
                 return ts
 
             }
             var item = sessionStorage.getItem("data-store")
-            console.log("data", item)
             sessionStorage.setItem("tutorial-step", ts);
 
 
@@ -501,6 +481,28 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
         },
 
+        resizeTutorial: function () {
+            const tutRow = document.getElementById('tut-row');
+            const otherDiv = document.getElementById('footer-row');
+            console.log(tutRow, "tutRow")
+
+            // Function to update height of otherDiv
+            function updateOtherDivHeight() {
+                console.log(tutRow.clientHeight)
+                otherDiv.style.minHeight = tutRow.clientHeight + 'px';
+            }
+
+            // Initial update
+            updateOtherDivHeight();
+
+            // Resize event listener for changes in screen size
+            window.addEventListener('resize', updateOtherDivHeight);
+
+            // MutationObserver to detect changes in tutRow size
+            const observer = new MutationObserver(updateOtherDivHeight);
+            observer.observe(tutRow, {attributes: true, childList: true, subtree: true});
+        },
+
 
 
         tutorialSteps: [
@@ -517,6 +519,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             [["distribution-graph"], "/analysis", true, null],
             [["replicate-and-norm", "distribution-graph"], "/analysis", true, null],
             [["pseudo-westernblot-row"], "/analysis", true, null],
+            [["table-tut", "table-tab"], "/analysis", true, null],
+            [["distribution-panel", "table-tut", "table-tab"], "/analysis", true, null],
+            [["selector-box-tut"], "/analysis", false, null],
+            [["color-tut"], "/analysis", true, null],
         ]
 
     }
@@ -527,7 +533,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
 document.addEventListener('keydown', (event) => {
     const currentInput = document.getElementsByClassName("dash-cell focused")[0];
-    console.log(currentInput)
     if (!currentInput) {
     // Break the code execution
     return ""
@@ -590,7 +595,5 @@ addEventListener("dragover", (event) => {
 var btn = document.getElementById("reset-rows-btn")
 var container = document.getElementsByClassName("previous-next-container")[0];
 container.insertBefore(btn, container.firstChild);
-
-
 
 

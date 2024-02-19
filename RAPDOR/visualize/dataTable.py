@@ -65,7 +65,7 @@ def _get_table(rapdordata):
                     className="row justify-content-center h-100"
                 ),
 
-                className="databox databox-open p-3", style={"resize": "vertical", "overflow-y": "auto", "min-height": "470px", "height": "470px"}
+                className="databox databox-open p-3", style={"resize": "vertical", "overflow-y": "auto", "min-height": "470px", "height": "470px"}, id="table-tut"
             )
         ],
         className="col-12 px-1 pb-1 justify-content-center",

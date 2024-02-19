@@ -369,10 +369,10 @@ def selector_box(disabled: bool = False):
                         html.Div(
                             _color_selection(),
                             className="col-12"),
-                        className="row justify-content-center pb-2"
+                        className="row justify-content-center pb-2", id="color-tut"
                     ),
                 ],
-                className="databox justify-content-center"
+                className="databox justify-content-center", id="selector-box-tut"
             )
         ],
         className="col-12 col-md-6 p-1 justify-content-center equal-height-column"

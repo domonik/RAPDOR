@@ -86,7 +86,8 @@ def get_app_layout(rapdordata: RAPDORData = None):
                 dash_extensions.enrich.page_container,
                 html.Div(
                     _footer(),
-                    className="row px-3 py-3 mt-auto justify-content-end align-items-center align-self-bottom",
+                    className="row px-3 py-3 mt-auto justify-content-end align-items-start align-self-bottom",
+                    id="footer-row",
                     style={
                         "background-color": "var(--databox-color)",
                         "border-color": "black",
