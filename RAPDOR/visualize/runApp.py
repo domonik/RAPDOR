@@ -103,7 +103,7 @@ def get_app_layout(rapdordata: RAPDORData = None):
                 ),
                 html.Div(
                     id="tut-overlay",
-                    className="overlay d-none"
+                    className="overlay d-none shadow"
                 )
 
 

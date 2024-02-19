@@ -156,7 +156,7 @@ def _tutorial_raptor():
                     [
                         html.Div(
                             [
-                                html.Div("tetx", id="tut-text", className="col-12")
+                                html.Div("text", id="tut-text", className="col-12")
                             ],
                             className="row w-100"
                         ),

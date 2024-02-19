@@ -22,7 +22,7 @@ def distribution_panel(name):
                                 [
                                     html.Div(
                                         [
-                                            html.Div(html.H5(f"Protein {name}", style={"text-align": "center", "width": "100%", "margin-bottom": "0"}, id="protein-id", className="align-self-center"), className="col-lg-4 col-12 d-flex py-2"),
+                                            html.Div(html.H5(f"Protein {name}", style={"text-align": "center", "width": "100%", "margin-bottom": "0"}, id="protein-id", className="align-self-center"), className="col-lg-4 col-12 d-flex py-2",),
                                             html.Div(
                                                 dcc.Dropdown(
                                                     [], None,
@@ -47,7 +47,7 @@ def distribution_panel(name):
 
 
                                 ],
-                                className="col-12 col-lg-6 justify-content-center align-self-center",
+                                className="col-12 col-lg-6 justify-content-center align-self-center",  id="rapdor-id"
                             ),
                             html.Div(
                                 [
@@ -93,7 +93,7 @@ def distribution_panel(name):
                                             ),
 
                                         ],
-                                        className="row justify-content-right"
+                                        className="row justify-content-right", id="replicate-and-norm"
                                     ),
 
                                 ],
@@ -123,14 +123,14 @@ def distribution_panel(name):
                             ),
                             html.Div("Fraction", className="col-12 pt-0", style={"text-align": "center", "font-size": "20px"})
                         ],
-                        className="row justify-content-center pb-2"
+                        className="row justify-content-center pb-2", id="pseudo-westernblot-row"
                     ),
 
                 ],
                 className="databox",
             )
         ],
-        className="col-12 px-1 pb-1 justify-content-center"
+        className="col-12 px-1 pb-1 justify-content-center", id="distribution-panel"
     )
     return distribution_panel
 

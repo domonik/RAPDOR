@@ -1,3 +1,25 @@
+function clickElement(id) {
+       return function () {
+        var attempts = 0; // Initialize attempts counter
+        var clickFn = function() {
+            var element = document.getElementById(id);
+            if (element) {
+                // Click the element
+                console.log("element", element);
+                element.click();
+            } else if (attempts < 5) {
+                attempts++; // Increment attempts
+                setTimeout(clickFn, 100); // Retry after a delay
+            } else {
+                console.error("Element with id '" + id + "' not found after 5 attempts.");
+            }
+        };
+        clickFn(); // Initial invocation
+    };
+
+
+}
+
 window.dash_clientside = Object.assign({}, window.dash_clientside, {
     clientside: {
 
@@ -280,61 +302,222 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             }
             return ""
         },
-        activateTutorial: function (btn, skip_btn) {
-            const tutRow = document.getElementById('tut-overlay');
-            const overlay = document.getElementById('tut-row');
+
+        loadJSON: function loadJSON(filename) {
+            var xhr = new XMLHttpRequest();
+            xhr.overrideMimeType("application/json");
+            xhr.open('GET', filename, false); // Set async parameter to false for synchronous request
+            xhr.send(null);
+            if (xhr.status === 200) {
+                stepsDataCache = JSON.parse(xhr.responseText); // Cache the loaded JSON data
+                return stepsDataCache;
+            } else {
+                console.error("Failed to load JSON (" + xhr.status + "): " + xhr.statusText);
+                return null;
+            }
+        },
+
+        stepsDataCache: null,
+
+        textForStep: function textForStep(stepNumber) {
+            // Check if JSON data is already cached
+            if (this.stepsDataCache) {
+                return this.stepsDataCache[stepNumber]
+            } else {
+                // Load JSON data synchronously if not already cached
+                var jsonData = this.loadJSON('assets/tutorial.json');
+                if (jsonData) {
+                    this.stepsDataCache = jsonData;
+                    return textForStep(stepNumber); // Recursive call after JSON data is loaded
+                }
+            }
+        },
+        waitForDOMContentLoaded: function () {
+            // Create a promise to wait for DOMContentLoaded event
+            return new Promise(function (resolve, reject) {
+                document.addEventListener('DOMContentLoaded', function () {
+                    console.log('DOM content loaded');
+                    // Resolve the promise when DOMContentLoaded event fires
+                    resolve();
+                });
+            });
+        },
+
+        toggleTutOverlay: function (){
+            const overlay = document.getElementById('tut-overlay');
+            const tutRow = document.getElementById('tut-row');
+            console.log(overlay)
             tutRow.classList.toggle('d-none');
             overlay.classList.toggle('d-none');
+            overlay.classList.toggle('shadow');
+        },
+
+
+        activateTutorial: function (btn, skip_btn, url) {
+            var tutFlag = sessionStorage.getItem("tutorial-flag");
+            console.log(tutFlag, "tutFlag")
+            if (dash_clientside.callback_context.triggered[0].prop_id === "url.pathname") {
+                if (tutFlag === null || tutFlag === undefined) {
+                    return ""
+
+                }
+            }
+            this.toggleTutOverlay()
+
+            console.log("context", dash_clientside.callback_context)
+            if (dash_clientside.callback_context.triggered[0].prop_id === "tut-end.n_clicks") {
+                var highlightedElements = document.querySelectorAll('.highlighted');
+                console.log(highlightedElements)
+                sessionStorage.removeItem("tutorial-flag");
+
+                highlightedElements.forEach(function (element) {
+                    element.classList.remove('highlighted');
+                });
+            } else {
+                sessionStorage.setItem("tutorial-flag", 1);
+                this.loadTutorialStep(0);
+            }
             return ""
 
         },
-        tutorialStep: function (next, previous) {
+
+        highlightDiv: function highlightDiv(highlightIDs, selectable, attempts = 0) {
+            if (highlightIDs && attempts < 5) {
+                highlightIDs.forEach(function (highlightID) {
+                    var highlight = document.getElementById(highlightID);
+                    console.log(highlight, highlightID);
+                    if (highlight) {
+                        if (highlightID === highlightIDs[0]) {
+                            highlight.classList.add('highlighted');
+                            highlight.scrollIntoView({ behavior: "smooth", block: "center" });
+                        } else {
+                            highlight.classList.add('highlighted-no-shadow');
+                        }
+
+                        if (selectable) {
+                            highlight.classList.add('tut-selectable');
+                        }
+                    } else {
+                        setTimeout(function () {
+                            highlightDiv(highlightIDs, selectable, attempts + 1); // Call itself with the same array and increment attempts
+                        }, 500);
+                    }
+                });
+            } else {
+                if (highlightIDs) {
+                    console.log("Div not found after 5 attempts")
+                }
+            }
+        },
+
+
+        removeHighlights: function () {
+            var highlightedElements = document.querySelectorAll('.highlighted, .highlighted-no-shadow');
+            console.log(highlightedElements)
+            highlightedElements.forEach(function (element) {
+                element.classList.remove('highlighted');
+                element.classList.remove('tut-selectable');
+                element.classList.remove('highlighted-no-shadow');
+            });
+
+        },
+
+        loadTutorialStep: function loadStep (step) {
             var ts = sessionStorage.getItem("tutorial-step");
+
             if (ts === null || ts === undefined) {
                 // Set ts to zero
                 ts = 0;
             }
-            var highlightedElements = document.querySelectorAll('.highlighted');
-            console.log(highlightedElements)
-            highlightedElements.forEach(function (element) {
-                element.classList.remove('highlighted');
-            });
+
+            var overlay = document.getElementById("tut-overlay");
+            overlay.classList.add('shadow');
+            this.removeHighlights()
+
             ts = parseInt(ts);
+            ts = ts + step;
+
+
             console.log(ts)
-            if (this.tutorialSteps.hasOwnProperty(ts)) {
-                // Key ts exists in this.tutorialSteps
-                var [highlightID, page, text] = this.tutorialSteps[ts];
-                ts = ts + 1
-                sessionStorage.setItem("tutorial-step", ts);
+            if (this.tutorialSteps.length > ts) {
+                var [highlightID, page, selectable, runFunction] = this.tutorialSteps[ts];
+                if (page) {
+                    if (window.location.pathname !== page) {
+                        sessionStorage.setItem("tutorial-step", ts);
+
+                        window.location.href = page
+                        return ""
+                    }
+
+
+                }
+                if (runFunction){
+                    runFunction()
+                }
+                console.log(highlightID, page)
+                var text = document.getElementById("tut-text");
+                var textFS = this.textForStep(ts)
+                console.log(textFS, "text")
+
+                text.textContent = textFS
 
 
                 if (highlightID) {
                     console.log("highlighting")
-                    var highlight = document.getElementById(highlightID);
-                    console.log(highlight)
-                    if (highlight) {
-                        highlight.classList.toggle('highlighted');
-                    }
+                    overlay.classList.remove('shadow');
 
-                }
-                if (page) {
-                    //window.location.href = page
+                    this.highlightDiv(highlightID, selectable);
 
 
                 }
+
             } else {
                 // Key ts does not exist in this.tutorialSteps
-                sessionStorage.setItem("tutorial-step", 0);
+                ts = 0;
+                sessionStorage.setItem("tutorial-step", ts);
+                sessionStorage.removeItem("tutorial-flag");
+                this.toggleTutOverlay();
+                return ts
+
             }
+            var item = sessionStorage.getItem("data-store")
+            console.log("data", item)
+            sessionStorage.setItem("tutorial-step", ts);
 
 
-            return 5
+            return ts
+
 
         },
-        tutorialSteps: {
-            0: [null, ".", null],
-            1: ["intensities-row", null, null]
-        }
+
+        tutorialStep: function (next, previous) {
+            if (dash_clientside.callback_context.triggered[0].prop_id === "tut-next.n_clicks") {
+                this.loadTutorialStep(1)
+            } else {
+                this.loadTutorialStep(-1)
+
+            }
+            return 0
+
+        },
+
+
+
+        tutorialSteps: [
+            [null, "/", false, null],
+            [["from-csv", "from-csv-tab"], "/", false, clickElement("from-csv-tab")],
+            [["intensities-row"], "/", false, null],
+            [["design-row"], "/", false, null],
+            [["log-base-row"], "/", false, null],
+            [["sep-row"], "/", false, clickElement("from-csv-tab")],
+            [["from-json", "from-json-tab"], "/", false, clickElement("from-json-tab")],
+            [null, "/analysis", false, null],
+            [["distribution-panel"], "/analysis", false, null],
+            [["rapdor-id", "additional-column"], "/analysis", false, null],
+            [["distribution-graph"], "/analysis", true, null],
+            [["replicate-and-norm", "distribution-graph"], "/analysis", true, null],
+            [["pseudo-westernblot-row"], "/analysis", true, null],
+        ]
 
     }
 
@@ -407,5 +590,7 @@ addEventListener("dragover", (event) => {
 var btn = document.getElementById("reset-rows-btn")
 var container = document.getElementsByClassName("previous-next-container")[0];
 container.insertBefore(btn, container.firstChild);
+
+
 
 

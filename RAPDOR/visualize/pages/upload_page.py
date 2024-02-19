@@ -81,7 +81,9 @@ def from_csv(disabled: bool = False):
                 )
 
             ],
-            className="row justify-content-center p-2"
+            className="row justify-content-center p-2",
+            id="design-row",
+
         ),
         html.Div(
             [
@@ -101,7 +103,9 @@ def from_csv(disabled: bool = False):
                     className="col-7 text-align-center align-items-center"
                 ),
             ],
-            className="row justify-content-center p-2"
+            className="row justify-content-center p-2",
+            id="log-base-row",
+
         ),
         html.Div(
             [
@@ -125,7 +129,9 @@ def from_csv(disabled: bool = False):
                 ),
 
             ],
-            className="row justify-content-center p-2"
+            className="row justify-content-center p-2",
+            id="sep-row",
+
         ),
         html.Div(
             [
@@ -136,7 +142,7 @@ def from_csv(disabled: bool = False):
             ],
             className="row justify-content-center p-2"
         ),
-    ], className="databox databox-open py-3")], label="From CSV", className="custom-tab", selected_className='custom-tab--selected')
+    ], className="databox databox-open py-3", id="from-csv")], label="From CSV", id="from-csv-tab", className="custom-tab", selected_className='custom-tab--selected')
     return data
 
 
@@ -173,7 +179,7 @@ def from_json(disabled):
             className="row justify-content-center p-2"
         ),
 
-    ], className="databox databox-open py-3"), label="From JSON", className="custom-tab",
+    ], className="databox databox-open py-3", id="from-json"), label="From JSON", className="custom-tab", id="from-json-tab",
         selected_className='custom-tab--selected'
     )
     return data
