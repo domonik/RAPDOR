@@ -2,7 +2,7 @@
 import dash
 from dash import html
 import base64
-from dash import dcc
+from dash import dcc, ctx
 from dash_extensions.enrich import callback, Input, Output, Serverside, State
 from RAPDOR.datastructures import RAPDORData
 import logging
@@ -17,6 +17,11 @@ logger = logging.getLogger(__name__)
 
 dash.register_page(__name__, path='/')
 
+RAPDORDIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+TUTFILE = os.path.join(RAPDORDIR, "tests/testData/testFile.tsv")
+TUTDESIGN = os.path.join(RAPDORDIR, "tests/testData/testDesign.tsv")
+assert os.path.exists(TUTFILE)
+assert os.path.exists(TUTDESIGN)
 
 
 
@@ -276,6 +281,7 @@ for name in ("intensities", "design", "json"):
     Output("table-state", "data", allow_duplicate=True),
     Output("current-row-ids", "data", allow_duplicate=True),
     Input("upload-csv-btn", "n_clicks"),
+    Input("tut-output", "data"),
     State("unique-id", "data"),
     State("seperator-radio", "value"),
     State("upload-intensities", "contents"),
@@ -283,31 +289,45 @@ for name in ("intensities", "design", "json"):
     State("logbase", "value"),
     prevent_initial_call=True
 )
-def upload_from_csv(btn, uid, sep, intensities_content, design_content, logbase):
-    if intensities_content is None and design_content is None:
-        raise PreventUpdate
-    try:
-        intensities_content = intensities_content.split(",")[1]
-        intensities_content = base64.b64decode(intensities_content).decode()
-        design_content = design_content.split(",")[1]
-        design_content = base64.b64decode(design_content).decode()
-        df = pd.read_csv(StringIO(intensities_content), sep=sep)
-        design = pd.read_csv(StringIO(design_content), sep=sep)
-        rapdordata = RAPDORData(df, design, logbase=None if logbase == 0 else logbase)
-        rapdordata = Serverside(rapdordata, key=uid)
-        redirect = "analysis"
-        alert = []
-    except Exception as e:
-        rapdordata = dash.no_update
-        redirect = dash.no_update
-        logger.exception("Data is not in expected format")
-        alert = html.Div(
-            dbc.Alert(
-                "Data is not in the expected format.",
-                color="danger",
-                dismissable=True,
-            ),
-            className="p-2 align-items-center, alert-msg",
+def upload_from_csv(btn, tut_output, uid, sep, intensities_content, design_content, logbase):
+    if ctx.triggered_id != "tut-output":
+        if intensities_content is None and design_content is None:
+            raise PreventUpdate
+        try:
+            intensities_content = intensities_content.split(",")[1]
+            intensities_content = base64.b64decode(intensities_content).decode()
+            design_content = design_content.split(",")[1]
+            design_content = base64.b64decode(design_content).decode()
+            df = pd.read_csv(StringIO(intensities_content), sep=sep)
+            design = pd.read_csv(StringIO(design_content), sep=sep)
+            redirect = "analysis"
 
-        )
+            rapdordata = RAPDORData(df, design, logbase=None if logbase == 0 else logbase)
+            rapdordata = Serverside(rapdordata, key=uid)
+            alert = []
+
+        except Exception as e:
+                rapdordata = dash.no_update
+                redirect = dash.no_update
+                logger.exception(f"Data is not in expected format: {str(e)}")
+                alert = html.Div(
+                    dbc.Alert(
+                        "Data is not in the expected format.",
+                        color="danger",
+                        dismissable=True,
+                    ),
+                    className="p-2 align-items-center, alert-msg",
+
+                )
+    else:
+        if tut_output == 7:
+            df = pd.read_csv(TUTFILE, sep="\t")
+            design = pd.read_csv(TUTDESIGN, sep="\t")
+            rapdordata = RAPDORData(df, design, logbase=2)
+            rapdordata = Serverside(rapdordata, key=uid)
+            alert = []
+            redirect = dash.no_update
+        else:
+            raise PreventUpdate
+
     return rapdordata, redirect, alert, None, None, None

@@ -792,3 +792,14 @@ input[type="radio"]:checked {
     border: black solid 2px;
 }
 
+#tut-cursor {
+    z-index: 100000;
+    width: 30px;
+    height: 30px;
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+    color: var(--secondary-color);
+    transition-duration: 1s;
+
+}

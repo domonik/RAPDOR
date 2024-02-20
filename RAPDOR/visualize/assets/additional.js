@@ -1,22 +1,152 @@
-function clickElement(id) {
-       return function () {
+function clickSimulator(trace) {
+    var cursor = document.createElement('i');
+    //cursor.id = 'custom-cursor';
+    cursor.classList.add("fa-solid", "fa-hand-pointer", "fa", "fa-lg")
+    cursor.id = "tut-cursor"
+    var start = trace[0]
+    var rect = start.getBoundingClientRect()
+    var initialX = rect.left + window.scrollX;
+    var initialY = rect.top + window.scrollY;
+    console.log(initialX)
+    cursor.style.position = "absolute";
+    cursor.style.left = initialX + "px";
+    cursor.style.top = initialY + "px";
+    document.body.appendChild(cursor);
+    console.log(target)
+    let i = 1
+    while (i < trace.length){
+        var target = trace[i];
+        var targetRect = target.getBoundingClientRect()
+        console.log(targetRect, "rect")
+
+        var x = targetRect.left + targetRect.width / 2 + window.scrollX;
+        var y = targetRect.top + targetRect.height / 2 + window.scrollY;
+        var moveX = x - initialX; // Calculate the new position relative to the initial position
+        var moveY = y - initialY;
+        var event = new MouseEvent('click', {
+            bubbles: true,
+            cancelable: true,
+            view: window
+        });
+
+        (function (iX, iY, mX, mY, delay) {
+            setTimeout(function () {
+                var cursor = document.getElementById('tut-cursor');
+
+                console.log("ix", iX)
+                console.log("ix", mX)
+                cursor.style.left = iX;
+                cursor.style.top = iY;
+                cursor.style.transform = `translate(${mX}px, ${mY}px)`;
+                t.dispatchEvent(e);
+            }, delay*1000);
+        })(initialX, initialY, moveX, moveY, i-1);
+        console.log(initialX, initialY, moveX, moveY);
+
+
+        (function (t, e, delay) {
+            setTimeout(function () {
+                t.dispatchEvent(e);
+            }, delay*1000);
+        })(target, event, i);
+        initialX = x;
+        initialY = y;
+        i++;
+
+    }
+
+    setTimeout(function () {
+        console.log(cursor)
+        document.body.removeChild(cursor);
+    }, i * 1000);
+
+}
+
+function simulateClickClass(className, max, visibleId = null) {
+     return function () {
         var attempts = 0; // Initialize attempts counter
-        var clickFn = function() {
-            var element = document.getElementById(id);
-            if (element) {
-                // Click the element
-                console.log("element", element);
-                element.click();
-            } else if (attempts < 5) {
+        var clickFn2 = function () {
+
+            var nextbtn = document.getElementById("tut-next");
+            console.log(nextbtn, "next-btn")
+            var targets = document.getElementsByClassName(className);
+            console.log(targets, "target")
+
+            if (!nextbtn || !targets) {
                 attempts++; // Increment attempts
-                setTimeout(clickFn, 100); // Retry after a delay
+                setTimeout(clickFn2, 100); // Retry after a delay
+            } else if (attempts < 5) {
+                targets = [...targets].slice(0, max)
+
+                clickSimulator([nextbtn].concat(targets))
+
+
             } else {
                 console.error("Element with id '" + id + "' not found after 5 attempts.");
             }
-        };
-        clickFn(); // Initial invocation
-    };
+        }
+        if (visibleId) {
+            var vid = document.getElementById(visibleId);
+            console.log(vid, "visibleID")
+            if (vid) {
 
+            } else {
+                clickFn2()
+            }
+
+        } else {
+            clickFn2()
+        }
+
+    }
+
+
+}
+
+function simulateClickID(id,  visibleId = null) {
+    return function () {
+        var attempts = 0; // Initialize attempts counter
+        var clickFn = function () {
+
+            var nextbtn = document.getElementById("tut-next");
+            console.log(nextbtn, "next-btn")
+            var target = document.getElementById(id);
+            console.log(target, "target")
+
+            if (!nextbtn || !target) {
+                attempts++; // Increment attempts
+                setTimeout(clickFn, 100); // Retry after a delay
+            } else if (attempts < 5) {
+                clickSimulator([nextbtn, target])
+
+
+            } else {
+                console.error("Element with id '" + id + "' not found after 5 attempts.");
+            }
+        }
+        if (visibleId) {
+            var vid = document.getElementById(visibleId);
+            console.log(vid, "visibleID")
+            if (vid) {
+
+            } else {
+                clickFn()
+            }
+
+        } else {
+            clickFn()
+        }
+
+    }
+
+}
+
+function multiClickInOne(fctArray) {
+    return function () {
+        for (let i = 0; i < fctArray.length; i++) {
+            setTimeout(fctArray[i], i*2000)
+        }
+    }
 
 }
 
@@ -433,7 +563,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
 
                 }
+                console.log("runFunction", runFunction)
                 if (runFunction){
+
                     runFunction()
                 }
                 var text = document.getElementById("tut-text");
@@ -461,7 +593,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 return ts
 
             }
-            var item = sessionStorage.getItem("data-store")
             sessionStorage.setItem("tutorial-step", ts);
 
 
@@ -471,14 +602,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
         tutorialStep: function (next, previous) {
+            var ts
             if (dash_clientside.callback_context.triggered[0].prop_id === "tut-next.n_clicks") {
-                this.loadTutorialStep(1)
+                ts = this.loadTutorialStep(1)
             } else {
-                this.loadTutorialStep(-1)
+                ts = this.loadTutorialStep(-1)
 
             }
-            return 0
-
+            if (ts == 7) {
+                return ts
+            } else {
+                return dash_clientside.no_update
+            }
         },
 
         resizeTutorial: function () {
@@ -504,17 +639,20 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
 
-
+        // Steps are organized like this:
+        // [ids_to_highlight, "page to go to", "can you click on highlighted divs", function to run]
         tutorialSteps: [
             [null, "/", false, null],
-            [["from-csv", "from-csv-tab"], "/", false, clickElement("from-csv-tab")],
-            [["intensities-row"], "/", false, null],
-            [["design-row"], "/", false, null],
-            [["log-base-row"], "/", false, null],
-            [["sep-row"], "/", false, clickElement("from-csv-tab")],
-            [["from-json", "from-json-tab"], "/", false, clickElement("from-json-tab")],
+            [["from-csv", "from-csv-tab"], "/", false, simulateClickID("from-csv-tab",  "from-csv")],
+            [["intensities-row"], "/", false, simulateClickID("from-csv-tab",  "intensities-row")],
+            [["design-row"], "/", false, simulateClickID("from-csv-tab",  "design-row")],
+            [["log-base-row"], "/", false, simulateClickID("from-csv-tab",  "log-base-row")],
+            [["sep-row"], "/", false, simulateClickID("from-csv-tab", "sep-row")],
+            [["from-json", "from-json-tab"], "/", false, simulateClickID("from-json-tab", "from-json")],
+            [["from-json", "from-json-tab"], "/", false, null],
             [null, "/analysis", false, null],
             [["distribution-panel"], "/analysis", false, null],
+            [["table-tab", "table-tut", "distribution-panel"], "/analysis", false, simulateClickClass("dash-cell column-0", 1)],
             [["rapdor-id", "additional-column"], "/analysis", false, null],
             [["distribution-graph"], "/analysis", true, null],
             [["replicate-and-norm", "distribution-graph"], "/analysis", true, null],

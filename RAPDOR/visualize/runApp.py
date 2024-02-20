@@ -76,7 +76,7 @@ def get_app_layout(rapdordata: RAPDORData = None):
                 html.Div(id="placeholder7"),
                 html.Div(id="placeholder8"),
                 html.Div(id="placeholder9"),
-                html.Div(id="placeholder10"),
+                dcc.Store(id="tut-output"),
                 html.Div(id="display-alert"),
 
                 html.Div(

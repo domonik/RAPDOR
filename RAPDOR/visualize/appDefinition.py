@@ -1,13 +1,12 @@
 import os
 
 import dash_bootstrap_components as dbc
-from dash import clientside_callback, ClientsideFunction
 
 from RAPDOR.visualize.staticContent import LOGO, LIGHT_LOGO
 assert os.path.exists(LOGO), f"{LOGO} does not exist"
 assert os.path.exists(LIGHT_LOGO), f"{LIGHT_LOGO} does not exist"
 from dash_extensions.enrich import DashProxy, Output, Input, State, Serverside, html, dcc, \
-    ServersideOutputTransform, FileSystemBackend
+    ServersideOutputTransform, FileSystemBackend, clientside_callback, ClientsideFunction
 from RAPDOR.visualize import DISPLAY, DISPLAY_FILE, CONFIG
 from RAPDOR.visualize.dataBackEnd import DisplayModeBackend
 
@@ -105,7 +104,7 @@ clientside_callback(
         function_name="tutorialStep",
 
     ),
-    [Output("placeholder10", "children")],
+    [Output("tut-output", "data")],
     [
         Input("tut-next", "n_clicks"),
         Input("tut-prev", "n_clicks"),
