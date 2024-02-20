@@ -12,53 +12,29 @@ function clickSimulator(trace) {
     cursor.style.left = initialX + "px";
     cursor.style.top = initialY + "px";
     document.body.appendChild(cursor);
-    console.log(target)
-    let i = 1
-    while (i < trace.length){
-        var target = trace[i];
-        var targetRect = target.getBoundingClientRect()
-        console.log(targetRect, "rect")
+    var target = trace[1];
+    var targetRect = target.getBoundingClientRect()
+    console.log(targetRect, "rect")
 
-        var x = targetRect.left + targetRect.width / 2 + window.scrollX;
-        var y = targetRect.top + targetRect.height / 2 + window.scrollY;
-        var moveX = x - initialX; // Calculate the new position relative to the initial position
-        var moveY = y - initialY;
+    var x = targetRect.left + targetRect.width / 2 + window.scrollX;
+    var y = targetRect.top + targetRect.height / 2 + window.scrollY;
+    var moveX = x - initialX; // Calculate the new position relative to the initial position
+    var moveY = y - initialY;
+
+    cursor.style.transform = `translate(${moveX}px, ${moveY}px)`;
+    setTimeout(function () {
         var event = new MouseEvent('click', {
             bubbles: true,
             cancelable: true,
-            view: window
+            view: window,
         });
-
-        (function (iX, iY, mX, mY, delay) {
-            setTimeout(function () {
-                var cursor = document.getElementById('tut-cursor');
-
-                console.log("ix", iX)
-                console.log("ix", mX)
-                cursor.style.left = iX;
-                cursor.style.top = iY;
-                cursor.style.transform = `translate(${mX}px, ${mY}px)`;
-                t.dispatchEvent(e);
-            }, delay*1000);
-        })(initialX, initialY, moveX, moveY, i-1);
-        console.log(initialX, initialY, moveX, moveY);
-
-
-        (function (t, e, delay) {
-            setTimeout(function () {
-                t.dispatchEvent(e);
-            }, delay*1000);
-        })(target, event, i);
-        initialX = x;
-        initialY = y;
-        i++;
-
-    }
+        target.dispatchEvent(event)
+    }, 1000)
 
     setTimeout(function () {
         console.log(cursor)
         document.body.removeChild(cursor);
-    }, i * 1000);
+    }, 1100);
 
 }
 
@@ -648,7 +624,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             [["design-row"], "/", false, simulateClickID("from-csv-tab",  "design-row")],
             [["log-base-row"], "/", false, simulateClickID("from-csv-tab",  "log-base-row")],
             [["sep-row"], "/", false, simulateClickID("from-csv-tab", "sep-row")],
-            [["from-json", "from-json-tab"], "/", false, simulateClickID("from-json-tab", "from-json")],
+            [["from-json", "from-json-tab"], "/", true, simulateClickID("from-json-tab", "from-json")],
             [["from-json", "from-json-tab"], "/", false, null],
             [null, "/analysis", false, null],
             [["distribution-panel"], "/analysis", false, null],
@@ -660,6 +636,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             [["table-tut", "table-tab"], "/analysis", true, null],
             [["distribution-panel", "table-tut", "table-tab"], "/analysis", true, null],
             [["selector-box-tut"], "/analysis", false, null],
+            [["selector-box-tut"], "/analysis", true, simulateClickClass("rc-slider-mark-text", 1)],
             [["color-tut"], "/analysis", true, null],
         ]
 

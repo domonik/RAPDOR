@@ -177,11 +177,13 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
     else:
         active_cell_out = dash.no_update
         page = page_current
-
-    return_value = data.iloc[page * page_size: (page_current + 1) * page_size]
-    if isinstance(active_cell_out, dict):
-        loc = return_value.iloc[0].id
-        active_cell_out['row_id'] = loc
+    if page * page_size > data.shape[0]:
+        return_value = pd.DataFrame()
+    else:
+        return_value = data.iloc[page * page_size: (page_current + 1) * page_size]
+        if isinstance(active_cell_out, dict):
+            loc = return_value.iloc[0].id
+            active_cell_out['row_id'] = loc
     return return_value.to_dict('records'), selected_row_ids, active_cell_out, page
 
 #

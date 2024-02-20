@@ -9,7 +9,7 @@ package_imports = [
     ['dash_loading_spinners', ['package-info.json', "dash_loading_spinners.min.js"]],
     ['dash_daq', ['package-info.json', 'metadata.json', 'dash_daq.min.js', 'async-colorpicker.js']],
     ['dash_extensions', ['package-info.json', 'metadata.json', 'dash_extensions.min.js']],
-    ['RAPDOR', ['visualize/assets/', 'visualize/pages/', "dashConfig.yaml"]],
+    ['RAPDOR', ['visualize/assets/', 'visualize/pages/', "dashConfig.yaml", "tests/testData"]],
     ]
 rdpsroot = os.path.join(os.getcwd(), "RAPDOR")
 
