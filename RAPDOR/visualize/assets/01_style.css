@@ -33,8 +33,6 @@
     }
 
 .shadow {
-    background-color: rgba(0, 0, 0, 0.8); /* Semi-transparent black */
-
 
 }
 
@@ -59,6 +57,10 @@
 
 .tut-selectable {
         z-index: 10000 !important;
+}
+
+.tut-selectable-no-shadow {
+        z-index: 10001 !important;
 }
 
 .tutorial-rapdor {

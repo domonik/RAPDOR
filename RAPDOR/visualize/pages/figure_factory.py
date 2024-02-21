@@ -439,7 +439,7 @@ def figure_factory_layout():
                             className="row justify-content-center px-4 px-md-4",
                         ),
                     ],
-                    className="databox"
+                    className="databox", id="ff-tut-preview"
                 ),
                 className="col-12 col-lg-6 px-1 py-2"
             ),

@@ -97,7 +97,7 @@ def get_app_layout(rapdordata: RAPDORData = None):
                 ),
                 html.Div(
                     _tutorial_raptor(),
-                    style={"pointer-events": "None", "z-index": "10000"},
+                    style={"pointer-events": "None", "z-index": "10002"},
                     className="row p-0 m-0 justify-content-end fixed-bottom d-none",
                     id="tut-row"
 

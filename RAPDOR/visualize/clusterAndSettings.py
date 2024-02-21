@@ -179,7 +179,7 @@ def _get_cluster_panel(disabled: bool = False):
                     ],
                     className="row"
                 ),
-                className="databox databox-open"
+                className="databox databox-open", id="dim-red-tut"
             )
         ],
         className="col-12 px-1 pb-1 justify-content-center"

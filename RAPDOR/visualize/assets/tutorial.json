@@ -1,7 +1,8 @@
 
 [
+  "Welcome to the RAPDOR tutorial. I will guide you through the analysis steps. I will block interactions with the page at some points. You can always leave the tutorial via close.",
   "This is the upload Page. Here you can upload your files to display.",
-  "This tab is used to upload data from value seperated files",
+  "This tab is used to upload data from value seperated files. They need to follow a schema that is described in the documentation. You can click on Docs at the top of the page",
   "Here you upload your intensities file",
   "Here you upload your design file",
   "This is used if your data is log transformed",
@@ -17,6 +18,18 @@
   "At the bottom of the distribution-panel is a pseudo-westernblot of the means of the raw data.",
   "This Table is used to select which distribution needs to be displayed in the distribution graph. You can click on the table in order to select the corresponding distribution. Via the dropdown at the bottom you can select which columns will be displayed in the table above. These columns correspond to non-data columns from your initial intensities file",
   "Feel free to select some rows now and get familiar with the control",
-  "This is the settings panel. If you don´t have pre-analyzed data, you need to adjust these according to your needs.",
-  "Here you can change the color schema via the dropdown menu."
+  "This is the settings panel. If you don´t have pre-analyzed data, you can use it to analyze your data.",
+  "The Distance Method is used to calculate a distance between samples from the fraction dimension. Whereas the Kernel slider uses an averaging kernel along the fraction dimension. This usually reduces variance among replicates. Usually you can leave those as they are.",
+  "The Run Scoring Button will calculate ANOSIM R values, Mean Distances and positions of the strongest shift for each Gene in your file. This Button is used if you have less then 5 replicates per condition.",
+  "I just clicked the Button. You can see that the Table contains all these values now. You can deselect them via the dropdown below",
+  "In order to rank the table we need to apply a sorting. Usually you would want to sort according to a decreasing ANOSIM R and a decreasing Mean Distance. Feel free to sort according to that via clicking the triangles next to the column names. Then click next afterwards.",
+  "We now applied ranks to our table. Note that the order you clicked the triangles matters and reflects the way values are sorted.",
+  "Via the Export JSON Button you can export the state of the whole analysis. Thus you can import pre-analyzed data from this file. If you are only interested in the table you can export this as a tsv file.",
+  "You can also change the color scheme and select pre defined schemes from the dropdown. Via clicking the colored boxes you can choose your own color scheme. We can use this to generate nice Figures in the Figure Factory.",
+  "Therefore you need to select rows from the table as I just did. Feel free to select some more. In the next step we will visit the Figure Factory.",
+  "Here is the Figure Factory. As you can see the plot contains the selected rows from the table. But it does not look nice yet. We can improve that.",
+  "Usually the default settings are fine for plots. However, you can tweak some settings using the Input fields.",
+  "This is a dimension reduction plot displaying all rows from the table but highlighting the selected ones. We can also find it on the analysis page. Let`s have a look.",
+  "Here you see the interactive dimension reduction. If you hover over the datapoints, the corresponding distribution is shown in the distribution panel. Just try yourself"
+
 ]

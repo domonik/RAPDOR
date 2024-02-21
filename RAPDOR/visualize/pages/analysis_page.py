@@ -46,7 +46,8 @@ layout = html.Div(
                         _get_cluster_panel(DISABLED),
                         className="row px-2 justify-content-center align-items-center"
 
-                    ), label="Dimension Reduction", className="custom-tab", selected_className='custom-tab--selected'
+                    ), label="Dimension Reduction", className="custom-tab", selected_className='custom-tab--selected',
+                    id="dim-red-tab"
                 )
             ],
             id="analysis-tabs",
