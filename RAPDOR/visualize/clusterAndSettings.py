@@ -222,7 +222,7 @@ def selector_box(disabled: bool = False):
                                 className="col-8 justify-content-center text-align-center"
                             )
                         ],
-                        className=BOOTSROW
+                        className=BOOTSROW, id="distance-method-tut"
                     ),
                     html.Div(
                         [
@@ -243,7 +243,7 @@ def selector_box(disabled: bool = False):
                                 className="col-12 col-md-8 justify-content-center",
                             ),
                         ],
-                        className=BOOTSROW
+                        className=BOOTSROW, id="kernel-tut"
                     ),
                     html.Div(
                         [
@@ -260,7 +260,7 @@ def selector_box(disabled: bool = False):
                             ),
                         ],
 
-                        className=BOOTSROW
+                        className=BOOTSROW, id="score-rank-tut",
                     ),
                     # html.Div(
                     #     [
@@ -344,7 +344,7 @@ def selector_box(disabled: bool = False):
                             ),
 
                         ],
-                        className=BOOTSROW
+                        className=BOOTSROW, id="anosim-tut"
                     ),
 
                     html.Div(
@@ -363,7 +363,7 @@ def selector_box(disabled: bool = False):
                             dcc.Download(id="download-dataframe-csv"),
                         ],
 
-                        className=BOOTSROW
+                        className=BOOTSROW, id="export-tut"
                     ),
                     html.Div(
                         html.Div(

@@ -1,3 +1,23 @@
+var isDOMLoaded = false
+document.addEventListener("DOMContentLoaded", function() {
+    // DOMContentLoaded event has fired
+    isDOMLoaded = true;
+    console.log("DOM content loaded.");
+});
+
+
+async function isPageLoaded() {
+    return new Promise((resolve, reject) => {
+        if (isDOMLoaded) {
+            resolve();
+        } else {
+            setTimeout(isPageLoaded, 100)
+        }
+
+
+    });
+}
+
 async function clickSimulator(trace) {
     return new Promise((resolve, reject) => {
         var cursor = document.createElement('i');
@@ -105,9 +125,15 @@ function simulateClickTableInput(nr) {
                 } else if (attempts < 5) {
                     var target = targets[nr].querySelector("input");
                     console.log(target, "targetofTableInput")
+                    console.log(target.checked, "targetofTableInput is checked")
+                    if (target.checked) {
+                        resolve();
+                    } else {
+                        await clickSimulator([nextbtn, target])
+                        resolve();
 
-                    await clickSimulator([nextbtn, target])
-                    resolve();
+                    }
+
 
 
                 } else {
@@ -133,18 +159,27 @@ function simulateClickFormCheckInput(nr) {
 
                 var nextbtn = document.getElementById("tut-next");
                 console.log(nextbtn, "next-btn")
-                var targets = document.getElementsByClassName('form-check');
+                var targets = document.getElementsByClassName('form-check-label');
                 console.log(targets, "targetIP")
 
                 if (!nextbtn || !targets || targets.length < nr) {
+                    console.log("???")
                     attempts++; // Increment attempts
-                    setTimeout(clickFn2, 100); // Retry after a delay
+                    setTimeout(clickFn2, 500); // Retry after a delay
                 } else if (attempts < 5) {
-                    var target = targets[nr].querySelector("input");
+                    console.log("foo")
+                    var target = targets[nr];
+                    if (target) {
+                        await clickSimulator([nextbtn, target])
+                        resolve();
+
+                    } else {
+                        attempts++;
+                        setTimeout(clickFn2, 500); // Retry after a delay
+                    }
                     console.log(target, "target")
 
-                    await clickSimulator([nextbtn, target])
-                    resolve();
+
 
 
                 } else {
@@ -550,7 +585,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
             } else {
                 sessionStorage.setItem("tutorial-flag", 1);
-                this.loadTutorialStep(0);
+                isPageLoaded().then(() => {
+                    this.loadTutorialStep(0)
+                })
             }
             return ""
 
@@ -621,7 +658,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
 
             if (this.tutorialSteps.length > ts) {
-                var [highlightID, page, selectable, runFunction] = this.tutorialSteps[ts];
+                var [highlightID, page, selectable, runFunction, reverse] = this.tutorialSteps[ts];
                 if (page) {
                     if (window.location.pathname !== page) {
                         sessionStorage.setItem("tutorial-step", ts);
@@ -653,6 +690,23 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 var textFS = this.textForStep(ts)
 
                 text.textContent = textFS
+                var trow = document.getElementById("tut-row");
+                var svgImage = document.getElementById('tutorial-rapdor-svg');
+                var rapdorDiv = document.getElementById("TutorialRapdor")
+
+
+
+                if (reverse) {
+                    trow.classList.add("flex-row-reverse")
+                    svgImage.style.transform = 'scale(-1, 1)';
+                    rapdorDiv.classList.add("justify-content-end");
+                } else {
+                    trow.classList.remove("flex-row-reverse")
+                    rapdorDiv.classList.remove("justify-content-end");
+
+                    svgImage.style.transform = "none"
+
+                }
 
             } else {
                 // Key ts does not exist in this.tutorialSteps
@@ -731,21 +785,26 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             [["distribution-graph"], "/analysis", true, null],
             [["replicate-and-norm", "distribution-graph"], "/analysis", true, null],
             [["pseudo-westernblot-row"], "/analysis", true, null],
-            [["table-tut", "table-tab"], "/analysis", true, null],
-            [["distribution-panel", "table-tut", "table-tab"], "/analysis", true, null],
-            [["selector-box-tut"], "/analysis", false, null],
-            [["selector-box-tut"], "/analysis", true, null],
-            [["selector-box-tut"], "/analysis", true, simulateClickID("score-btn", 1)],
+            [["table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
+            [["distribution-panel", "table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
+            [["selector-box-tut"], "/analysis", false, null, true],
+            [["distance-method-tut"], "/analysis", false, null, true],
+            [["heatmap-box-tut"], "/analysis", false, null],
+            [["kernel-tut"], "/analysis", false, null, true],
+            [["score-rank-tut"], "/analysis", false, null, true],
+            [["anosim-tut"], "/analysis", false, null, true],
+            [["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, simulateClickID("score-btn", 1)],
             [["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, null],
-            [["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, null],
-            [["table-tut", "selector-box-tut","table-tab" ], "/analysis", true, simulateClickID("rank-btn", 1)],
-            [["selector-box-tut"], "/analysis", true, null],
-            [["color-tut"], "/analysis", true, null],
-            [["table-tut", "table-tab"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3)])],
+            [["table-tut", "selector-box-tut","table-tab" ], "/analysis", true, simulateClickID("rank-btn", 1), true],
+            [["export-tut"], "/analysis", true, null, true],
+            [["color-tut"], "/analysis", true, null, true],
+            [["table-tut", "table-tab"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3), simulateClickTableInput( 5)])],
             [null, "/figure_factory", false, simulateClickFormCheckInput(0)],
             [["ff-tut-preview"], "/figure_factory", false, simulateClickID("ff-default", 1)],
             [["ff-tut-preview"], "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
+            [null, "/analysis", true],
             [["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            [["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
             [["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
 
         ]
@@ -809,7 +868,6 @@ document.addEventListener('click', (event) => {
 //     // Add your code to run when an element gains focus
 // }, true);
 
-
 addEventListener("dragover", (event) => {
     const dragOverElement = event.target;
     if (dragOverElement.classList.contains("custom-tab")) {
@@ -820,5 +878,6 @@ addEventListener("dragover", (event) => {
 var btn = document.getElementById("reset-rows-btn")
 var container = document.getElementsByClassName("previous-next-container")[0];
 container.insertBefore(btn, container.firstChild);
+
 
 
