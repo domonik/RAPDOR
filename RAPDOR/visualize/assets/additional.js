@@ -689,7 +689,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 var text = document.getElementById("tut-text");
                 var textFS = this.textForStep(ts)
 
-                text.textContent = textFS
+                text.innerHTML = textFS
                 var trow = document.getElementById("tut-row");
                 var svgImage = document.getElementById('tutorial-rapdor-svg');
                 var rapdorDiv = document.getElementById("TutorialRapdor")
@@ -768,8 +768,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         // Steps are organized like this:
         // [ids_to_highlight, "page to go to", "can you click on highlighted divs", function to run]
         tutorialSteps: [
-            [null, null, false, null],
-            [null, null, false, null],
+            [["tut-overlay"], null, false, null],
+            [["tut-overlay"], null, false, null],
             [null, "/", false, null],
             [["from-csv", "from-csv-tab"], "/", false, simulateClickID("from-csv-tab",  "from-csv")],
             [["intensities-row"], "/", false, simulateClickID("from-csv-tab",  "intensities-row")],

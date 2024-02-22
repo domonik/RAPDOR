@@ -1,6 +1,6 @@
 
 [
-  "Welcome to the RAPDOR tutorial. I will guide you through the analysis steps. I will block interactions with the page at some points. You can always leave the tutorial via close.",
+  "Welcome to the RAPDOR tutorial. I will guide you through the analysis steps. I will block interactions with the page at some points. You can always leave the tutorial via close. <br> <b> Note that if something breaks just open a new broswer tab. This tool caches some values and if it breaks refreshing the page might not be sufficient.</b>",
   "We will use data from a protein fractionation experiment for this tutorial. However, keep in mind that this tool works for any kind of multivariate measurement that can be displayed as a probability distribution.",
   "This is the upload Page. Here you can upload your files to display.",
   "This tab is used to upload data from value seperated files. They need to follow a scheme that is described in the documentation. You can click on Docs at the top of the page and find a detailed description of that.",
