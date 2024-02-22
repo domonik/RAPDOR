@@ -12,6 +12,8 @@ async function clickSimulator(trace) {
         cursor.style.top = initialY + "px";
         document.body.appendChild(cursor);
         var target = trace[1];
+        console.log("running clickSimulator target: ", target)
+
         var targetRect = target.getBoundingClientRect()
         var x = targetRect.left + targetRect.width / 2 + window.scrollX;
         var y = targetRect.top + targetRect.height / 2 + window.scrollY;
@@ -49,13 +51,15 @@ function simulateClickClass(className, nr, visibleId = null) {
                 var targets = document.getElementsByClassName(className);
                 console.log(targets, "target")
 
-                if (!nextbtn || !targets) {
+                if (!nextbtn || targets.length <= nr) {
                     attempts++; // Increment attempts
-                    setTimeout(clickFn2, 100); // Retry after a delay
+                    setTimeout(clickFn2, 500); // Retry after a delay
                 } else if (attempts < 5) {
                     var target = targets[nr]
 
                     await clickSimulator([nextbtn, target])
+                    resolve();
+
 
 
                 } else {
@@ -63,9 +67,10 @@ function simulateClickClass(className, nr, visibleId = null) {
                 }
             }
             if (visibleId) {
-                var vid = document.getElementById(visibleId);
+                var vid = document.getElementsByClassName(visibleId);
                 console.log(vid, "visibleID")
-                if (vid) {
+                if (vid.length > 0) {
+                    resolve();
 
                 } else {
                     clickFn2()
@@ -91,19 +96,23 @@ function simulateClickTableInput(nr) {
                 var nextbtn = document.getElementById("tut-next");
                 console.log(nextbtn, "next-btn")
                 var targets = document.querySelectorAll('tr');
-                console.log(targets, "target")
+                console.log(targets, "targets TableInput")
 
-                if (!nextbtn || !targets) {
+                if (!nextbtn || !targets || targets.length < nr || targets.length === 3) {
+                    console.log("try again")
                     attempts++; // Increment attempts
                     setTimeout(clickFn2, 100); // Retry after a delay
                 } else if (attempts < 5) {
                     var target = targets[nr].querySelector("input");
+                    console.log(target, "targetofTableInput")
 
                     await clickSimulator([nextbtn, target])
+                    resolve();
 
 
                 } else {
                     console.error("Element with id '" + id + "' not found after 5 attempts.");
+                    resolve();
                 }
             }
 
@@ -127,7 +136,7 @@ function simulateClickFormCheckInput(nr) {
                 var targets = document.getElementsByClassName('form-check');
                 console.log(targets, "targetIP")
 
-                if (!nextbtn || !targets) {
+                if (!nextbtn || !targets || targets.length < nr) {
                     attempts++; // Increment attempts
                     setTimeout(clickFn2, 100); // Retry after a delay
                 } else if (attempts < 5) {
@@ -135,10 +144,12 @@ function simulateClickFormCheckInput(nr) {
                     console.log(target, "target")
 
                     await clickSimulator([nextbtn, target])
+                    resolve();
 
 
                 } else {
                     console.error("Element with id '" + id + "' not found after 5 attempts.");
+                    resolve();
                 }
             }
 
@@ -704,6 +715,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         // [ids_to_highlight, "page to go to", "can you click on highlighted divs", function to run]
         tutorialSteps: [
             [null, null, false, null],
+            [null, null, false, null],
             [null, "/", false, null],
             [["from-csv", "from-csv-tab"], "/", false, simulateClickID("from-csv-tab",  "from-csv")],
             [["intensities-row"], "/", false, simulateClickID("from-csv-tab",  "intensities-row")],
@@ -715,7 +727,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             [null, "/analysis", false, null],
             [["distribution-panel"], "/analysis", false, null],
             [["table-tab", "table-tut", "distribution-panel"], "/analysis", false, simulateClickClass("dash-cell column-0", 1)],
-            [["rapdor-id", "additional-column"], "/analysis", false, null],
+            [["rapdor-id"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
             [["distribution-graph"], "/analysis", true, null],
             [["replicate-and-norm", "distribution-graph"], "/analysis", true, null],
             [["pseudo-westernblot-row"], "/analysis", true, null],
@@ -732,8 +744,9 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             [["table-tut", "table-tab"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3)])],
             [null, "/figure_factory", false, simulateClickFormCheckInput(0)],
             [["ff-tut-preview"], "/figure_factory", false, simulateClickID("ff-default", 1)],
-            [null, "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
+            [["ff-tut-preview"], "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
             [["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            [["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
 
         ]
 

@@ -498,6 +498,8 @@ def update_selected_proteins(rapdordata: RAPDORData, current_row_ids):
 def apply_default_settings(clicks, plot_type, selected_proteins):
     if clicks is None:
         raise PreventUpdate
+    if len(selected_proteins) == 0:
+        raise PreventUpdate
     m_size = line_width = grid_width = dtickx = dticky = height = vspace = xaxisw = yaxisw = dash.no_update
     l1x = l2x = l1y = l2y = None
     if plot_type == 0:
