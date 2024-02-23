@@ -658,7 +658,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
 
             if (this.tutorialSteps.length > ts) {
-                var [highlightID, page, selectable, runFunction, reverse] = this.tutorialSteps[ts];
+                var [stepName, highlightID, page, selectable, runFunction, reverse] = this.tutorialSteps[ts];
                 if (page) {
                     if (window.location.pathname !== page) {
                         sessionStorage.setItem("tutorial-step", ts);
@@ -689,12 +689,15 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 var text = document.getElementById("tut-text");
                 var textFS = this.textForStep(ts)
 
+
                 text.innerHTML = textFS
+                var header = document.getElementById("tut-head");
+                header.textContent = stepName;
                 var trow = document.getElementById("tut-row");
+                var step = document.getElementById("tut-step");
                 var svgImage = document.getElementById('tutorial-rapdor-svg');
                 var rapdorDiv = document.getElementById("TutorialRapdor")
-
-
+                step.textContent = `${ts+1}/${this.tutorialSteps.length}`
 
                 if (reverse) {
                     trow.classList.add("flex-row-reverse")
@@ -766,46 +769,46 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
 
 
         // Steps are organized like this:
-        // [ids_to_highlight, "page to go to", "can you click on highlighted divs", function to run]
+        // [step_name, ids_to_highlight, "page to go to", "can you click on highlighted divs", function to run]
         tutorialSteps: [
-            [["tut-overlay"], null, false, null],
-            [["tut-overlay"], null, false, null],
-            [null, "/", false, null],
-            [["from-csv", "from-csv-tab"], "/", false, simulateClickID("from-csv-tab",  "from-csv")],
-            [["intensities-row"], "/", false, simulateClickID("from-csv-tab",  "intensities-row")],
-            [["design-row"], "/", false, simulateClickID("from-csv-tab",  "design-row")],
-            [["log-base-row"], "/", false, simulateClickID("from-csv-tab",  "log-base-row")],
-            [["sep-row"], "/", false, simulateClickID("from-csv-tab", "sep-row")],
-            [["from-json", "from-json-tab"], "/", false, simulateClickID("from-json-tab", "from-json")],
-            [["from-json", "from-json-tab"], "/", false, simulateClickID("from-json-tab", "from-json")],
-            [null, "/analysis", false, null],
-            [["distribution-panel"], "/analysis", false, null],
-            [["table-tab", "table-tut", "distribution-panel"], "/analysis", false, simulateClickClass("dash-cell column-0", 1)],
-            [["rapdor-id"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
-            [["distribution-graph"], "/analysis", true, null],
-            [["replicate-and-norm", "distribution-graph"], "/analysis", true, null],
-            [["pseudo-westernblot-row"], "/analysis", true, null],
-            [["table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
-            [["distribution-panel", "table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
-            [["selector-box-tut"], "/analysis", false, null, true],
-            [["distance-method-tut"], "/analysis", false, null, true],
-            [["heatmap-box-tut"], "/analysis", false, null],
-            [["kernel-tut"], "/analysis", false, null, true],
-            [["score-rank-tut"], "/analysis", false, null, true],
-            [["anosim-tut"], "/analysis", false, null, true],
-            [["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, simulateClickID("score-btn", 1)],
-            [["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, null],
-            [["table-tut", "selector-box-tut","table-tab" ], "/analysis", true, simulateClickID("rank-btn", 1), true],
-            [["export-tut"], "/analysis", true, null, true],
-            [["color-tut"], "/analysis", true, null, true],
-            [["table-tut", "table-tab"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3), simulateClickTableInput( 5)])],
-            [null, "/figure_factory", false, simulateClickFormCheckInput(0)],
-            [["ff-tut-preview"], "/figure_factory", false, simulateClickID("ff-default", 1)],
-            [["ff-tut-preview"], "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
-            [null, "/analysis", true],
-            [["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
-            [["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
-            [["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Tutorial",["tut-overlay"], null, false, null],
+            ["Tutorial", ["tut-overlay"], null, false, null],
+            ["Data Upload", null, "/", false, null],
+            ["Data Upload", ["from-csv", "from-csv-tab"], "/", false, simulateClickID("from-csv-tab",  "from-csv")],
+            ["Data Upload", ["intensities-row"], "/", false, simulateClickID("from-csv-tab",  "intensities-row")],
+            ["Data Upload", ["design-row"], "/", false, simulateClickID("from-csv-tab",  "design-row")],
+            ["Data Upload", ["log-base-row"], "/", false, simulateClickID("from-csv-tab",  "log-base-row")],
+            ["Data Upload", ["sep-row"], "/", false, simulateClickID("from-csv-tab", "sep-row")],
+            ["Data Upload", ["from-json", "from-json-tab"], "/", false, simulateClickID("from-json-tab", "from-json")],
+            ["Data Upload", ["from-json", "from-json-tab"], "/", false, simulateClickID("from-json-tab", "from-json")],
+            ["Analysis", null, "/analysis", false, null],
+            ["Distribution", ["distribution-panel"], "/analysis", false, null],
+            ["Distribution", ["table-tab", "table-tut", "distribution-panel"], "/analysis", false, simulateClickClass("dash-cell column-0", 1)],
+            ["Distribution", ["rapdor-id"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Distribution", ["distribution-graph"], "/analysis", true, null],
+            ["Distribution", ["replicate-and-norm", "distribution-graph"], "/analysis", true, null],
+            ["Distribution", ["pseudo-westernblot-row"], "/analysis", true, null],
+            ["Table", ["table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
+            ["Table", ["distribution-panel", "table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
+            ["Analysis Workflow", ["selector-box-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["distance-method-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["heatmap-box-tut"], "/analysis", false, null],
+            ["Analysis Workflow", ["kernel-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["score-rank-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["anosim-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, simulateClickID("score-btn", 1)],
+            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, null],
+            ["Analysis Workflow", ["table-tut", "selector-box-tut","table-tab" ], "/analysis", true, simulateClickID("rank-btn", 1), true],
+            ["Analysis Workflow", ["export-tut"], "/analysis", true, null, true],
+            ["Figure Creation", ["color-tut"], "/analysis", true, null, true],
+            ["Figure Creation", ["table-tut", "table-tab"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3), simulateClickTableInput( 5)])],
+            ["Figure Creation", null, "/figure_factory", false, simulateClickFormCheckInput(0)],
+            ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, simulateClickID("ff-default", 1)],
+            ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
+            ["Dimension Reduction", null, "/analysis", true],
+            ["Dimension Reduction", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
 
         ]
 

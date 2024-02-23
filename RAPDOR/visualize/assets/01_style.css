@@ -36,6 +36,29 @@
 
 }
 
+#tut-end {
+    padding: 5px;
+    width: 25pt;
+    height: 25pt;
+    border-radius: 50%;
+}
+
+.btn-tut {
+    background-color: var(--table-dark);
+    color: var(--r-text-color);
+    border-radius: 5px;
+    padding: 5px 10px 5px 10px;
+
+}
+
+.btn-tut:hover {
+    background-color: var(--primary-hover-color);
+}
+
+h5 {
+    margin-bottom: 0;
+}
+
 .highlighted {
     position: relative;
     border-radius: 2px;

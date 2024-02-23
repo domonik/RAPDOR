@@ -63,7 +63,7 @@ def _header_layout():
                     dcc.Store(id="t-fill-start", data=TCSTARTS),
                     dcc.Store(id="t-black-start", data=TC2STARTS),
                     html.Div(
-                        html.Button("Pages", id="open-offcanvas", n_clicks=0, className="align-self-start pages-btn"),
+                        html.Button(id="open-offcanvas", n_clicks=0, className="align-self-start pages-btn fa fa-bars fa-xl"),
                         className="col-1 d-lg-none d-flex align-items-center"
                     ),
                     html.Div([
@@ -151,28 +151,37 @@ def _tutorial_raptor():
                 html.Div(
                     [
                         html.Div(
-                            html.Div(
-                                html.Button("Close", className="btn-secondary w-100",
-                                            style={"pointer-events": "all"}, id="tut-end"
-                                            ),
-                                className="justify-self-end d-flex p-2 col-2"
-                            ),
-                            className="row justify-content-end px-4"
+                            [
+                                html.Div(
+                                    html.H5("Tutorial", id="tut-head"), className="col-8 p-1 align-items-center d-flex"
+                                ),
+                                html.Div(
+                                    html.Button("", className="btn-tut fa fa-xmark",
+                                                style={"pointer-events": "all"}, id="tut-end"
+                                                ),
+                                    className="justify-self-end d-flex p-1 col-2 justify-content-end"
+                                ),
+
+
+                            ],
+
+                            className="row justify-content-between px-4 pt-1"
 
                         ),
                         html.Div(
 
                             [
-                                html.Div("text", id="tut-text", className="col-12 p-2")
+                                html.Div("", id="tut-text", className="col-12 p-2")
                             ],
                             className="row px-4"
                         ),
                         html.Div(
                             [
-                                html.Div(html.Button("Previous",className="btn-secondary w-100"),  id="tut-prev", className="col-3 d-flex p-2"),
-                                html.Div(html.Button("Next", className="btn-secondary w-100"), id="tut-next",  className="col-3 p-2 d-flex ")
+                                html.Div(html.Button(className="btn-tut fa fa-angle-left fa-lg"),  id="tut-prev", className="col-2 d-flex p-1 justify-content-start"),
+                                html.Div(html.Span("1/15"),  id="tut-step", className="col-2 d-flex p-1 justify-content-center"),
+                                html.Div(html.Button(className="btn-tut fa fa-angle-right fa-lg"), id="tut-next",  className="col-2 d-flex p-1 justify-content-end")
                             ],
-                            className="row justify-content-between px-4"
+                            className="row justify-content-between px-4 pb-1"
                         ),
 
                     ],
@@ -189,7 +198,7 @@ def _tutorial_raptor():
         html.Div(
             html.Img(src=svg, className="tutorial-rapdor-svg p-0",
                      id="tutorial-rapdor-svg", ),
-            className="tutorial-rapdor col-lg-3 col-6 d-flex p-0 m-0", id="TutorialRapdor"
+            className="tutorial-rapdor col-lg-3 d-none d-lg-flex p-0 m-0", id="TutorialRapdor"
         ),
 
     ]

@@ -21,7 +21,7 @@ else:
 app = DashProxy(
     "RAPDOR Dashboard",
     title="RAPDOR Visualizer",
-    external_stylesheets=[dbc.themes.DARKLY, "https://use.fontawesome.com/releases/v5.10.2/css/all.css"],
+    external_stylesheets=[dbc.themes.DARKLY, "https://use.fontawesome.com/releases/v6.5.1/css/all.css"],
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
     prevent_initial_callbacks="initial_duplicate",
