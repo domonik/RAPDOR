@@ -485,6 +485,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             var r = document.querySelector(':root');
             r.style.setProperty('--primary-color', primaryColor)
             r.style.setProperty('--secondary-color', secondaryColor)
+            let btn = document.getElementById("night-mode").querySelector('button')
+            btn.classList.add("fa", "fa-solid", "fa")
 
             if (on) {
                 r.style.setProperty('--r-text-color', "white")
@@ -501,6 +503,11 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--secondary-hover-color', darker2);
                 var table_head = this.function2(primaryColor, 0.05);
                 r.style.setProperty('--table-head-color', table_head);
+                btn.classList.add("fa-moon")
+                btn.classList.remove("fa-sun")
+                btn.style.backgroundColor = "black"
+                btn.style.borderColor = "black"
+                btn.style.color = "white"
 
 
             } else {
@@ -517,6 +524,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 r.style.setProperty('--primary-hover-color', lighter);
                 r.style.setProperty('--secondary-hover-color', lighter2);
                 r.style.setProperty('--disabled-input', "#a6a6a6")
+                btn.classList.remove("fa-moon")
+                btn.classList.add("fa-sun")
+                btn.style.backgroundColor = "white"
+                btn.style.borderColor = "white"
+                btn.style.color = "var(--table-head-color)"
+
 
 
 
@@ -809,6 +822,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             ["Dimension Reduction", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
             ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
             ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Finish",null, null, false, simulateClickID("dim-red-tab", "dim-red-tut")],
 
         ]
 

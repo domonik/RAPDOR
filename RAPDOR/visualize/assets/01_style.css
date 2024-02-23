@@ -828,3 +828,18 @@ input[type="radio"]:checked {
     transition-duration: 1s;
 
 }
+
+#tut-btn {
+    height: 100%;
+    background-color: transparent;
+    color: white;
+    border: 0 solid;
+}
+
+#tut-btn:hover {
+    color: var(--primary-color);
+}
+
+#night-mode button {
+  color: var(--table-head-color)
+}

@@ -37,5 +37,6 @@
   "Now that we are back at the analysis page lets have a look at the dimension reduction.",
   "Here you see the interactive dimension reduction. If you hover over the datapoints, the corresponding distribution is shown in the distribution panel. Just try yourself",
   "The relative position shift is an indicator of how many fractions the protein shifted. The relative distribution change shows whether a protein was more uniformly distributed after treatment (positive values) or accumulated in a less fractions (negative values)",
-  "You can also filter this plot via a Cutoff at the right. E.g. you can filter for data points with a specific Rank. Just try yourself."
+  "You can also filter this plot via a Cutoff at the right. E.g. you can filter for data points with a specific Rank. Just try yourself.",
+  "This is it. You finished the tutorial. Now you can go to the upload page and upload your own data."
 ]

@@ -81,7 +81,8 @@ def _header_layout():
                         className="col-md-6 col-7 justify-content-center justify-conent-md-start", id="logo-container"
                     ),
                     html.Div(
-                        daq.BooleanSwitch(
+                        [
+                            daq.BooleanSwitch(
                             label='',
                             labelPosition='left',
                             color="var(--r-text-color)",
@@ -91,19 +92,24 @@ def _header_layout():
                             persistence=True
 
                         ),
-                        className="col-1 col-md-2 d-flex justify-content-end justify-self-end"
+
+                        ],
+                        className="col-1  d-flex justify-content-end justify-self-end align-items-center"
                     ),
                     html.Div(
-                        html.Button("Tutorial", id="tut-btn", style={"z-index": "10000"},
-                                    className="px-2 btn-secondary", ),
-                        className="col-2 col-sm-1 justify-content-center justify-self-end d-flex align-items-center"
+                        [
+                            html.Span("Tutorial", style={"font-family": "Font Awesome 6 Free", "color": "white"}, className="d-lg-flex d-none"),
+                            html.Button(id="tut-btn", style={"z-index": "10000"},
+                                    className="p-2 btn-secondary fa fa-regular fa-circle-play fa-2xl", )
+                        ],
+                        className="col-2 justify-content-end justify-self-end d-flex align-items-center"
 
                     )
 
 
 
                 ],
-                className="row"
+                className="row px-1 justify-content-between"
             ),
             className="databox header-box p-2",
             style={"text-align": "center"},
