@@ -811,7 +811,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             ["Analysis Workflow", ["anosim-tut"], "/analysis", false, null, true],
             ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, simulateClickID("score-btn", 1)],
             ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, null],
-            ["Analysis Workflow", ["table-tut", "selector-box-tut","table-tab" ], "/analysis", true, simulateClickID("rank-btn", 1), true],
+            ["Analysis Workflow", ["table-tut", "selector-box-tut","table-tab",  "distribution-graph"], "/analysis", true, simulateClickID("rank-btn", 1), true],
             ["Analysis Workflow", ["export-tut"], "/analysis", true, null, true],
             ["Figure Creation", ["color-tut"], "/analysis", true, null, true],
             ["Figure Creation", ["table-tut", "table-tab"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3), simulateClickTableInput( 5)])],

@@ -177,7 +177,7 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
     else:
         active_cell_out = dash.no_update
         page = page_current
-    if page * page_size > data.shape[0]:
+    if page * page_size >= data.shape[0]:
         return_value = pd.DataFrame()
     else:
         return_value = data.iloc[page * page_size: (page_current + 1) * page_size]
