@@ -392,6 +392,7 @@ def rank_table(btn, sel_columns, current_sorting, rapdordata, uid):
 
         rapdordata.rank_table(cols, asc)
         sel_columns += ["Rank"]
+        sel_columns = list(set(sel_columns))
     except Exception as e:
         alert = True
         alert_msg = f"Ranking Failed:\n{str(e)}"
