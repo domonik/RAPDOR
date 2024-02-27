@@ -320,7 +320,7 @@ def upload_from_csv(btn, tut_output, uid, sep, intensities_content, design_conte
 
                 )
     else:
-        if tut_output == 7:
+        if tut_output == 5:
             df = pd.read_csv(TUTFILE, sep="\t")
             design = pd.read_csv(TUTDESIGN, sep="\t")
             rapdordata = RAPDORData(df, design)

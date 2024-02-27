@@ -106,6 +106,47 @@ function simulateClickClass(className, nr, visibleId = null) {
 
 }
 
+function simulateClickSorting(columnName) {
+    return function () {
+        return new Promise((resolve, reject) => {
+            var attempts = 0; // Initialize attempts counter
+            var clickFn2 = async function () {
+
+                var nextbtn = document.getElementById("tut-next");
+                console.log(nextbtn, "next-btn")
+                const thElement = document.querySelector('th[data-dash-column="' + columnName + '"]');
+                const div = thElement.querySelector('.column-actions');
+                const target = div.querySelector('.column-header--sort');
+                console.log(target, "target Sorting")
+
+                if (!nextbtn || !target) {
+                    console.log("try again")
+                    attempts++; // Increment attempts
+                    setTimeout(clickFn2, 100); // Retry after a delay
+                } else if (attempts < 5) {
+                    const svg = target.querySelector('svg');
+                    console.log(svg.classList, "svgClasses")
+
+                    let sorted = svg.classList.contains("fa-sort-down")
+                    while (!sorted) {
+                        await clickSimulator([nextbtn, target])
+                        sorted = svg.classList.contains("fa-sort-down")
+                    }
+                    resolve();
+                } else {
+                    console.error("Element with id '" + id + "' not found after 5 attempts.");
+                    resolve();
+                }
+            }
+
+            clickFn2()
+
+        });
+    }
+
+
+}
+
 function simulateClickTableInput(nr) {
     return  function () {
         return new Promise((resolve, reject) => {
@@ -751,7 +792,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 ts = this.loadTutorialStep(-1)
 
             }
-            if (ts == 7) {
+            if (ts == 5) {
                 return ts
             } else {
                 return dash_clientside.no_update
@@ -788,10 +829,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             ["Tutorial", ["tut-overlay"], null, false, null],
             ["Data Upload", null, "/", false, null],
             ["Data Upload", ["from-csv", "from-csv-tab"], "/", false, simulateClickID("from-csv-tab",  "from-csv")],
-            ["Data Upload", ["intensities-row"], "/", false, simulateClickID("from-csv-tab",  "intensities-row")],
-            ["Data Upload", ["design-row"], "/", false, simulateClickID("from-csv-tab",  "design-row")],
-            ["Data Upload", ["log-base-row"], "/", false, simulateClickID("from-csv-tab",  "log-base-row")],
-            ["Data Upload", ["sep-row"], "/", false, simulateClickID("from-csv-tab", "sep-row")],
             ["Data Upload", ["from-json", "from-json-tab"], "/", false, simulateClickID("from-json-tab", "from-json")],
             ["Data Upload", ["from-json", "from-json-tab"], "/", false, simulateClickID("from-json-tab", "from-json")],
             ["Analysis", null, "/analysis", false, null],
@@ -804,14 +841,17 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             ["Table", ["table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
             ["Table", ["distribution-panel", "table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
             ["Analysis Workflow", ["selector-box-tut"], "/analysis", false, null, true],
-            ["Analysis Workflow", ["distance-method-tut"], "/analysis", false, null, true],
-            ["Analysis Workflow", ["heatmap-box-tut"], "/analysis", false, null],
             ["Analysis Workflow", ["kernel-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["distance-method-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["heatmap-box-tut"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
             ["Analysis Workflow", ["score-rank-tut"], "/analysis", false, null, true],
             ["Analysis Workflow", ["anosim-tut"], "/analysis", false, null, true],
-            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, simulateClickID("score-btn", 1)],
-            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", true, null],
-            ["Analysis Workflow", ["table-tut", "selector-box-tut","table-tab",  "distribution-graph"], "/analysis", true, simulateClickID("rank-btn", 1), true],
+            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", false, simulateClickID("score-btn", 1)],
+            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", false, null],
+            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("ANOSIM R"), simulateClickSorting("Mean Distance")])],
+            ["Analysis Workflow", ["table-tut", "selector-box-tut","table-tab",  "distribution-graph"], "/analysis", false, simulateClickID("rank-btn", 1), true],
+            ["Analysis Workflow", ["heatmap-box-tut"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1)])],
+            ["Analysis Workflow", ["distribution-panel"], "/analysis", false, null],
             ["Analysis Workflow", ["export-tut"], "/analysis", true, null, true],
             ["Figure Creation", ["color-tut"], "/analysis", true, null, true],
             ["Figure Creation", ["table-tut", "table-tab"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3), simulateClickTableInput( 5)])],

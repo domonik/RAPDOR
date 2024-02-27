@@ -205,6 +205,27 @@ def selector_box(disabled: bool = False):
                     html.Div(
                         [
                             html.Div(
+                                html.Span("Kernel Size", style={"text-align": "center"}),
+                                className="col-12 col-md-4 justify-content-center align-self-center"
+                            ),
+                            html.Div(
+                                dcc.Slider(
+                                    0, MAX_KERNEL_SLIDER, step=None,
+                                    marks={
+                                        i: str(i) for i in [0] + list(range(3, MAX_KERNEL_SLIDER + 1, 2))
+                                    }, value=3,
+                                    className="justify-content-center",
+                                    id="kernel-slider",
+                                    disabled=disabled
+                                ),
+                                className="col-12 col-md-8 justify-content-center",
+                            ),
+                        ],
+                        className=BOOTSROW, id="kernel-tut"
+                    ),
+                    html.Div(
+                        [
+                            html.Div(
                                 html.Span("Distance Method", style={"text-align": "center"}),
                                 className="col-4 justify-content-center align-self-center"
                             ),
@@ -223,27 +244,6 @@ def selector_box(disabled: bool = False):
                             )
                         ],
                         className=BOOTSROW, id="distance-method-tut"
-                    ),
-                    html.Div(
-                        [
-                            html.Div(
-                                html.Span("Kernel Size", style={"text-align": "center"}),
-                                className="col-12 col-md-4 justify-content-center align-self-center"
-                            ),
-                            html.Div(
-                                dcc.Slider(
-                                    0, MAX_KERNEL_SLIDER, step=None,
-                                    marks={
-                                        i: str(i) for i in [0] + list(range(3, MAX_KERNEL_SLIDER+1, 2))
-                                    }, value=3,
-                                    className="justify-content-center",
-                                    id="kernel-slider",
-                                    disabled=disabled
-                                ),
-                                className="col-12 col-md-8 justify-content-center",
-                            ),
-                        ],
-                        className=BOOTSROW, id="kernel-tut"
                     ),
                     html.Div(
                         [
