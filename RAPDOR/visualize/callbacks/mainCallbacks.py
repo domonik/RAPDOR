@@ -194,6 +194,7 @@ def update_selected_id(active_cell, test_div, additional_header, rapdordata):
         if test_div is None:
             raise PreventUpdate
         active_row_id = int(test_div)
+        active_cell = active_row_id
         protein = rapdordata.df.loc[active_row_id, "RAPDORid"]
     else:
         raise PreventUpdate
