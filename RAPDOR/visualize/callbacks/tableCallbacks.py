@@ -151,6 +151,7 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
                 data = data.loc[data[col_name].str.startswith(filter_value)]
 
     if sort_by is not None:
+        sort_by = [col for col in sort_by if col["column_id"] in data]
         if len(sort_by):
             data = data.sort_values(
                 [col['column_id'] for col in sort_by],
