@@ -822,8 +822,8 @@ def update_ff_download_preview(
             fig.update_annotations(
                 font=dict(size=legend_font_size)
             )
-        except IndexError:
-            pass
+        except IndexError as e:
+            logger.error(str(e))
         fig.update_xaxes(title=dict(font=dict(size=axis_font_size)))
         fig.update_yaxes(title=dict(font=dict(size=axis_font_size)))
     logger.info("generating image")

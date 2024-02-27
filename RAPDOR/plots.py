@@ -1291,13 +1291,14 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
 def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 0.1, second_bg_color: str = None, bubble_legend_color: str = None):
     xloc = [legend_start + idx * legend_spread for idx in range(3)]
     fig.data[0].x = xloc
-    annos = [annotation for annotation in fig.layout.annotations if annotation.text != "Mean Distance"]
+    annos = [annotation for annotation in fig.layout.annotations if (annotation.text != "Mean Distance" and annotation.xref == "x")]
     if second_bg_color is not None:
         fig.update_shapes(fillcolor=second_bg_color)
     for idx, annotation in enumerate(annos):
         annotation.update(
             x=xloc[idx] + 0.02 + idx * 0.02 / 3,
         )
+
     if bubble_legend_color is not None:
         fig.data[0].update(marker=dict(line=dict(color=bubble_legend_color)))
     return fig
