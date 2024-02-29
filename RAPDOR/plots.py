@@ -550,19 +550,26 @@ def plot_means_and_histos(rapdorids, rapdordata: RAPDORData, colors, title_col: 
     return fig
 
 
-def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors):
+def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, orientation: str = "h"):
     fig = go.Figure(layout=dict(template=DEFAULT_TEMPLATE))
     triangles = []
     df = rapdordata.df.sort_values(by="Rank")
-    x = list(range(df["Rank"].min(), df.Rank.max() + 1))
+    init_x = list(range(df["Rank"].min(), df.Rank.max() + 1))
     tri_x = 25
     tri_y = 0.1
     for idx, (key, data) in enumerate(rapdorsets.items()):
         df = df.sort_values(by="Rank")
         data = df[df["RAPDORid"].isin(data)]["Rank"] - 1
+        x = init_x
         y = np.empty(len(x))
         y.fill(np.nan)
         y[data] = 1.
+        tri = np.nanmedian((y * np.asarray(x)))
+        trixs = [tri - tri_x, tri, tri + tri_x, tri - tri_x]
+        triys = [0, tri_y, 0, 0]
+        if orientation == "v":
+            triys, trixs = trixs, triys
+            x, y = y, x
         fig.add_trace(
             go.Bar(
                 x=x,
@@ -571,14 +578,15 @@ def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors):
                 marker_line=dict(width=2, color=colors[idx]),
                 name=key,
                 hovertext=df["Gene"],
+                orientation="v" if orientation == "h" else "h"
 
             )
         )
-        tri = np.nanmedian((y * np.asarray(x)))
+
         triangles.append(
             go.Scatter(
-                x=[tri - tri_x, tri, tri + tri_x, tri - tri_x],
-                y=[0, tri_y, 0, 0],
+                x=trixs,
+                y=triys,
                 mode="lines",
                 fill="toself",
                 fillcolor=colors[idx],
@@ -588,8 +596,15 @@ def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors):
         )
     fig.add_traces(triangles)
     fig.update_layout(barmode="overlay", bargap=0, legend=dict(orientation="h", y=1.02, yanchor="bottom", x=1, xanchor="right"))
-    fig.update_xaxes(title="Rank", range=(x[0], x[-1]), showgrid=False)
-    fig.update_yaxes(range=(0, 1), showgrid=False, showticklabels=False)
+    if orientation == "h":
+        fig.update_xaxes(title="Rank", range=(init_x[0], init_x[-1]), showgrid=True)
+        fig.update_yaxes(range=(0, 1), showgrid=False, showticklabels=False)
+    elif orientation == "v":
+        fig.update_yaxes(title="Rank", range=(init_x[0], init_x[-1]), showgrid=True)
+        fig.update_xaxes(range=(0, 1), showgrid=False, showticklabels=False)
+
+    fig.layout.xaxis.type = "linear"
+    fig.layout.yaxis.type = "linear"
     return fig
 
 
@@ -1739,12 +1754,13 @@ if __name__ == '__main__':
     ids3 = list(rapdor.df[rapdor.df["photosystem"] == True]["RAPDORid"])
     ids = []
     ids += list(rapdor.df[rapdor.df["old_locus_tag"].str.contains("sll1388|slr0711")]["RAPDORid"])
+    d = {"large Ribo": ids2, "foo": ids}
+
     #plt = plot_dimension_reduction(rapdor, colors=COLOR_SCHEMES["Dolphin"], highlight=ids  )
-    plt = plot_protein_distributions(ids, rapdor, colors=COLOR_SCHEMES["Dolphin"], plot_type="zoomed")
+    plt = rank_plot(d, rapdor, colors=COLOR_SCHEMES["Dolphin"], orientation="v")
     plt.show()
     exit()
 
-    d = {"large Ribo": ids2, "small Ribo": ids, "photosystem": ids3}
     #fig = multi_means_and_histo(d, rapdor, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
     #fig = plot_protein_distributions(ids[0:4], rapdor, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
     fig = plot_sample_histogram(rapdor, method="jsd")
