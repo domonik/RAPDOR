@@ -49,7 +49,6 @@ COLOR_SCHEMES = {
 
 COLORS = list(qualitative.Alphabet) + list(qualitative.Light24) + list(qualitative.Dark24) + list(qualitative.G10)
 
-
 DEFAULT_TEMPLATE = copy.deepcopy(pio.templates["plotly_white"])
 
 DEFAULT_TEMPLATE.update(
@@ -167,7 +166,7 @@ def plot_replicate_distribution(
     if colors is None:
         colors = DEFAULT_COLORS
     indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
-    x = list(range(offset+1, subdata.shape[1] + offset+1))
+    x = list(range(offset + 1, subdata.shape[1] + offset + 1))
     fig = go.Figure()
     names = []
     values = []
@@ -260,7 +259,8 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
         if cols != 2:
             raise ValueError("Number of columns not supported for mixed plot")
         y_title = None
-        arrays = [rapdordata.norm_array[protein] for protein in proteins] + [rapdordata.kernel_array[protein] for protein in proteins]
+        arrays = [rapdordata.norm_array[protein] for protein in proteins] + [rapdordata.kernel_array[protein] for
+                                                                             protein in proteins]
         annotation += list(rapdordata.df[title_col][proteins])
     elif plot_type == "zoomed":
         arrays = [rapdordata.norm_array[protein] for protein in proteins] * 3
@@ -276,7 +276,7 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
         rows=rows, cols=cols,
         x_title="Fraction",
         y_title=y_title,
-        #row_titles=list(annotation),
+        # row_titles=list(annotation),
         **kwargs
     )
     idx = 0
@@ -297,13 +297,14 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                     wmin = wmin - margin
                     clipmaxes.append((wmin, wmax))
 
-                plot_idx = (row_idx) * cols + (col_idx +1) if idx != 0 else ""
+                plot_idx = (row_idx) * cols + (col_idx + 1) if idx != 0 else ""
                 xref = f"x{plot_idx} domain"
                 yref = f"y{plot_idx} domain"
                 if mode == "line":
                     fig = plot_distribution(array, rapdordata.internal_design_matrix, offset=i, colors=colors)
                 elif mode == "bar":
-                    fig = plot_bars(array, rapdordata.internal_design_matrix, offset=i, colors=colors, x=rapdordata.fractions)
+                    fig = plot_bars(array, rapdordata.internal_design_matrix, offset=i, colors=colors,
+                                    x=rapdordata.fractions)
                 else:
                     raise ValueError("mode must be one of line or bar")
                 if plot_type not in ("mixed", "zoomed") or col_idx == 1:
@@ -321,7 +322,7 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                 for trace in fig["data"]:
                     if idx > 0:
                         trace['showlegend'] = False
-                    fig_subplots.add_trace(trace, row=row_idx+1, col=col_idx+1)
+                    fig_subplots.add_trace(trace, row=row_idx + 1, col=col_idx + 1)
                 idx += 1
     if plot_type == "mixed":
         fig_subplots.add_annotation(
@@ -351,11 +352,9 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
 
     if plot_type == "zoomed":
         for idx, entry in enumerate(x1s):
-            clipmax= clipmaxes[idx]
-            fig_subplots.update_xaxes(range=[entry-zoom_fractions, entry+zoom_fractions], row=idx+1, col=2)
-            fig_subplots.update_yaxes(row=idx+1, col=2, range=clipmax)
-
-
+            clipmax = clipmaxes[idx]
+            fig_subplots.update_xaxes(range=[entry - zoom_fractions, entry + zoom_fractions], row=idx + 1, col=2)
+            fig_subplots.update_yaxes(row=idx + 1, col=2, range=clipmax)
 
     fig_subplots.update_layout(
         legend=fig["layout"]["legend"],
@@ -365,7 +364,8 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
     return fig_subplots
 
 
-def plot_var_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_COLORS["primary"], var_measure: str = "ANOSIM R", bins: int=10):
+def plot_var_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_COLORS["primary"],
+                   var_measure: str = "ANOSIM R", bins: int = 10):
     fig = go.Figure()
     proteins = rapdordata[rapdorids]
     x = rapdordata.df.loc[proteins][var_measure]
@@ -410,7 +410,6 @@ def plot_distance_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_
     fig.update_xaxes(title=rapdordata.state.distance_method, range=[x_min, x_max])
     fig.update_yaxes(title="Freq.")
     return fig
-
 
 
 def plot_mean_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col: str = None):
@@ -504,7 +503,6 @@ def plot_mean_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col
             ))
     fig.update_layout(violingap=0, violinmode='overlay')
 
-
     fig = _update_distribution_layout(fig, names, x, i, yname=f"rel. {rapdordata.measure_type} {rapdordata.measure}")
     return fig
 
@@ -538,7 +536,6 @@ def plot_means_and_histos(rapdorids, rapdordata: RAPDORData, colors, title_col: 
         fig.update_xaxes(fig3["layout"]["xaxis"], row=3)
         fig.update_yaxes(fig3["layout"]["yaxis"], row=3)
 
-
     # Add traces from the third figure to the third subplot
 
     fig.update_layout(
@@ -550,13 +547,38 @@ def plot_means_and_histos(rapdorids, rapdordata: RAPDORData, colors, title_col: 
     return fig
 
 
-def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, orientation: str = "h"):
+def _coordinates_to_svg_path(x_coords, y_coords):
+    if len(x_coords) != 3 or len(y_coords) != 3:
+        raise ValueError("The input should contain exactly 3 coordinates for a triangle.")
+
+    path = f"M {x_coords[0]} {y_coords[0]} "  # Move to the first vertex
+
+    for i in range(1, 3):
+        path += f"L {x_coords[i]} {y_coords[i]} "  # Draw lines to the other vertices
+
+    path += "Z"  # Close the path
+
+    return path
+
+
+def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, orientation: str = "h",
+              triangles: str = "inside", tri_x: float = 25, tri_y: float = 0.1):
     fig = go.Figure(layout=dict(template=DEFAULT_TEMPLATE))
-    triangles = []
     df = rapdordata.df.sort_values(by="Rank")
     init_x = list(range(df["Rank"].min(), df.Rank.max() + 1))
-    tri_x = 25
-    tri_y = 0.1
+    if triangles == "outside":
+        trirefx = "paper" if orientation == "v" else "x"
+        trirefy = "paper" if orientation == "h" else "y"
+        anoxanchor = "center" if orientation == "h" else "right"
+        anoyanchor = "top" if orientation == "h" else "middle"
+
+        modifier = tri_y
+    else:
+        trirefx, trirefy = "x", "y"
+        modifier = 0
+        anoxanchor = "center" if orientation == "h" else "left"
+        anoyanchor = "bottom" if orientation == "h" else "middle"
+
     for idx, (key, data) in enumerate(rapdorsets.items()):
         df = df.sort_values(by="Rank")
         data = df[df["RAPDORid"].isin(data)]["Rank"] - 1
@@ -565,8 +587,8 @@ def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, o
         y.fill(np.nan)
         y[data] = 1.
         tri = np.nanmedian((y * np.asarray(x)))
-        trixs = [tri - tri_x, tri, tri + tri_x, tri - tri_x]
-        triys = [0, tri_y, 0, 0]
+        trixs = [tri - tri_x, tri, tri + tri_x]
+        triys = [0 - modifier, tri_y - modifier, 0 - modifier]
         if orientation == "v":
             triys, trixs = trixs, triys
             x, y = y, x
@@ -582,20 +604,35 @@ def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, o
 
             )
         )
-
-        triangles.append(
-            go.Scatter(
-                x=trixs,
-                y=triys,
-                mode="lines",
-                fill="toself",
+        color = fig.layout.xaxis.linecolor
+        fig.add_shape(
+            dict(
+                type="path",
+                path=_coordinates_to_svg_path(trixs, triys),
+                line_color=color if color else "black",
                 fillcolor=colors[idx],
-                marker_color=colors[idx],
-                showlegend=False
+                xref=trirefx,
+                yref=trirefy,
+                name=f"{key} median",
+                layer="below" if triangles == "outside" else None,
+                showlegend=True
+
             )
         )
-    fig.add_traces(triangles)
-    fig.update_layout(barmode="overlay", bargap=0, legend=dict(orientation="h", y=1.02, yanchor="bottom", x=1, xanchor="right"))
+        fig.add_annotation(
+            text=f"{tri:.1f}",
+            xref=trirefx,
+            yref=trirefy,
+            x=trixs[1] if orientation == "h" else trixs[0],
+            y=triys[0] if orientation == "h" else triys[1],
+            showarrow=False,
+            xanchor=anoxanchor,
+            yanchor=anoyanchor,
+
+        )
+
+    fig.update_layout(barmode="overlay", bargap=0,
+                      legend=dict(orientation="h", y=1.02, yanchor="bottom", x=1, xanchor="right"))
     if orientation == "h":
         fig.update_xaxes(title="Rank", range=(init_x[0], init_x[-1]), showgrid=True)
         fig.update_yaxes(range=(0, 1), showgrid=False, showticklabels=False)
@@ -606,8 +643,6 @@ def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, o
     fig.layout.xaxis.type = "linear"
     fig.layout.yaxis.type = "linear"
     return fig
-
-
 
 
 def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, **kwargs):
@@ -638,16 +673,12 @@ def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORDat
     if "x_title" not in kwargs:
         kwargs["x_title"] = "Fraction"
 
-
-
-
     fig = make_subplots(rows=3, cols=len(rapdorsets), shared_yaxes=True, **kwargs)
 
     for c_idx, (name, rapdorids) in enumerate(rapdorsets.items(), 1):
         fig1 = plot_distance_histo(rapdorids, rapdordata, colors[2])
         fig2 = plot_var_histo(rapdorids, rapdordata, colors[2])
         fig3 = plot_mean_distributions(rapdorids, rapdordata, colors)
-
 
         for trace in fig1['data']:
             trace.update(showlegend=False)
@@ -669,7 +700,6 @@ def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORDat
             fig.update_xaxes(fig3["layout"]["xaxis"], row=3, col=c_idx)
             fig.update_xaxes(title=None, row=3, col=c_idx)
             fig.update_yaxes(fig3["layout"]["yaxis"], row=3)
-
 
     fig.update_layout(violingap=0, violinmode='overlay', bargap=0)
     fig.update_xaxes(title=None, row=1)
@@ -698,16 +728,15 @@ def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORDat
     return fig
 
 
-
 def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount"):
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure(layout=go.Layout(yaxis2=go.layout.YAxis(
-            visible=False,
-            matches="y",
-            overlaying="y",
-            anchor="x",
-        )))
+        visible=False,
+        matches="y",
+        overlaying="y",
+        anchor="x",
+    )))
     indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
     x = x[offset: subdata.shape[1] + offset]
     names = []
@@ -725,7 +754,7 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
             x=x,
             name="Bar",
             offsetgroup=str(eidx),
-            #offset=(eidx - 1) * 1 / 3,
+            # offset=(eidx - 1) * 1 / 3,
             marker_color=colors[eidx],
             legend=legend,
             marker=dict(line=dict(width=1, color="black"))
@@ -735,7 +764,7 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
             x=x,
             name="Q.25-Q.75",
             offsetgroup=str(eidx),
-            #offset=(eidx - 1) * 1 / 3,
+            # offset=(eidx - 1) * 1 / 3,
             error_y=dict(
                 type='data',  # value of error bar given in data coordinates
                 array=upper_quantile,
@@ -815,12 +844,12 @@ def plot_distribution(
     medians = []
     means = []
     errors = []
-    x = list(range(offset+1, subdata.shape[1] + offset+1))
+    x = list(range(offset + 1, subdata.shape[1] + offset + 1))
     names = []
     j_val = max([len(name) for name in indices.keys()])
     for eidx, (name, idx) in enumerate(indices.items()):
         name = f"{name}".ljust(j_val, " ")
-        legend=f"legend{eidx+1}"
+        legend = f"legend{eidx + 1}"
         names.append(name)
         median_values = np.nanmedian(subdata[idx,], axis=0)
 
@@ -838,7 +867,7 @@ def plot_distribution(
             legend=legend,
             line=dict(width=3, dash="dot")
 
-            ))
+        ))
         means.append(go.Scatter(
             x=x,
             y=mean_values,
@@ -922,6 +951,7 @@ def _update_distribution_layout(fig, names, x, offset, yname):
     )
     return fig
 
+
 def plot_heatmap(distances, design: pd.DataFrame, colors=None):
     """Plots a heatmap of the sample distances
 
@@ -949,7 +979,8 @@ def plot_heatmap(distances, design: pd.DataFrame, colors=None):
     return fig
 
 
-def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid", vspace: float = 0.01, scale_max: bool = True):
+def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_col: str = "RAPDORid",
+                              vspace: float = 0.01, scale_max: bool = True):
     """Plots a figure containing a pseudo westernblot of the protein distribution.
 
     This will ignore smoothing kernels and plots raw mean replicate intensities.
@@ -977,8 +1008,8 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
                                  specs=[
                                      [
                                          {
-                                             "t": vspace/2 if not idx % 2 else 0.000,
-                                             "b": vspace/2 if idx % 2 else 0.000
+                                             "t": vspace / 2 if not idx % 2 else 0.000,
+                                             "b": vspace / 2 if idx % 2 else 0.000
                                          }
                                      ] for idx in range(len(proteins) * 2)
                                  ]
@@ -986,7 +1017,8 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
                                  )
     for idx, protein in enumerate(proteins, 1):
         array = rapdordata.array[protein]
-        fig = plot_barcode_plot(array, rapdordata.internal_design_matrix, colors=colors, fractions=rapdordata.fractions, scale_max=scale_max)
+        fig = plot_barcode_plot(array, rapdordata.internal_design_matrix, colors=colors, fractions=rapdordata.fractions,
+                                scale_max=scale_max)
         for i_idx, trace in enumerate(fig["data"]):
             fig_subplots.add_trace(trace, row=(idx * 2) + i_idx - 1, col=1)
     fig = fig_subplots
@@ -1002,7 +1034,7 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
     fig.add_trace(go.Scatter(
         x=[None],
         y=[None],
-        marker=dict(color=colors[1],  symbol="square"),
+        marker=dict(color=colors[1], symbol="square"),
         showlegend=True,
         mode="markers",
         name=fig.data[1].name,
@@ -1017,11 +1049,12 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
     )
     fig.update_xaxes(showticklabels=False)
     fig.update_yaxes(showticklabels=False)
-    fig.update_yaxes(showgrid=False,  showline=True, linewidth=2, mirror=True )
+    fig.update_yaxes(showgrid=False, showline=True, linewidth=2, mirror=True)
     fig.update_xaxes(showticklabels=True, row=len(proteins) * 2, col=1)
     v = 1 / len(proteins)
     for idx in range(len(proteins) * 2):
-        fig.update_xaxes(showgrid=False, showline=True, linewidth=2, side="top" if not idx % 2 else "bottom", row=idx + 1, col=1)
+        fig.update_xaxes(showgrid=False, showline=True, linewidth=2, side="top" if not idx % 2 else "bottom",
+                         row=idx + 1, col=1)
         if scale_max:
             show = True if idx % 2 else False
             ticklabelpos = "outside"
@@ -1042,7 +1075,6 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
             ticklabelposition=ticklabelpos,
             tickfont=dict(color=None)
 
-
         )
         y_domain = f"y{idx + 1} domain" if idx != 0 else "y domain"
         if not idx % 2:
@@ -1050,13 +1082,11 @@ def plot_protein_westernblots(rapdorids, rapdordata: RAPDORData, colors, title_c
         else:
             fig["layout"]["annotations"][idx].update(text="")
 
-
-
     return fig_subplots
 
 
-
-def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float = 0.025, fractions=None, scale_max: bool = True):
+def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float = 0.025, fractions=None,
+                      scale_max: bool = True):
     """Creates a Westernblot like plot from the mean of protein intensities
 
     Args:
@@ -1087,10 +1117,10 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
         color = _color_to_calpha(color, 1)
         scale.append([[0, a_color], [1, color]])
         name = f"{name}"
-        mean_values = np.mean(subdata[idx, ], axis=0)
+        mean_values = np.mean(subdata[idx,], axis=0)
         ys.append([name for _ in range(len(mean_values))])
         if fractions is None:
-            xs.append(list(range(1, subdata.shape[1]+1)))
+            xs.append(list(range(1, subdata.shape[1] + 1)))
         else:
             xs.append(fractions)
         names.append(name)
@@ -1101,7 +1131,6 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
         m_val = max(m_val)
         m_val = [m_val, m_val]
     for idx, (x, y, z) in enumerate(zip(xs, ys, means)):
-
         fig.add_trace(
             go.Heatmap(
                 x=x,
@@ -1112,7 +1141,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
                 hovertemplate='<b>Fraction: %{x}</b><br><b>Protein Intensity: %{z:.2e}</b> ',
 
             ),
-            row=idx+1, col=1
+            row=idx + 1, col=1
         )
     fig.data[0].update(zmin=0, zmax=m_val[0])
     fig.data[1].update(zmin=0, zmax=m_val[1])
@@ -1207,10 +1236,10 @@ def plot_dimension_reduction(
         )
     elif dimensions == 3:
         fig = _plot_dimension_reduction_result3d(
-                rapdordata,
-                colors=colors,
-                clusters=clusters,
-                highlight=highlight
+            rapdordata,
+            colors=colors,
+            clusters=clusters,
+            highlight=highlight
         )
     else:
         raise ValueError("Unsupported dimensionality")
@@ -1231,7 +1260,7 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
-    if n_cluster > len(colors)-2:
+    if n_cluster > len(colors) - 2:
         fig.add_annotation(
             xref="paper",
             yref="paper",
@@ -1265,9 +1294,9 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
                 marker=dict(color=colors[-2], size=8, line=dict(color=colors[-1], width=4)),
                 name="Not Clustered",
 
+            )
         )
-        )
-    for color_idx, cluster in enumerate(range(min(n_cluster, len(colors)-2))):
+    for color_idx, cluster in enumerate(range(min(n_cluster, len(colors) - 2))):
         c_mask = mask & (clusters == cluster)
         fig.add_trace(go.Scatter3d(
             x=embedding[c_mask, :][:, 0],
@@ -1291,7 +1320,6 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
             )
         )
 
-
     fig.update_layout(
         scene=go.layout.Scene(
             xaxis=go.layout.scene.XAxis(title=f"relative fraction shift"),
@@ -1303,10 +1331,12 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
     return fig
 
 
-def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 0.1, second_bg_color: str = None, bubble_legend_color: str = None):
+def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 0.1, second_bg_color: str = None,
+                         bubble_legend_color: str = None):
     xloc = [legend_start + idx * legend_spread for idx in range(3)]
     fig.data[0].x = xloc
-    annos = [annotation for annotation in fig.layout.annotations if (annotation.text != "Mean Distance" and annotation.xref == "x")]
+    annos = [annotation for annotation in fig.layout.annotations if
+             (annotation.text != "Mean Distance" and annotation.xref == "x")]
     if second_bg_color is not None:
         fig.update_shapes(fillcolor=second_bg_color)
     for idx, annotation in enumerate(annos):
@@ -1321,8 +1351,10 @@ def update_bubble_legend(fig, legend_start: float = 0.2, legend_spread: float = 
 
 def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clusters=None,
                                        highlight=None, marker_max_size: int = 40, second_bg_color: str = "white",
-                                       bubble_legend_color: str = "black", legend_start: float = 0.2, legend_spread: float = 0.1,
-                                       sel_column=None, cutoff_range: Tuple[float, float] = None, cutoff_type: str = None
+                                       bubble_legend_color: str = "black", legend_start: float = 0.2,
+                                       legend_spread: float = 0.1,
+                                       sel_column=None, cutoff_range: Tuple[float, float] = None,
+                                       cutoff_type: str = None
                                        ):
     embedding = rapdordata.current_embedding
     displayed_text = rapdordata.df["RAPDORid"] if sel_column is None else rapdordata.df[sel_column]
@@ -1363,7 +1395,6 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
 
     )
     for idx, entry in enumerate(circles):
-
         fig.add_annotation(
             xref="x",
             yref="y",
@@ -1392,17 +1423,17 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     )
     if cutoff_range is not None:
         assert cutoff_type is not None
-        indices = rapdordata.df[(rapdordata.df[cutoff_type] < cutoff_range[1]) & (rapdordata.df[cutoff_type] >= cutoff_range[0])].index
+        indices = rapdordata.df[
+            (rapdordata.df[cutoff_type] < cutoff_range[1]) & (rapdordata.df[cutoff_type] >= cutoff_range[0])].index
         cutoff_mask[indices] = 1
     else:
         cutoff_mask = np.ones(embedding.shape[0], dtype=bool)
 
     if highlight is not None and len(highlight) > 0:
-
         indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
 
-    if n_cluster > len(colors)-2:
+    if n_cluster > len(colors) - 2:
         fig.add_annotation(
             xref="paper",
             yref="paper",
@@ -1448,7 +1479,6 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
 
                 )
 
-
         fig.add_trace(
             go.Scatter(
                 x=embx,
@@ -1458,11 +1488,11 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
                 marker=dict(color=colors[-2], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
                 name="Not Clustered",
 
-        ),
+            ),
             row=2,
             col=1
         )
-    for color_idx, cluster in enumerate(range(min(n_cluster, len(colors)-2))):
+    for color_idx, cluster in enumerate(range(min(n_cluster, len(colors) - 2))):
         c_mask = mask & (clusters == cluster) & cutoff_mask
         fig.add_trace(go.Scatter(
             x=embedding[c_mask, :][:, 0],
@@ -1502,8 +1532,10 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     fig.update_layout(
         xaxis2=dict(title="relative fraction shift"),
         yaxis2=dict(title="relative distribution change"),
-        yaxis=dict(range=[0, 1], showgrid=False, showline=False, showticklabels=False, zeroline=False, ticklen=0, fixedrange=True),
-        xaxis=dict(range=[0, 1], showgrid=False, showline=False, showticklabels=False, zeroline=False, ticklen=0, fixedrange=True),
+        yaxis=dict(range=[0, 1], showgrid=False, showline=False, showticklabels=False, zeroline=False, ticklen=0,
+                   fixedrange=True),
+        xaxis=dict(range=[0, 1], showgrid=False, showline=False, showticklabels=False, zeroline=False, ticklen=0,
+                   fixedrange=True),
         legend={'itemsizing': 'constant'},
     )
     return fig
@@ -1595,7 +1627,7 @@ def _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titl
 
     fig.update_layout(
         legend=dict(
-            x=1, y=1, yanchor="top", xanchor="right", xref="paper", yref="paper", #itemsizing="constant"
+            x=1, y=1, yanchor="top", xanchor="right", xref="paper", yref="paper",  # itemsizing="constant"
         )
     )
     fig.update_xaxes(showgrid=True)
@@ -1607,7 +1639,7 @@ def _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titl
     return fig
 
 
-def _sample_spearman(rapdordata: RAPDORData, colors: Iterable[str], x_0 = 1.1, y_0 = 1.15, **kwargs):
+def _sample_spearman(rapdordata: RAPDORData, colors: Iterable[str], x_0=1.1, y_0=1.15, **kwargs):
     names = [f"{row['Replicate']}#-{row['Treatment']}" for idx, row in rapdordata.internal_design_matrix.iterrows()]
     column_titles = [f"c{name}" for name in names[:-1]]
     row_titles = [f"r{name}" for name in names[1:]]
@@ -1644,7 +1676,8 @@ def _sample_spearman(rapdordata: RAPDORData, colors: Iterable[str], x_0 = 1.1, y
                     pearson_coefficient, _ = spearmanr(sub_i, sub_j)
                 # pearson_coefficient = data.distances[protein][i][j]
                 spears[protein] = pearson_coefficient
-            same = rapdordata.internal_design_matrix.iloc[i]["Treatment"] == rapdordata.internal_design_matrix.iloc[j]["Treatment"]
+            same = rapdordata.internal_design_matrix.iloc[i]["Treatment"] == rapdordata.internal_design_matrix.iloc[j][
+                "Treatment"]
             fig.add_trace(
                 go.Histogram(
                     x=spears, showlegend=False,
@@ -1666,7 +1699,7 @@ def _sample_spearman(rapdordata: RAPDORData, colors: Iterable[str], x_0 = 1.1, y
     return fig
 
 
-def _sample_jsd_histograms(rapdordata: RAPDORData, colors: Iterable[str], x_0 = 1.1, y_0 = 1.15, **kwargs):
+def _sample_jsd_histograms(rapdordata: RAPDORData, colors: Iterable[str], x_0=1.1, y_0=1.15, **kwargs):
     names = [f"{row['Replicate']}#-{row['Treatment']}" for idx, row in rapdordata.internal_design_matrix.iterrows()]
     column_titles = [f"c{name}" for name in names[:-1]]
     row_titles = [f"r{name}" for name in names[1:]]
@@ -1691,7 +1724,8 @@ def _sample_jsd_histograms(rapdordata: RAPDORData, colors: Iterable[str], x_0 = 
             for protein in range(p):
                 jsd = rapdordata.distances[protein][i][j]
                 jsds[protein] = jsd
-            same = rapdordata.internal_design_matrix.iloc[i]["Treatment"] == rapdordata.internal_design_matrix.iloc[j]["Treatment"]
+            same = rapdordata.internal_design_matrix.iloc[i]["Treatment"] == rapdordata.internal_design_matrix.iloc[j][
+                "Treatment"]
             fig.add_trace(
                 go.Histogram(
                     x=jsds, showlegend=False,
@@ -1712,7 +1746,8 @@ def _sample_jsd_histograms(rapdordata: RAPDORData, colors: Iterable[str], x_0 = 
     return fig
 
 
-def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman", colors: Iterable[str] = COLOR_SCHEMES["Flamingo"], **kwargs):
+def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman",
+                          colors: Iterable[str] = COLOR_SCHEMES["Flamingo"], **kwargs):
     """ Plots the distribution of jensen-shannon-distance/spearman R for all pairwise samples
 
     Args:
@@ -1732,9 +1767,9 @@ def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman", colo
         raise ValueError(f"Mode {method} not supported")
 
 
-
 if __name__ == '__main__':
     from RAPDOR.datastructures import RAPDORData
+
     df = pd.read_csv("../testData/sanitized_df.tsv", sep="\t")
     df["ribosomal protein"] = ((df["Gene"].str.contains('rpl|rps|Rpl|Rps', case=False)) | (
         df['ProteinFunction'].str.contains('ribosomal protein', case=False)))
@@ -1756,17 +1791,16 @@ if __name__ == '__main__':
     ids += list(rapdor.df[rapdor.df["old_locus_tag"].str.contains("sll1388|slr0711")]["RAPDORid"])
     d = {"large Ribo": ids2, "foo": ids}
 
-    #plt = plot_dimension_reduction(rapdor, colors=COLOR_SCHEMES["Dolphin"], highlight=ids  )
-    plt = rank_plot(d, rapdor, colors=COLOR_SCHEMES["Dolphin"], orientation="v")
+    # plt = plot_dimension_reduction(rapdor, colors=COLOR_SCHEMES["Dolphin"], highlight=ids  )
+    plt = rank_plot(d, rapdor, colors=COLOR_SCHEMES["Dolphin"], orientation="v", tri_y=0.1, triangles="inside")
+    plt.update_xaxes(dtick=25)
     plt.show()
     exit()
 
-    #fig = multi_means_and_histo(d, rapdor, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
-    #fig = plot_protein_distributions(ids[0:4], rapdor, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
+    # fig = multi_means_and_histo(d, rapdor, colors=COLOR_SCHEMES["Dolphin"] + COLOR_SCHEMES["Viking"])
+    # fig = plot_protein_distributions(ids[0:4], rapdor, mode="bar", plot_type="mixed", colors=COLOR_SCHEMES["Dolphin"])
     fig = plot_sample_histogram(rapdor, method="jsd")
     fig.show()
     fig = plot_sample_histogram(rapdor)
     fig.show()
     fig.write_image("foo.svg")
-
-

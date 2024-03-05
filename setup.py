@@ -33,7 +33,7 @@ setup(
         "statsmodels",
         "numpy",
         "scipy",
-        "plotly>=5.15",
+        "plotly>=5.16",
         "pandas",
         "dash>=2.5",
         "dash_bootstrap_components",
