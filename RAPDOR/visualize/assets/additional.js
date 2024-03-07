@@ -106,7 +106,7 @@ function simulateClickClass(className, nr, visibleId = null) {
 
 }
 
-function simulateClickSorting(columnName) {
+function simulateClickSorting(columnName, mode = "down") {
     return function () {
         return new Promise((resolve, reject) => {
             var attempts = 0; // Initialize attempts counter
@@ -127,10 +127,10 @@ function simulateClickSorting(columnName) {
                     const svg = target.querySelector('svg');
                     console.log(svg.classList, "svgClasses")
 
-                    let sorted = svg.classList.contains("fa-sort-down")
+                    let sorted = svg.classList.contains(`fa-sort-${mode}`)
                     while (!sorted) {
                         await clickSimulator([nextbtn, target])
-                        sorted = svg.classList.contains("fa-sort-down")
+                        sorted = svg.classList.contains(`fa-sort-${mode}`)
                     }
                     resolve();
                 } else {
@@ -595,6 +595,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         },
 
         stepsDataCache: null,
+        tutorialFile: null,
 
         textForStep: function textForStep(stepNumber) {
             // Check if JSON data is already cached
@@ -602,7 +603,7 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 return this.stepsDataCache[stepNumber]
             } else {
                 // Load JSON data synchronously if not already cached
-                var jsonData = this.loadJSON('assets/tutorial.json');
+                var jsonData = this.loadJSON(this.tutorialFile);
                 if (jsonData) {
                     this.stepsDataCache = jsonData;
                     return textForStep(stepNumber); // Recursive call after JSON data is loaded
@@ -619,9 +620,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             overlay.classList.toggle('shadow');
             this.resizeTutorial()
         },
+        activateDisplayTutorial: function(btn, skip_btn, url) {
+          this.tutorialFile = "assets/tutorialDisplayMode.json";
+          this.tutorialSteps = this.displayTutSteps;
+          this.tutStartUp()
 
+        },
 
-        activateTutorial: function (btn, skip_btn, url) {
+        tutStartUp: function() {
             var tutFlag = sessionStorage.getItem("tutorial-flag");
             if (dash_clientside.callback_context.triggered[0].prop_id === "url.pathname") {
                 if (tutFlag === null || tutFlag === undefined) {
@@ -632,7 +638,6 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             this.toggleTutOverlay()
 
             if (dash_clientside.callback_context.triggered[0].prop_id === "tut-end.n_clicks") {
-                var highlightedElements = document.querySelectorAll('.highlighted');
                 sessionStorage.removeItem("tutorial-flag");
                 this.removeHighlights()
                 this.resizeTutorial()
@@ -643,6 +648,14 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                     this.loadTutorialStep(0)
                 })
             }
+        },
+
+        activateTutorial: function (btn, skip_btn, url) {
+            this.tutorialFile = 'assets/tutorial.json';
+            this.tutorialSteps = this.tutSteps;
+            this.tutStartUp()
+
+
             return ""
 
         },
@@ -821,10 +834,46 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             observer.observe(tutRow, {attributes: true, childList: true, subtree: true});
         },
 
+        tutorialSteps: null,
+        displayTutSteps: [
+            ["Tutorial", ["tut-overlay"], null, false, null],
+            ["Tutorial", ["tut-overlay"], null, false, null],
+            ["Analysis", null, "/", false, null],
+            ["Distribution", ["distribution-panel"], "/", false, null],
+            ["Distribution", ["table-tab", "table-tut", "distribution-panel"], "/", false, simulateClickClass("dash-cell column-0", 1)],
+            ["Distribution", ["rapdor-id"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Distribution", ["distribution-graph"], "/", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Distribution", ["replicate-and-norm", "distribution-graph"], "/", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Distribution", ["pseudo-westernblot-row"], "/", true, null],
+            ["Table", ["table-tut", "table-tab"], "/", true, simulateClickID("table-tab", "table-tut")],
+            ["Table", ["distribution-panel", "table-tut", "table-tab"], "/", true, simulateClickID("table-tab", "table-tut")],
+            ["Analysis Workflow", ["selector-box-tut"], "/", false, null, true],
+            ["Analysis Workflow", ["selector-box-tut"], "/", false, null, true],
+            ["Analysis Workflow", ["kernel-tut"], "/", false, null, true],
+            ["Analysis Workflow", ["distance-method-tut"], "/", false, null, true],
+            ["Analysis Workflow", ["heatmap-box-tut"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up")])],
+            ["Analysis Workflow", ["heatmap-box-tut"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up"), simulateClickClass("dash-cell column-0", 1)])],
+            ["Analysis Workflow", ["distribution-panel"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up"), simulateClickClass("dash-cell column-0", 1)])],
+            ["Analysis Workflow", ["export-tut"], "/", true, null, true],
+            ["Figure Creation", ["color-tut"], "/", true, null, true],
+            ["Figure Creation", ["table-tut", "table-tab"], "/", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3), simulateClickTableInput( 5)])],
+            ["Figure Creation", null, "/figure_factory", false, simulateClickFormCheckInput(0)],
+            ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, simulateClickID("ff-default", 1)],
+            ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
+            ["Dimension Reduction", null, "/", true],
+            ["Dimension Reduction", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Finish",null, null, false, simulateClickID("dim-red-tab", "dim-red-tut")],
 
+
+
+
+        ],
         // Steps are organized like this:
         // [step_name, ids_to_highlight, "page to go to", "can you click on highlighted divs", function to run]
-        tutorialSteps: [
+        tutSteps: [
             ["Tutorial",["tut-overlay"], null, false, null],
             ["Tutorial", ["tut-overlay"], null, false, null],
             ["Tutorial", ["tut-overlay"], null, false, null],

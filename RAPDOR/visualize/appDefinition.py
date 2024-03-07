@@ -85,7 +85,7 @@ clientside_callback(
 clientside_callback(
     ClientsideFunction(
         namespace="clientside",
-        function_name="activateTutorial",
+        function_name="activateTutorial" if not DISPLAY else "activateDisplayTutorial",
 
     ),
     [Output("placeholder9", "children")],
