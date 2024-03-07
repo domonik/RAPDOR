@@ -21,7 +21,7 @@ from RAPDOR.visualize import DISABLED
 
 
 
-dash.register_page(__name__, path='/analysis')
+dash.register_page(__name__, path='/analysis' if not DISPLAY else "/", name="Analysis")
 
 layout = html.Div(
     [

@@ -50,7 +50,7 @@ def _header_layout():
                                 if page["module"] != "pages.not_found_404"
                             ] + [
                                 dbc.ListGroupItem(
-                                    "Help",
+                                    "Docs",
                                     href="https://domonik.github.io/RAPDOR/"
                                 )
                             ]
@@ -63,14 +63,16 @@ def _header_layout():
                     dcc.Store(id="t-fill-start", data=TCSTARTS),
                     dcc.Store(id="t-black-start", data=TC2STARTS),
                     html.Div(
-                        html.Button(id="open-offcanvas", n_clicks=0, className="align-self-start pages-btn fa fa-bars fa-xl"),
+                        html.Button(id="open-offcanvas", n_clicks=0,
+                                    className="align-self-start pages-btn fa fa-bars fa-xl"),
                         className="col-1 d-lg-none d-flex align-items-center"
                     ),
                     html.Div([
-                        dcc.Link("Upload", href="/", className="px-2"),
-                        dcc.Link("Analysis", href="/analysis", className="px-2"),
-                        dcc.Link("Figure Factory", href="/figure_factory", className="px-2", style={"white-space": "nowrap"}),
-                        dcc.Link("Docs", href="https://domonik.github.io/RAPDOR/",
+                                 dcc.Link(page["name"], href=page["path"], className="px-2", style={"white-space": "nowrap"}) for page in
+                                 page_registry.values()
+                                 if page["module"] != "pages.not_found_404"
+                             ] + [
+                                 dcc.Link("Docs", href="https://domonik.github.io/RAPDOR/",
                                  className="px-2", target="_blank"),
                         ],
                         className=" col-3 d-lg-flex d-none align-items-center"

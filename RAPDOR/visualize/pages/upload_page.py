@@ -11,11 +11,11 @@ import pandas as pd
 from io import StringIO
 from dash.exceptions import PreventUpdate
 import os
-from RAPDOR.visualize import DISABLED
+from RAPDOR.visualize import DISABLED, DISPLAY
 
 logger = logging.getLogger(__name__)
-
-dash.register_page(__name__, path='/')
+if not DISPLAY:
+    dash.register_page(__name__, path='/')
 
 RAPDORDIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 TUTFILE = os.path.join(RAPDORDIR, "tests/testData/tutorialData.tsv")
@@ -219,115 +219,115 @@ layout = html.Div(
     ], className="row p-2 justify-content-center"
 )
 
-
-@callback(
-    Output("data-store", "data", allow_duplicate=True),
-    Output("url", "pathname", allow_duplicate=True),
-    Output("upload-alert-div", "children", allow_duplicate=True),
-    Output("sel-col-state", "data", allow_duplicate=True),
-    Output("table-state", "data", allow_duplicate=True),
-    Output("current-row-ids", "data", allow_duplicate=True),
-    Input("upload-json", "contents"),
-    State("unique-id", "data")
-
-)
-def upload_json(data, uid):
-    if data is None:
-        return dash.no_update
-    if uid is None:
-        logger.error("User ID missing. Cannot assign Data without a user ID")
-        return dash.no_update
-    try:
-        content = data.split(',')[1]
-        decoded = base64.b64decode(content)
-        rapdor = RAPDORData.from_json(decoded)
-        rapdor = Serverside(rapdor, key=uid)
-        redirect = "analysis"
-        alert = []
-    except Exception as e:
-        rapdor = dash.no_update
-        redirect = dash.no_update
-        logger.exception("Data is not in expected format")
-        alert = html.Div(
-            dbc.Alert(
-                "Data is not in the expected format.",
-                color="danger",
-                dismissable=True,
-            ),
-            className="p-2 align-items-center, alert-msg",
-
-        )
-    return rapdor, redirect, alert, None, None, None
-
-
-for name in ("intensities", "design", "json"):
+if not DISPLAY:
     @callback(
-        Output(f"{name}-upload-text", "children"),
-        Input(f"upload-{name}", "filename")
+        Output("data-store", "data", allow_duplicate=True),
+        Output("url", "pathname", allow_duplicate=True),
+        Output("upload-alert-div", "children", allow_duplicate=True),
+        Output("sel-col-state", "data", allow_duplicate=True),
+        Output("table-state", "data", allow_duplicate=True),
+        Output("current-row-ids", "data", allow_duplicate=True),
+        Input("upload-json", "contents"),
+        State("unique-id", "data")
+
     )
-    def change_intensity_text(filename):
-        if filename is None:
-            raise PreventUpdate
-        return filename
-
-
-
-
-@callback(
-    Output("data-store", "data", allow_duplicate=True),
-    Output("url", "pathname", allow_duplicate=True),
-    Output("upload-alert-div", "children", allow_duplicate=True),
-    Output("sel-col-state", "data", allow_duplicate=True),
-    Output("table-state", "data", allow_duplicate=True),
-    Output("current-row-ids", "data", allow_duplicate=True),
-    Input("upload-csv-btn", "n_clicks"),
-    Input("tut-output", "data"),
-    State("unique-id", "data"),
-    State("seperator-radio", "value"),
-    State("upload-intensities", "contents"),
-    State("upload-design", "contents"),
-    State("logbase", "value"),
-    prevent_initial_call=True
-)
-def upload_from_csv(btn, tut_output, uid, sep, intensities_content, design_content, logbase):
-    if ctx.triggered_id != "tut-output":
-        if intensities_content is None and design_content is None:
-            raise PreventUpdate
+    def upload_json(data, uid):
+        if data is None:
+            return dash.no_update
+        if uid is None:
+            logger.error("User ID missing. Cannot assign Data without a user ID")
+            return dash.no_update
         try:
-            intensities_content = intensities_content.split(",")[1]
-            intensities_content = base64.b64decode(intensities_content).decode()
-            design_content = design_content.split(",")[1]
-            design_content = base64.b64decode(design_content).decode()
-            df = pd.read_csv(StringIO(intensities_content), sep=sep)
-            design = pd.read_csv(StringIO(design_content), sep=sep)
+            content = data.split(',')[1]
+            decoded = base64.b64decode(content)
+            rapdor = RAPDORData.from_json(decoded)
+            rapdor = Serverside(rapdor, key=uid)
             redirect = "analysis"
-
-            rapdordata = RAPDORData(df, design, logbase=None if logbase == 0 else logbase)
-            rapdordata = Serverside(rapdordata, key=uid)
             alert = []
-
         except Exception as e:
-                rapdordata = dash.no_update
-                redirect = dash.no_update
-                logger.exception(f"Data is not in expected format: {str(e)}")
-                alert = html.Div(
-                    dbc.Alert(
-                        "Data is not in the expected format.",
-                        color="danger",
-                        dismissable=True,
-                    ),
-                    className="p-2 align-items-center, alert-msg",
-
-                )
-    else:
-        if tut_output == 5:
-            df = pd.read_csv(TUTFILE, sep="\t")
-            design = pd.read_csv(TUTDESIGN, sep="\t")
-            rapdordata = RAPDORData(df, design)
-            rapdordata = Serverside(rapdordata, key=uid)
-            alert = []
+            rapdor = dash.no_update
             redirect = dash.no_update
-        else:
-            raise PreventUpdate
+            logger.exception("Data is not in expected format")
+            alert = html.Div(
+                dbc.Alert(
+                    "Data is not in the expected format.",
+                    color="danger",
+                    dismissable=True,
+                ),
+                className="p-2 align-items-center, alert-msg",
 
-    return rapdordata, redirect, alert, None, None, None
+            )
+        return rapdor, redirect, alert, None, None, None
+
+
+    for name in ("intensities", "design", "json"):
+        @callback(
+            Output(f"{name}-upload-text", "children"),
+            Input(f"upload-{name}", "filename")
+        )
+        def change_intensity_text(filename):
+            if filename is None:
+                raise PreventUpdate
+            return filename
+
+
+
+
+    @callback(
+        Output("data-store", "data", allow_duplicate=True),
+        Output("url", "pathname", allow_duplicate=True),
+        Output("upload-alert-div", "children", allow_duplicate=True),
+        Output("sel-col-state", "data", allow_duplicate=True),
+        Output("table-state", "data", allow_duplicate=True),
+        Output("current-row-ids", "data", allow_duplicate=True),
+        Input("upload-csv-btn", "n_clicks"),
+        Input("tut-output", "data"),
+        State("unique-id", "data"),
+        State("seperator-radio", "value"),
+        State("upload-intensities", "contents"),
+        State("upload-design", "contents"),
+        State("logbase", "value"),
+        prevent_initial_call=True
+    )
+    def upload_from_csv(btn, tut_output, uid, sep, intensities_content, design_content, logbase):
+        if ctx.triggered_id != "tut-output":
+            if intensities_content is None and design_content is None:
+                raise PreventUpdate
+            try:
+                intensities_content = intensities_content.split(",")[1]
+                intensities_content = base64.b64decode(intensities_content).decode()
+                design_content = design_content.split(",")[1]
+                design_content = base64.b64decode(design_content).decode()
+                df = pd.read_csv(StringIO(intensities_content), sep=sep)
+                design = pd.read_csv(StringIO(design_content), sep=sep)
+                redirect = "analysis"
+
+                rapdordata = RAPDORData(df, design, logbase=None if logbase == 0 else logbase)
+                rapdordata = Serverside(rapdordata, key=uid)
+                alert = []
+
+            except Exception as e:
+                    rapdordata = dash.no_update
+                    redirect = dash.no_update
+                    logger.exception(f"Data is not in expected format: {str(e)}")
+                    alert = html.Div(
+                        dbc.Alert(
+                            "Data is not in the expected format.",
+                            color="danger",
+                            dismissable=True,
+                        ),
+                        className="p-2 align-items-center, alert-msg",
+
+                    )
+        else:
+            if tut_output == 5:
+                df = pd.read_csv(TUTFILE, sep="\t")
+                design = pd.read_csv(TUTDESIGN, sep="\t")
+                rapdordata = RAPDORData(df, design)
+                rapdordata = Serverside(rapdordata, key=uid)
+                alert = []
+                redirect = dash.no_update
+            else:
+                raise PreventUpdate
+
+        return rapdordata, redirect, alert, None, None, None
