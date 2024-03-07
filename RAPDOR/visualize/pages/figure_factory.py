@@ -4,7 +4,7 @@ from dash import html
 import base64
 from dash import dcc
 from dash_extensions.enrich import callback, Input, Output, Serverside, State
-from RAPDOR.visualize import DISPLAY
+from RAPDOR.visualize import DISPLAY, DISABLED
 from RAPDOR.datastructures import RAPDORData
 import logging
 import dash_bootstrap_components as dbc
@@ -26,7 +26,7 @@ pio.templates["RAPDORDefault"] = DEFAULT_TEMPLATE
 pio.templates["RAPDORDark"] = DEFAULT_TEMPLATE_DARK
 
 
-def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
+def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y, disabled: bool = False):
     if isinstance(default_x, int):
         step = 1
     elif isinstance(default_x, float):
@@ -56,7 +56,8 @@ def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
                         type=d_type,
                         step=step,
                         persistence=True,
-                        persistence_type="session"
+                        persistence_type="session",
+                        disabled=disabled
                     ),
                     className="col-4 p-0"
                 ),
@@ -75,7 +76,8 @@ def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
                         type=d_type,
                         step=step,
                         persistence=True,
-                        persistence_type="session"
+                        persistence_type="session",
+                        disabled=disabled
                     ),
                     className="col-4 p-0 "
                 )
@@ -88,7 +90,7 @@ def _arg_x_and_y(input_id_x, input_id_y, arg, d_type, default_x, default_y):
     ]
     return div
 
-def _args_and_name(input_id, arg, d_type, default):
+def _args_and_name(input_id, arg, d_type, default, disabled: bool = False, **kwargs):
     if isinstance(default, int):
         step = 1
     elif isinstance(default, float):
@@ -111,13 +113,15 @@ def _args_and_name(input_id, arg, d_type, default):
                     step=step,
                     persistence=True,
                     persistence_type="session",
+                    disabled=disabled,
+                    **kwargs
                 ),
                 className="col-8 col-md-4 justify-content-center text-align-center py-1"
             )
         ]
     return div
 
-def _arg_and_dropdown(arg, dd_list, default, input_id):
+def _arg_and_dropdown(arg, dd_list, default, input_id, disabled: bool = False):
     div = [
         html.Div(
             html.Span(arg, style={"text-align": "center"}),
@@ -130,7 +134,8 @@ def _arg_and_dropdown(arg, dd_list, default, input_id):
                 id=input_id,
                 clearable=False,
                 persistence=True,
-                persistence_type="session"
+                persistence_type="session",
+                disabled=disabled
 
             ),
             className="col-8 col-md-4 justify-content-center text-align-center py-1"
@@ -150,17 +155,17 @@ def _distribution_settings():
             ),
             *_arg_and_dropdown("Name Col", ["RAPDORid"], "RAPDORid", "displayed-column-dd"),
             html.Div(html.H5("Plot style"), className=BOOTSH5),
-            *_args_and_name("download-width", "Width [px]", "number", 800),
-            *_args_and_name("download-height", "Height [px]", "number", 500),
-            *_args_and_name("download-marker-size", "Marker Size", "number", 8),
-            *_args_and_name("download-line-width", "Line Width", "number", 3),
-            *_args_and_name("download-grid-width", "Grid Width", "number", 1),
-            *_args_and_name("v-space", "Vertical Space", "number", 0.01),
-            *_arg_x_and_y("legend1-x", "legend1-y", "Legend Pos", "number", 0., 1.),
-            *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.05),
-            *_arg_x_and_y("x-axis-width", "y-axis-width", "Axis width", "number", 1, 1),
-            *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1., 0.1),
-            *_arg_x_and_y("zeroline-x-width", "zeroline-y-width", "Zeroline", "number", 1, 0),
+            *_args_and_name("download-width", "Width [px]", "number", 800, max=1000 if DISPLAY else None, min=100 if DISPLAY else None),
+            *_args_and_name("download-height", "Height [px]", "number", 500, max=1500 if DISPLAY else None, min=100 if DISPLAY else None),
+            *_args_and_name("download-marker-size", "Marker Size", "number", 8, disabled=DISABLED),
+            *_args_and_name("download-line-width", "Line Width", "number", 3, disabled=DISABLED),
+            *_args_and_name("download-grid-width", "Grid Width", "number", 1, disabled=DISABLED),
+            *_args_and_name("v-space", "Vertical Space", "number", 0.01, disabled=DISABLED),
+            *_arg_x_and_y("legend1-x", "legend1-y", "Legend Pos", "number", 0., 1., disabled=DISABLED),
+            *_arg_x_and_y("legend2-x", "legend2-y", "Legend2 Pos", "number", 0., 1.05, disabled=DISABLED),
+            *_arg_x_and_y("x-axis-width", "y-axis-width", "Axis width", "number", 1, 1, disabled=DISABLED),
+            *_arg_x_and_y("d-x-tick", "d-y-tick", "Axid dtick", "number", 1., 0.1, disabled=DISABLED),
+            *_arg_x_and_y("zeroline-x-width", "zeroline-y-width", "Zeroline", "number", 1, 0, disabled=DISABLED),
 
         ],
         className=BOOTSROW,
@@ -174,8 +179,8 @@ def _font_settings():
         [
 
             html.Div(html.H5("Fonts"), className=BOOTSH5),
-            *_args_and_name("legend-font-size", "Legend", "number", 14),
-            *_args_and_name("axis-font-size", "Axis", "number", 18),
+            *_args_and_name("legend-font-size", "Legend", "number", 14, disabled=DISABLED),
+            *_args_and_name("axis-font-size", "Axis", "number", 18, disabled=DISABLED),
 
         ],
         className=BOOTSROW,
@@ -189,8 +194,8 @@ def _bubble_legend_settings():
         [
 
             html.Div(html.H5("Bubble Legend"), className=BOOTSH5),
-            *_args_and_name("legend-start", "Legend Start", "number", 0.25),
-            *_args_and_name("legend-spread", "Legend Spread", "number", 0.12),
+            *_args_and_name("legend-start", "Legend Start", "number", 0.25, disabled=DISABLED),
+            *_args_and_name("legend-spread", "Legend Spread", "number", 0.12, disabled=DISABLED),
 
         ],
         className=BOOTSROW,
@@ -612,6 +617,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
             fig = plot_protein_westernblots(keys, rapdordata, colors=colors, title_col=displayed_col, vspace=vspace, scale_max=False)
             settings = DEFAULT_WESTERNBLOT_SETTINGS
         elif plot_type == 3:
+            print(rapdordata.current_embedding)
             if rapdordata.current_embedding is not None:
                 keys = rapdordata.df[rapdordata.df.loc[:, "RAPDORid"].isin(keys)].index
                 fig = _plot_dimension_reduction_result2d(
@@ -628,7 +634,12 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
                 fig.update_xaxes(mirror=True, row=2)
                 fig.update_yaxes(mirror=True, row=2)
             else:
-                fig = empty_figure("Distances not Calculated.<br>Go to Analysis Page and click the Get Score Button.")
+                message = "Distances not Calculated.<br>Go to Analysis Page"
+                if not DISPLAY:
+                    message += "and click the Get Score Button."
+                else:
+                    " first"
+                fig = empty_figure(message)
             settings = DEFAULT_DIMRED_SETTINGS
             bubble_style["display"] = "flex"
 
@@ -652,7 +663,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
     encoded_image = Serverside(fig, key=uid + "_figure_factory")
     return encoded_image, *settings, bubble_style, distribution_style
 
-DEFAULT_DISTRIBUTION_SETTINGS = (5, False, 3, False, 0., 1.01, None)
+DEFAULT_DISTRIBUTION_SETTINGS = (5, True if DISABLED else False, 3, True if DISABLED else False, 0., 1.01, None)
 DEFAULT_WESTERNBLOT_SETTINGS = (None, True, None, True, 0., 1.01, dash.no_update)
 DEFAULT_DIMRED_SETTINGS = (None, True, None, True, 1.01, 0.85, dash.no_update)
 
