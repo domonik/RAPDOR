@@ -1,5 +1,6 @@
 import os
 import yaml
+import json
 
 
 VISDIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,12 +22,20 @@ if CONFIG["display"]["mode"]:
     DISPLAY_FILE = CONFIG["display"]["file"]
     if not os.path.exists(DISPLAY_FILE):
         raise ValueError(f"Running in Display Mode but cannot find the file to display:\n Expected File {DISPLAY_FILE}")
+    if CONFIG["display"]["custom_tutorial_dialog"]:
+        TUTORIAL_DIALOG_FILE = CONFIG["display"]["custom_tutorial_dialog"]
+    else:
+        TUTORIAL_DIALOG_FILE = os.path.join(os.path.dirname(VISDIR), "visualize", "assets", "tutorialDisplayMode.json")
 else:
     DISPLAY = False
     DISPLAY_FILE = None
+    TUTORIAL_DIALOG_FILE = os.path.join(os.path.dirname(VISDIR), "visualize", "assets", "tutorial.json")
+
 DISABLED = DISPLAY
 MAX_KERNEL_SLIDER = CONFIG["kernel"]["max"]
 
+with open(TUTORIAL_DIALOG_FILE, "r") as handle:
+    TUTORIAL_DIALOG = json.load(handle)
 
 BOOTSH5 = "col-12 justify-content-center px-0"
 BOOTSROW = "row  px-4 px-md-4 py-1"

@@ -8,7 +8,7 @@ from RAPDOR.visualize.colorSelection import _color_theme_modal
 from RAPDOR.visualize.staticContent import _header_layout, _footer, _tutorial_raptor
 import logging
 
-from RAPDOR.visualize import DISPLAY
+from RAPDOR.visualize import DISPLAY, TUTORIAL_DIALOG
 
 logging.basicConfig()
 logger = logging.getLogger("RAPDOR")
@@ -67,6 +67,7 @@ def get_app_layout(rapdordata: RAPDORData = None):
                 dcc.Store(id="table-state", storage_type="session"),
                 dcc.Store(id="primary-color", storage_type="session", data="rgb(138, 255, 172)"),
                 dcc.Store(id="secondary-color", storage_type="session", data="rgb(255, 138, 221)"),
+                dcc.Store(id="tutorial-dialog", storage_type="session", data=TUTORIAL_DIALOG),
 
                 html.Div(id="placeholder2"),
                 html.Div(id="placeholder3"),

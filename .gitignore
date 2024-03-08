@@ -163,3 +163,5 @@ crashlytics-build.properties
 fabric.properties
 /testData/
 *file_system_backend/
+/customConfig.yaml
+/customTutorialDialog.json

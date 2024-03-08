@@ -92,7 +92,8 @@ clientside_callback(
     [
         Input("tut-btn", "n_clicks"),
         Input("tut-end", "n_clicks"),
-        Input("url", "pathname")
+        Input("url", "pathname"),
+        State("tutorial-dialog", "data")
     ],
     prevent_initial_call=True,
 

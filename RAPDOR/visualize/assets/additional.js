@@ -580,35 +580,12 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             return ""
         },
 
-        loadJSON: function loadJSON(filename) {
-            var xhr = new XMLHttpRequest();
-            xhr.overrideMimeType("application/json");
-            xhr.open('GET', filename, false); // Set async parameter to false for synchronous request
-            xhr.send(null);
-            if (xhr.status === 200) {
-                stepsDataCache = JSON.parse(xhr.responseText); // Cache the loaded JSON data
-                return stepsDataCache;
-            } else {
-                console.error("Failed to load JSON (" + xhr.status + "): " + xhr.statusText);
-                return null;
-            }
-        },
 
         stepsDataCache: null,
         tutorialFile: null,
 
         textForStep: function textForStep(stepNumber) {
-            // Check if JSON data is already cached
-            if (this.stepsDataCache) {
-                return this.stepsDataCache[stepNumber]
-            } else {
-                // Load JSON data synchronously if not already cached
-                var jsonData = this.loadJSON(this.tutorialFile);
-                if (jsonData) {
-                    this.stepsDataCache = jsonData;
-                    return textForStep(stepNumber); // Recursive call after JSON data is loaded
-                }
-            }
+            return this.stepsDataCache[stepNumber]
         },
 
 
@@ -620,15 +597,18 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             overlay.classList.toggle('shadow');
             this.resizeTutorial()
         },
-        activateDisplayTutorial: function(btn, skip_btn, url) {
+        activateDisplayTutorial: function(btn, skip_btn, url, tutorial_dialog) {
           this.tutorialFile = "assets/tutorialDisplayMode.json";
           this.tutorialSteps = this.displayTutSteps;
-          this.tutStartUp()
+          this.tutStartUp(tutorial_dialog)
 
         },
 
-        tutStartUp: function() {
+        tutStartUp: function(dialog) {
             var tutFlag = sessionStorage.getItem("tutorial-flag");
+            if (!this.stepsDataCache) {
+                this.stepsDataCache = dialog
+            }
             if (dash_clientside.callback_context.triggered[0].prop_id === "url.pathname") {
                 if (tutFlag === null || tutFlag === undefined) {
                     return ""
@@ -650,10 +630,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             }
         },
 
-        activateTutorial: function (btn, skip_btn, url) {
+        activateTutorial: function (btn, skip_btn, url, tutorial_dialog) {
             this.tutorialFile = 'assets/tutorial.json';
             this.tutorialSteps = this.tutSteps;
-            this.tutStartUp()
+            this.tutStartUp(tutorial_dialog)
 
 
             return ""

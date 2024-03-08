@@ -8,6 +8,7 @@ backend:
 display:
   mode: false
   file: 'RAPDOR.json'
+  custom_tutorial_dialog: False # Here you can put your own dialog json file to change what is said in the tutorial.
 
 # This specifies the maximum selectable kernel range. adjust this if you have a high number of fractions accordingly.
 kernel:
