@@ -9,6 +9,7 @@ display:
   mode: false
   file: 'RAPDOR.json'
   custom_tutorial_dialog: False # Here you can put your own dialog json file to change what is said in the tutorial.
+  welcome_files: False # Use a List of markdown files here to display them in several boxes on the Welcome Page
 
 # This specifies the maximum selectable kernel range. adjust this if you have a high number of fractions accordingly.
 kernel:

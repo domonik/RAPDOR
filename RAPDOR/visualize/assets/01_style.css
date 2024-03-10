@@ -59,6 +59,11 @@ h5 {
     margin-bottom: 0;
 }
 
+h1, h2, h3 {
+    text-align: center;
+}
+
+
 .highlighted {
     position: relative;
     border-radius: 2px;

@@ -18,6 +18,10 @@ async function isPageLoaded() {
     });
 }
 
+
+let nightStyleElement = document.createElement('style');
+document.head.appendChild(nightStyleElement);
+
 async function clickSimulator(trace) {
     return new Promise((resolve, reject) => {
         var cursor = document.createElement('i');
@@ -528,6 +532,11 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             r.style.setProperty('--secondary-color', secondaryColor)
             let btn = document.getElementById("night-mode").querySelector('button')
             btn.classList.add("fa", "fa-solid", "fa")
+            let styleSheet = nightStyleElement.sheet;
+            let cssRule;
+            while (styleSheet.cssRules.length) {
+                styleSheet.deleteRule(0);
+            }
 
             if (on) {
                 r.style.setProperty('--r-text-color', "white")
@@ -549,6 +558,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 btn.style.backgroundColor = "black"
                 btn.style.borderColor = "black"
                 btn.style.color = "white"
+                cssRule = '.d-light { display: none !important; }';
+                styleSheet.insertRule(cssRule, 0);
 
 
             } else {
@@ -570,6 +581,8 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
                 btn.style.backgroundColor = "white"
                 btn.style.borderColor = "white"
                 btn.style.color = "var(--table-head-color)"
+                cssRule = '.d-night { display: none !important; }';
+                styleSheet.insertRule(cssRule, 0);
 
 
 
@@ -818,33 +831,33 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
         displayTutSteps: [
             ["Tutorial", ["tut-overlay"], null, false, null],
             ["Tutorial", ["tut-overlay"], null, false, null],
-            ["Analysis", null, "/", false, null],
-            ["Distribution", ["distribution-panel"], "/", false, null],
-            ["Distribution", ["table-tab", "table-tut", "distribution-panel"], "/", false, simulateClickClass("dash-cell column-0", 1)],
-            ["Distribution", ["rapdor-id"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
-            ["Distribution", ["distribution-graph"], "/", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
-            ["Distribution", ["replicate-and-norm", "distribution-graph"], "/", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
-            ["Distribution", ["pseudo-westernblot-row"], "/", true, null],
-            ["Table", ["table-tut", "table-tab"], "/", true, simulateClickID("table-tab", "table-tut")],
-            ["Table", ["distribution-panel", "table-tut", "table-tab"], "/", true, simulateClickID("table-tab", "table-tut")],
-            ["Analysis Workflow", ["selector-box-tut"], "/", false, null, true],
-            ["Analysis Workflow", ["selector-box-tut"], "/", false, null, true],
-            ["Analysis Workflow", ["kernel-tut"], "/", false, null, true],
-            ["Analysis Workflow", ["distance-method-tut"], "/", false, null, true],
-            ["Analysis Workflow", ["heatmap-box-tut"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
-            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up")])],
-            ["Analysis Workflow", ["heatmap-box-tut"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up"), simulateClickClass("dash-cell column-0", 1)])],
-            ["Analysis Workflow", ["distribution-panel"], "/", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up"), simulateClickClass("dash-cell column-0", 1)])],
-            ["Analysis Workflow", ["export-tut"], "/", true, null, true],
-            ["Figure Creation", ["color-tut"], "/", true, null, true],
-            ["Figure Creation", ["table-tut", "table-tab"], "/", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3), simulateClickTableInput( 5)])],
+            ["Analysis", null, "/analysis", false, null],
+            ["Distribution", ["distribution-panel"], "/analysis", false, null],
+            ["Distribution", ["table-tab", "table-tut", "distribution-panel"], "/analysis", false, simulateClickClass("dash-cell column-0", 1)],
+            ["Distribution", ["rapdor-id"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Distribution", ["distribution-graph"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Distribution", ["replicate-and-norm", "distribution-graph"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Distribution", ["pseudo-westernblot-row"], "/analysis", true, null],
+            ["Table", ["table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
+            ["Table", ["distribution-panel", "table-tut", "table-tab"], "/analysis", true, simulateClickID("table-tab", "table-tut")],
+            ["Analysis Workflow", ["selector-box-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["selector-box-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["kernel-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["distance-method-tut"], "/analysis", false, null, true],
+            ["Analysis Workflow", ["heatmap-box-tut"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickClass("dash-cell column-0", 1, "selected-row")])],
+            ["Analysis Workflow", ["table-tut", "table-tab", "selector-box-tut"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up")])],
+            ["Analysis Workflow", ["heatmap-box-tut"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up"), simulateClickClass("dash-cell column-0", 1)])],
+            ["Analysis Workflow", ["distribution-panel"], "/analysis", false, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickSorting("Rank", "up"), simulateClickClass("dash-cell column-0", 1)])],
+            ["Analysis Workflow", ["export-tut"], "/analysis", true, null, true],
+            ["Figure Creation", ["color-tut"], "/analysis", true, null, true],
+            ["Figure Creation", ["table-tut", "table-tab"], "/analysis", true, multiClickInOne([simulateClickID("table-tab", "table-tut"), simulateClickTableInput( 3), simulateClickTableInput( 5)])],
             ["Figure Creation", null, "/figure_factory", false, simulateClickFormCheckInput(0)],
             ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, simulateClickID("ff-default", 1)],
             ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
-            ["Dimension Reduction", null, "/", true],
-            ["Dimension Reduction", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/", true, simulateClickID("dim-red-tab", "dim-red-tut")],
-            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/", true, simulateClickID("dim-red-tab", "dim-red-tut")],
-            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Dimension Reduction", null, "/analysis", true],
+            ["Dimension Reduction", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
             ["Finish",null, null, false, simulateClickID("dim-red-tab", "dim-red-tut")],
 
 

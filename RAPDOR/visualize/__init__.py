@@ -26,9 +26,18 @@ if CONFIG["display"]["mode"]:
         TUTORIAL_DIALOG_FILE = CONFIG["display"]["custom_tutorial_dialog"]
     else:
         TUTORIAL_DIALOG_FILE = os.path.join(os.path.dirname(VISDIR), "visualize", "assets", "tutorialDisplayMode.json")
+    if CONFIG["display"]["welcome_files"]:
+        WELCOME_FILES = CONFIG["display"]["welcome_files"]
+    else:
+        WELCOME_FILES = [os.path.join(os.path.dirname(VISDIR), "visualize", "assets", "defaultWelcome.md")]
+
+
+
 else:
     DISPLAY = False
     DISPLAY_FILE = None
+    WELCOME_TEXT = None
+
     TUTORIAL_DIALOG_FILE = os.path.join(os.path.dirname(VISDIR), "visualize", "assets", "tutorial.json")
 
 DISABLED = DISPLAY

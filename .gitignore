@@ -165,3 +165,6 @@ fabric.properties
 *file_system_backend/
 /customConfig.yaml
 /customTutorialDialog.json
+/customWelcome.md
+/GraphicalAbstract.md
+/graphicalAbstract.svg
