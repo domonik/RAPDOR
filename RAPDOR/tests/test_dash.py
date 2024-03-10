@@ -7,6 +7,10 @@ import dash
 import os
 import pytest
 
+from contextvars import copy_context
+from dash._callback_context import context_value
+from dash._utils import AttributeDict
+
 
 
 TESTFILE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -32,7 +36,13 @@ def test_csv_upload(base64design, base64intensities):
     logbase = 2
     base64design = "base64," + base64design["content"]
     base64intensities = "base64," + base64intensities["content"]
-    rapdordata, redirect, alert, *state3 = upload_from_csv(btn, uid, sep, base64intensities, base64design, logbase)
+
+    def run_callback():
+        context_value.set(AttributeDict(**{"triggered_inputs": [{"prop_id": "upload-csv-btn.n_clicks"}]}))
+        return upload_from_csv(btn, None, uid, sep, base64intensities, base64design, logbase)
+
+    ctx = copy_context()
+    rapdordata, redirect, alert, *state3 = ctx.run(run_callback)
     assert redirect == "analysis"
     assert alert == []
     assert isinstance(rapdordata.value, RAPDORData)

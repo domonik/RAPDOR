@@ -37,6 +37,7 @@ else:
     DISPLAY = False
     DISPLAY_FILE = None
     WELCOME_TEXT = None
+    WELCOME_FILES = None
 
     TUTORIAL_DIALOG_FILE = os.path.join(os.path.dirname(VISDIR), "visualize", "assets", "tutorial.json")
 
