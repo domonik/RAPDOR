@@ -840,7 +840,7 @@ def plot_distribution(
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure()
-    indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
+    indices = design.groupby("Treatment", group_keys=True, observed=False).apply(lambda x: list(x.index))
     medians = []
     means = []
     errors = []
@@ -1103,7 +1103,7 @@ def plot_barcode_plot(subdata, design: pd.DataFrame, colors=None, vspace: float 
     """
     if colors is None:
         colors = DEFAULT_COLORS
-    indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
+    indices = design.groupby("Treatment", group_keys=True, observed=False).apply(lambda x: list(x.index))
     fig = make_subplots(cols=1, rows=2, vertical_spacing=vspace)
 
     ys = []

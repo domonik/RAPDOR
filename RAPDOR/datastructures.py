@@ -20,6 +20,7 @@ import json
 from json import JSONEncoder
 from pandas.testing import assert_frame_equal
 from statsmodels.distributions.empirical_distribution import ECDF
+import warnings
 from io import StringIO
 
 DECIMALS = 15
@@ -228,16 +229,18 @@ class RAPDORData:
 
         design_matrix["Treatment"] = pd.Categorical(design_matrix["Treatment"], categories=treatment_levels, ordered=True)
         self.score_columns += [f"{treatment} expected shift" for treatment in treatment_levels]
-        self.treatment_levels = design_matrix["Treatment"].unique().sort_values().to_list()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=FutureWarning)
+            self.treatment_levels = design_matrix["Treatment"].unique().sort_values().to_list()
         if len(self.treatment_levels) != 2:
             raise ValueError(f"Number of treatment levels is not equal 2:\n found levels are {self.treatment_levels}")
         design_matrix = design_matrix.sort_values(by=["Fraction", "Treatment", "Replicate"])
-        tmp = design_matrix.groupby(["Treatment", "Replicate"], as_index=False)["Name"].agg(list).dropna().reset_index()
+        tmp = design_matrix.groupby(["Treatment", "Replicate"], as_index=False, observed=False)["Name"].agg(list).dropna().reset_index()
         self.df.index = np.arange(self.df.shape[0])
         self.df = self.df.round(decimals=DECIMALS)
         self.fractions = design_matrix["Fraction"].unique()
         self.categorical_fraction = self.fractions.dtype == np.dtype('O')
-        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("Treatment")["Replicate"].count() >= 5))
+        self.permutation_sufficient_samples = bool(np.all(tmp.groupby("Treatment", observed=False)["Replicate"].count() >= 5))
         l = []
         rnames = []
         for idx, row in tmp.iterrows():
@@ -254,7 +257,7 @@ class RAPDORData:
             array[mask] = 0
         self.array = array
         self.internal_design_matrix = tmp
-        indices = self.internal_design_matrix.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
+        indices = self.internal_design_matrix.groupby("Treatment", group_keys=True, observed=False).apply(lambda x: list(x.index))
         self.indices = tuple(np.asarray(index) for index in indices)
 
         p = ~np.any(self.array, axis=-1)
@@ -302,7 +305,9 @@ class RAPDORData:
     def _normalize_rows(array, eps: float = 0):
         if eps:
             array += eps
-        array = array / np.sum(array, axis=-1, keepdims=True)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            array = array / np.sum(array, axis=-1, keepdims=True)
         array = array.round(DECIMALS)
         return array
 
@@ -380,35 +385,40 @@ class RAPDORData:
         self._unset_scores_and_pvalues()
 
     def determine_strongest_shift(self):
-        rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
-        rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
-        mid = 0.5 * (rnase_true + rnase_false)
-        if self.state.distance_method in ["Jensen-Shannon-Distance", "KL-Divergence"]:
-            rel1 = rel_entr(rnase_false, mid)
-            rel2 = rel_entr(rnase_true, mid)
-        elif self.state.distance_method == "Euclidean-Distance":
-            rel1 = rnase_false - mid
-            rel2 = rnase_true - mid
-        else:
-            raise ValueError(f"Peak determination failed due to bug in source code")
-        test = rel2
-        if self.categorical_fraction:
-            positions = np.argmax(test, axis=-1)
-            positions += self.state.kernel_size // 2
-            positions = self.fractions[positions]
-        else:
-            i = self.state.kernel_size // 2
-            t = ((test == np.max(test, axis=-1, keepdims=True)) * self.fractions[i:-i])
-            positions = t.sum(axis=-1) / np.count_nonzero(t, axis=-1)
-            positions = np.floor(positions).astype(int)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
+            rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
+            mid = 0.5 * (rnase_true + rnase_false)
+            if self.state.distance_method in ["Jensen-Shannon-Distance", "KL-Divergence"]:
+                rel1 = rel_entr(rnase_false, mid)
+                rel2 = rel_entr(rnase_true, mid)
+            elif self.state.distance_method == "Euclidean-Distance":
+                rel1 = rnase_false - mid
+                rel2 = rnase_true - mid
+            else:
+                raise ValueError(f"Peak determination failed due to bug in source code")
+            test = rel2
+            if self.categorical_fraction:
+                positions = np.argmax(test, axis=-1)
+                positions += self.state.kernel_size // 2
+                positions = self.fractions[positions]
+            else:
+
+                i = self.state.kernel_size // 2
+                t = ((test == np.max(test, axis=-1, keepdims=True)) * self.fractions[i:-i])
+                positions = t.sum(axis=-1) / np.count_nonzero(t, axis=-1)
+                positions = np.floor(positions).astype(int)
         # Get the middle occurrence index
 
 
         self.df["position strongest shift"] = positions
 
     def calc_mean_distance(self):
-        rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
-        rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
+            rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
         jsd = self._calc_distance_via(self.state.distance_method, rnase_true, rnase_false, axis=-1)
         self.df["Mean Distance"] = jsd
 
@@ -428,8 +438,10 @@ class RAPDORData:
         #. Calculate a weighted average over the Fraction indices using $D$ as weights
 
         """
-        rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
-        rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
+            rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
 
 
         mid = 0.5 * (rnase_true + rnase_false)
@@ -444,13 +456,15 @@ class RAPDORData:
         else:
             raise ValueError(f"Peak determination failed due to bug in source code")
         rel1[rel1 < 0] = 0
-        rel1 = (rel1 / np.sum(rel1, axis=-1, keepdims=True)) * range
-        r1 = np.sum(rel1, axis=-1)
-        self.df[f"{self.treatment_levels[0]} expected shift"] = r1.round(decimals=DECIMALS)
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            rel1 = (rel1 / np.sum(rel1, axis=-1, keepdims=True)) * range
+            r1 = np.sum(rel1, axis=-1)
+            self.df[f"{self.treatment_levels[0]} expected shift"] = r1.round(decimals=DECIMALS)
 
-        rel2[rel2 < 0] = 0
-        rel2 = (rel2 / np.sum(rel2, axis=-1, keepdims=True)) * range
-        r2 = np.sum(rel2, axis=-1)
+            rel2[rel2 < 0] = 0
+            rel2 = (rel2 / np.sum(rel2, axis=-1, keepdims=True)) * range
+            r2 = np.sum(rel2, axis=-1)
 
         self.df[f"{self.treatment_levels[1]} expected shift"] = r2.round(decimals=DECIMALS)
         side = r2 - r1
@@ -492,15 +506,16 @@ class RAPDORData:
     def calc_distribution_features(self):
         if "position strongest shift" not in self.df:
             raise ValueError("Peaks not determined. Determine Peaks first")
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
+            rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
+            mixture = rnase_true + rnase_false
+            uni_nonzero = mixture > 0
+            uniform = (np.ones((mixture.shape[0], mixture.shape[1])) / np.count_nonzero(uni_nonzero, axis=-1, keepdims=True)) * uni_nonzero
 
-        rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
-        rnase_true = np.nanmean(self.norm_array[:, self.indices[1]], axis=-2)
-        mixture = rnase_true + rnase_false
-        uni_nonzero = mixture > 0
-        uniform = (np.ones((mixture.shape[0], mixture.shape[1])) / np.count_nonzero(uni_nonzero, axis=-1, keepdims=True)) * uni_nonzero
-
-        false_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_false, uniform, axis=-1)
-        true_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_true, uniform, axis=-1)
+            false_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_false, uniform, axis=-1)
+            true_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_true, uniform, axis=-1)
         diff = false_uni_distance - true_uni_distance
         if self.categorical_fraction:
             shift = self.df["position strongest shift"].to_numpy()
@@ -684,21 +699,23 @@ class RAPDORData:
         outer_group_distances = self._get_outer_group_distances(indices_false, indices_true)
         inner_group_distances = self._get_innergroup_distances(indices_false, indices_true)
         stat_distances = np.concatenate((outer_group_distances, inner_group_distances), axis=-1)
-        if ignore_nan:
-            mask = np.isnan(stat_distances)
-            ranks = stat_distances.argsort(axis=-1).argsort(axis=-1).astype(float)
-            ranks[mask] = np.nan
-            rb = np.nanmean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
-            rw = np.nanmean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
-            nonnan = np.count_nonzero(~mask, axis=-1)
-            r = (rb - rw) / (nonnan / 2)
-        else:
-            mask = np.isnan(stat_distances).any(axis=-1)
-            ranks = stat_distances.argsort(axis=-1).argsort(axis=-1)
-            rb = np.mean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
-            rw = np.mean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
-            r = (rb - rw) / (ranks.shape[-1] / 2)
-            r[mask] = np.nan
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            if ignore_nan:
+                mask = np.isnan(stat_distances)
+                ranks = stat_distances.argsort(axis=-1).argsort(axis=-1).astype(float)
+                ranks[mask] = np.nan
+                rb = np.nanmean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
+                rw = np.nanmean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
+                nonnan = np.count_nonzero(~mask, axis=-1)
+                r = (rb - rw) / (nonnan / 2)
+            else:
+                mask = np.isnan(stat_distances).any(axis=-1)
+                ranks = stat_distances.argsort(axis=-1).argsort(axis=-1)
+                rb = np.mean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
+                rw = np.mean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
+                r = (rb - rw) / (ranks.shape[-1] / 2)
+                r[mask] = np.nan
         r[self.df["min replicates per group"] < self.min_replicates] = np.nan
         return r
 
@@ -876,7 +893,6 @@ class RAPDORData:
     def _from_dict(cls, dict_repr):
 
         for key, value in dict_repr.items():
-            print(key)
             if key == "state":
                 dict_repr[key] = RAPDORState(**value)
             elif key in ("df", "design", "internal_design_matrix"):

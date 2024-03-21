@@ -224,7 +224,7 @@ def calc_clusters(
         return Serverside(rapdordata, key=uid), True
 
     except ValueError as e:
-        logger.error(traceback.format_exc())
+        logger.info(traceback.format_exc())
         return dash.no_update, False
 
 
