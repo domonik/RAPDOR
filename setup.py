@@ -27,7 +27,7 @@ setup(
     include_package_data=True,
     package_data={
         "RAPDOR.visualize": ["assets/*"],
-        "RAPDOR": ["tests/*.py", "tests/test_data/*", "dashConfig.yaml"],
+        "RAPDOR": ["tests/*.py", "tests/testData/*", "dashConfig.yaml"],
     },
     install_requires=[
         "statsmodels",

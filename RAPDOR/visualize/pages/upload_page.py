@@ -20,8 +20,8 @@ if not DISPLAY:
 RAPDORDIR = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 TUTFILE = os.path.join(RAPDORDIR, "tests/testData/tutorialData.tsv")
 TUTDESIGN = os.path.join(RAPDORDIR, "tests/testData/tutorialDesign.tsv")
-assert os.path.exists(TUTFILE)
-assert os.path.exists(TUTDESIGN)
+assert os.path.exists(TUTFILE), f"File {TUTFILE} does not exists"
+assert os.path.exists(TUTDESIGN), f"File {TUTDESIGN} does not exists"
 
 
 
