@@ -12,7 +12,7 @@
   "Via this table you can select the proteins distribution which is then displayed in the graph at the top.",
   "Here is the RAPDORid of the displayed distribution. Beside you can select another column from the uploaded intensities table which is displayed in addition to the RAPDORid.",
   "This graph shows the distribution of your experimental data along the fraction dimension. Here you can see the distribution of the control samples compared to RNase treated samples.",
-  "You can see the distribution of the different <b>replicates via triggering the left slider</b>. The right slider is used to display raw data. Raw data is the measured data not normalized along the fraction dimension. Feel free to try the different combinations now.",
+  "You can see the distribution of the different <b>replicates via triggering the first slider</b>. The second slider is used to display raw data. Raw data is the measured data not normalized along the fraction dimension. Feel free to try the different combinations now.",
   "At the bottom of the distribution-panel is a pseudo-westernblot of the means of the raw data.",
   "Via the dropdown at the bottom you can select which columns will be displayed in the table above. These columns correspond to non-data columns from your initial intensities file.",
   "Feel free to select some rows now and get familiar with the control.",

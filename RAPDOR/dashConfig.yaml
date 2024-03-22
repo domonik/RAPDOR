@@ -10,7 +10,7 @@ display:
   file: 'RAPDOR.json'
   custom_tutorial_dialog: False # Here you can put your own dialog json file to change what is said in the tutorial.
   welcome_files: False # Use a List of markdown files here to display them in several boxes on the Welcome Page
-  default_columns: ["Gene"] # Use this as the list of per default displayed columns
+  default_columns: ["Gene", "Rank", "ANOSIM R", "Mean Distance"] # Use this as the list of per default displayed columns
 
 # This specifies the maximum selectable kernel range. adjust this if you have a high number of fractions accordingly.
 kernel:
