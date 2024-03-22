@@ -143,7 +143,7 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
                 data = data.loc[getattr(data[col_name], operator)(filter_value)]
             elif operator == 'contains':
                 filter_value = str(filter_value).split(".0")[0]
-                data = data.loc[data[col_name].str.contains(filter_value).fillna(False)]
+                data = data.loc[data[col_name].str.contains(filter_value, case=False).fillna(False)]
             elif operator == 'datestartswith':
                 filter_value = str(filter_value).split(".0")[0]
 
