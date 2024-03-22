@@ -9,6 +9,7 @@ from dash.exceptions import PreventUpdate
 from pandas.core.dtypes.common import is_numeric_dtype
 from dash.dash_table.Format import Format
 from RAPDOR.visualize.dataTable import SELECTED_STYLE, _create_table
+from RAPDOR.visualize.callbacks.mainCallbacks import remove_list_duplicates
 from dash_extensions.enrich import Serverside, State, callback
 import logging
 logger = logging.getLogger(__name__)
@@ -367,7 +368,7 @@ def run_scoring(n_clicks, sel_columns, rapdordata, uid):
                 peak_names = peak_names.tolist()
             sel_columns += ["shift direction", "relative fraction shift"]
             sel_columns += peak_names
-        sel_columns = list(set(sel_columns))
+        sel_columns = remove_list_duplicates(sel_columns)
     return sel_columns, Serverside(rapdordata, key=uid), True
 
 
@@ -393,7 +394,7 @@ def rank_table(btn, sel_columns, current_sorting, rapdordata, uid):
 
         rapdordata.rank_table(cols, asc)
         sel_columns += ["Rank"]
-        sel_columns = list(set(sel_columns))
+        sel_columns = remove_list_duplicates(sel_columns)
     except Exception as e:
         alert = True
         alert_msg = f"Ranking Failed:\n{str(e)}"
@@ -466,7 +467,7 @@ def run_anosim(n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
                 className="p-2 align-items-center, alert-msg",
 
             )
-    sel_columns = list(set(sel_columns))
+    sel_columns = remove_list_duplicates(sel_columns)
     return sel_columns, Serverside(rapdordata, key=uid), alert_msg, dash.no_update
 
 

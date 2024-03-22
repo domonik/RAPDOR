@@ -30,7 +30,7 @@ if CONFIG["display"]["mode"]:
         WELCOME_FILES = CONFIG["display"]["welcome_files"]
     else:
         WELCOME_FILES = [os.path.join(os.path.dirname(VISDIR), "visualize", "assets", "defaultWelcome.md")]
-
+    DEFAULT_COLUMNS =  CONFIG["display"]["default_columns"] if CONFIG["display"]["default_columns"] else []
 
 
 else:
@@ -38,6 +38,7 @@ else:
     DISPLAY_FILE = None
     WELCOME_TEXT = None
     WELCOME_FILES = None
+    DEFAULT_COLUMNS = ["Gene"]
 
     TUTORIAL_DIALOG_FILE = os.path.join(os.path.dirname(VISDIR), "visualize", "assets", "tutorial.json")
 

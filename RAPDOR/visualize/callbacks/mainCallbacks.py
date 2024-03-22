@@ -10,11 +10,19 @@ from dash_extensions.enrich import Serverside, State, callback
 from RAPDOR.datastructures import RAPDORData
 import uuid
 import dash_bootstrap_components as dbc
-from RAPDOR.visualize import DISPLAY
+from RAPDOR.visualize import DISPLAY, DEFAULT_COLUMNS
 
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def remove_list_duplicates(input_list):
+    unique_list = []
+    for item in input_list:
+        if item not in unique_list:
+            unique_list.append(item)
+    return unique_list
 
 
 @callback(
@@ -97,12 +105,10 @@ def load_initital_state(uid, pathname, rapdordata: RAPDORData, selected_ad_heade
     if sel_col_state is None or len(sel_col_state) == 0:
         sel_columns = []
         logger.info("Table dropdown state does not match the selection, will update")
-        if "Gene" in rapdordata.extra_df:
-            sel_columns.append("Gene")
-        for name in rapdordata.score_columns:
+        for name in DEFAULT_COLUMNS:
             if name in rapdordata.extra_df:
                 sel_columns.append(name)
-        sel_columns = list(set(sel_columns))
+        sel_columns = remove_list_duplicates(sel_columns)
     else:
         sel_columns = dash.no_update
     dm = rapdordata.state.distance_method if rapdordata.state.distance_method is not None else dash.no_update
@@ -140,7 +146,7 @@ def recompute_data(kernel_size, distance_method, rapdordata, uid, selected_colum
         logger.info(f"Normalizing using method: {distance_method} and eps: {eps}")
         rapdordata.normalize_and_get_distances(method=distance_method, kernel=kernel_size, eps=eps)
         selected_columns = [] if selected_columns is None else selected_columns
-        selected_columns = list(set(selected_columns) - set(rapdordata.score_columns))
+        selected_columns = [col for col in selected_columns if col not in rapdordata.score_columns]
         return html.Div(), Serverside(rapdordata, key=uid), selected_columns, selected_columns, [], ""
     logger.info("Data already Normalized")
     raise PreventUpdate

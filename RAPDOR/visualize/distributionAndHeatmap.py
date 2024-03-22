@@ -22,7 +22,7 @@ def distribution_panel(name):
                                 [
                                     html.Div(
                                         [
-                                            html.Div(html.H5(f"Protein {name}", style={"text-align": "center", "width": "100%", "margin-bottom": "0"}, id="protein-id", className="align-self-center"), className="col-lg-4 col-12 d-flex py-2",),
+                                            html.Div(html.H5(f"RAPDORid {name}", style={"text-align": "center", "width": "100%", "margin-bottom": "0"}, id="protein-id", className="align-self-center"), className="col-lg-4 col-12 d-flex py-2",),
                                             html.Div(
                                                 dcc.Dropdown(
                                                     [], None,
