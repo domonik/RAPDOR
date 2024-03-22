@@ -890,6 +890,12 @@ class RAPDORData:
         return data
 
     @classmethod
+    def from_file(cls, json_file):
+        with open(json_file) as handle:
+            json_string = handle.read()
+        return cls.from_json(json_string)
+
+    @classmethod
     def _from_dict(cls, dict_repr):
 
         for key, value in dict_repr.items():

@@ -539,6 +539,7 @@ def update_selectable_columns(rapdordata, options):
     new_options = rapdordata.extra_df.columns
     new_options = list(new_options)
     new_options.remove("RAPDORid")
+    new_options.remove("id")
     options = dash.no_update if set(new_options) == set(options) else new_options
     return options
 

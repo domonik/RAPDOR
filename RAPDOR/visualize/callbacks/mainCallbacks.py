@@ -224,7 +224,7 @@ def update_selected_id(active_cell, test_div, additional_header, rapdordata):
     prevent_initial_call=True,
 )
 def download_dataframe(n_clicks, rapdordata):
-    return dcc.send_data_frame(rapdordata.extra_df.to_csv, "RAPDOR.tsv", sep="\t")
+    return dcc.send_data_frame(rapdordata.to_csv, "RAPDOR.tsv", sep="\t")
 
 
 
