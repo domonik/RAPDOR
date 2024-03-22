@@ -206,7 +206,7 @@ def selector_box(disabled: bool = False):
                         [
                             html.Div(
                                 html.Span("Kernel Size", style={"text-align": "center"}),
-                                className="col-12 col-md-4 justify-content-center align-self-center"
+                                className="col-12 col-md-4 d-flex p-1 justify-content-center align-self-center"
                             ),
                             html.Div(
                                 dcc.Slider(
@@ -227,7 +227,7 @@ def selector_box(disabled: bool = False):
                         [
                             html.Div(
                                 html.Span("Distance Method", style={"text-align": "center"}),
-                                className="col-4 justify-content-center align-self-center"
+                                className="col-12 col-md-4 d-flex p-1 justify-content-center align-self-center"
                             ),
                             html.Div(
                                 dcc.Dropdown(
@@ -240,7 +240,7 @@ def selector_box(disabled: bool = False):
                                     persistence_type="session"
 
                                 ),
-                                className="col-8 justify-content-center text-align-center"
+                                className="col-12 col-md-8 justify-content-center",
                             )
                         ],
                         className=BOOTSROW, id="distance-method-tut"

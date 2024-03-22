@@ -48,5 +48,5 @@ MAX_KERNEL_SLIDER = CONFIG["kernel"]["max"]
 with open(TUTORIAL_DIALOG_FILE, "r") as handle:
     TUTORIAL_DIALOG = json.load(handle)
 
-BOOTSH5 = "col-12 justify-content-center px-0"
+BOOTSH5 = "col-12 justify-content-center px-0 py-2"
 BOOTSROW = "row  px-4 px-md-4 py-1"

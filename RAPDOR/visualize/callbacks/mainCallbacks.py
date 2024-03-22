@@ -223,8 +223,9 @@ def update_selected_id(active_cell, test_div, additional_header, rapdordata):
     State("data-store", "data"),
     prevent_initial_call=True,
 )
-def download_dataframe(n_clicks, rapdordata):
-    return dcc.send_data_frame(rapdordata.to_csv, "RAPDOR.tsv", sep="\t")
+def download_dataframe(n_clicks, rapdordata: RAPDORData):
+    df = rapdordata.extra_df.drop(["id"], axis=1)
+    return dcc.send_data_frame(df.to_csv, "RAPDOR.tsv", sep="\t")
 
 
 
