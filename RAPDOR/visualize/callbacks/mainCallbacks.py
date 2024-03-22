@@ -273,7 +273,10 @@ def display_mode_alert(uid, display_mode):
         alert_msg = html.Div(
             [
                 html.H3("Display mode", style={"color": "white"}),
-                html.Div("Most of the functionality was disabled by the host. You can still inspect pre-analyzed data")
+                html.Div([
+                    "This is ment to inspect pre-analyzed data. The tool for data analysis can be downloaded here: ",
+                    html.A("https://github.com/domonik/RAPDOR/releases", target="_blank", href="https://github.com/domonik/RAPDOR/releases", id="displayModeLink")
+                ])
             ]
         )
 

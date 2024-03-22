@@ -848,3 +848,7 @@ input[type="radio"]:checked {
 #night-mode button {
   color: var(--table-head-color)
 }
+
+#displayModeLink:hover {
+    color: var(--secondary-color);
+}
