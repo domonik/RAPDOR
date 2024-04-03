@@ -6,17 +6,14 @@ from RAPDOR.visualize.staticContent import LOGO, LIGHT_LOGO
 assert os.path.exists(LOGO), f"{LOGO} does not exist"
 assert os.path.exists(LIGHT_LOGO), f"{LIGHT_LOGO} does not exist"
 from dash_extensions.enrich import DashProxy, Output, Input, State, Serverside, html, dcc, \
-    ServersideOutputTransform, FileSystemBackend, clientside_callback, ClientsideFunction
+    ServersideOutputTransform, FileSystemBackend, clientside_callback, ClientsideFunction, RedisBackend
 from RAPDOR.visualize import DISPLAY, DISPLAY_FILE, CONFIG
-from RAPDOR.visualize.dataBackEnd import DisplayModeBackend
+from RAPDOR.visualize.backends import background_callback_manager, celery_app, data_backend
 
 FILEDIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(FILEDIR, "assets")
 
-if not DISPLAY:
-    another_backend = FileSystemBackend(cache_dir=CONFIG["backend"]["name"], threshold=CONFIG["backend"]["threshold"])
-else:
-    another_backend = DisplayModeBackend(DISPLAY_FILE, cache_dir=CONFIG["backend"]["name"], threshold=CONFIG["backend"]["threshold"])
+
 
 app = DashProxy(
     "RAPDOR Dashboard",
@@ -25,10 +22,13 @@ app = DashProxy(
     assets_folder=ASSETS_DIR,
     index_string=open(os.path.join(ASSETS_DIR, "index.html")).read(),
     prevent_initial_callbacks="initial_duplicate",
-    transforms=[ServersideOutputTransform(backends=[another_backend])],
+    transforms=[ServersideOutputTransform(backends=[data_backend])],
     use_pages=True,
-    pages_folder=os.path.join(FILEDIR, "pages")
+    pages_folder=os.path.join(FILEDIR, "pages"),
+    background_callback_manager=background_callback_manager
 )
+
+
 
 
 

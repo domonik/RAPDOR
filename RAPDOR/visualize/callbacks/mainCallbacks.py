@@ -33,7 +33,7 @@ def remove_list_duplicates(input_list):
     State("data-initial-store", "data")
 )
 def assign_session_identifier(uid, data, initial_data):
-    logger.info(f"data is {data}")
+    logger.info(f"data is {data} uid is {uid}")
     rdata = dash.no_update
     if uid is None:
         uid = str(uuid.uuid4())

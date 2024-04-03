@@ -2,6 +2,8 @@ from dash import html, dcc
 import pandas as pd
 
 from RAPDOR.datastructures import RAPDORData
+from RAPDOR.visualize.backends import celery_app, background_callback_manager
+
 from RAPDOR.visualize.appDefinition import app
 import dash_extensions.enrich
 from RAPDOR.visualize.colorSelection import _color_theme_modal
@@ -9,7 +11,6 @@ from RAPDOR.visualize.staticContent import _header_layout, _footer, _tutorial_ra
 import logging
 
 from RAPDOR.visualize import DISPLAY, TUTORIAL_DIALOG
-
 logging.basicConfig()
 logger = logging.getLogger("RAPDOR")
 
@@ -115,6 +116,8 @@ def get_app_layout(rapdordata: RAPDORData = None):
         return div
     return return_layout
 
+
+app.register_celery_tasks()
 
 if __name__ == '__main__':
     import os

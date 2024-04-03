@@ -3,6 +3,7 @@ import pandas as pd
 from dash import html, dcc, dash_table
 from dash.dash_table.Format import Format
 from pandas.core.dtypes.common import is_numeric_dtype
+import dash_bootstrap_components as dbc
 import logging
 
 logger = logging.getLogger(__name__)
@@ -22,29 +23,51 @@ def _get_table(rapdordata):
             html.Div(
                 html.Div(
                         [
-
-                            dls.RingChase(
+                            html.Div(
                                 [
                                     html.Div(
                                         _create_table(rapdordata),
                                         className="col-12 justify-content-center h-100 dbc-row-selectable",
                                         id="data-table",
-                                        style={"min-width": "100px", "overflow-x": "auto"}
+                                        style={"min-width": "100px", "overflow-x": "auto",
+                                               # "display": "block"
+                                               }
 
                                     ),
-                                    html.Button("Reset Selected Rows", id="reset-rows-btn", className="reset-col-btn first-page",
-                                                style=dict(position="absolute", left="0")),
 
+                                    html.Button("Reset Selected Rows", id="reset-rows-btn",
+                                                className="reset-col-btn first-page",
+                                                style=dict(position="absolute", left="0")),
 
                                 ],
 
-                                color="var(--primary-color)",
-                                width=200,
-                                thickness=20,
-                                id="ring-chase-tbl"
-
+                                id="table-loading",
+                                style={"height": "90%"}
 
                             ),
+
+
+                            html.Div(
+                                html.Div(
+                                    dbc.Progress(
+                                        id="progress_bar",
+                                        value="0",
+                                        color="var(--primary-color)",
+                                        animated=True,
+                                        striped=True,
+                                        style={"padding": "0"}),
+                                    className="w-80",
+                                    style={"height": "1rem", "width": "90%"}
+
+                                ),
+
+                                className="col-12 justify-content-center align-items-center p-2",
+                                style={"display": "none"},
+                                id="table-progress-container"
+
+                            ),
+
+
                             html.Div(
                                 dcc.Dropdown(
                                     [sel_columns] if sel_columns is not None else [],

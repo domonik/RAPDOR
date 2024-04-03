@@ -418,14 +418,31 @@ def rank_table(btn, sel_columns, current_sorting, rapdordata, uid):
     Output("data-store", "data", allow_duplicate=True),
     Output("alert-div", "children", allow_duplicate=True),
     Output("tbl", "data", allow_duplicate=True),
+    Output("progress_bar", "value"),
     Input('anosim-btn', 'n_clicks'),
     State("table-selector", "value"),
     State("anosim-permutation-nr", "value"),
     State("data-store", "data"),
     State("unique-id", "data"),
+    background=True,
+    running=[
+        (Output('anosim-btn', 'disabled'), True, False),
+        (
+                Output("table-progress-container", "style"),
+                {"display": "flex", "height": "90%"},
+                {"display": "none"},
+        ),
+        (
+                Output("table-loading", "style"),
+                {"display": "none"},
+                {"display": "block", "height": "90%"},
+        ),
+    ],
+    progress=[Output("progress_bar", "value")],
+    prevent_initial_call=True
 
 )
-def run_anosim(n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
+def run_anosim(set_progress, n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
     alert_msg = dash.no_update
     if n_clicks is None or n_clicks == 0:
         raise PreventUpdate
@@ -449,11 +466,11 @@ def run_anosim(n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
         sel_columns += ["ANOSIM R"]
 
         if rapdordata.permutation_sufficient_samples:
-            rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local")
+            rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local", callback=set_progress)
             sel_columns += ["local ANOSIM adj p-Value"]
 
         else:
-            rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global")
+            rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global", callback=set_progress)
             sel_columns += ["global ANOSIM adj p-Value"]
 
             alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
@@ -468,7 +485,7 @@ def run_anosim(n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
 
             )
     sel_columns = remove_list_duplicates(sel_columns)
-    return sel_columns, Serverside(rapdordata, key=uid), alert_msg, dash.no_update
+    return sel_columns, Serverside(rapdordata, key=uid), alert_msg, dash.no_update, "0"
 
 
 @callback(

@@ -1,6 +1,8 @@
 import copy
 import multiprocessing
 import os
+import time
+
 from scipy.stats import ttest_ind
 import pandas as pd
 from pandas.api.types import is_float_dtype
@@ -752,7 +754,7 @@ class RAPDORData:
         self.df["ANOSIM R"] = r.round(decimals=DECIMALS)
         self.state.anosim_r = True
 
-    def _calc_global_anosim_distribution(self, nr_permutations: int, threads: int, seed: int = 0):
+    def _calc_global_anosim_distribution(self, nr_permutations: int, threads: int, seed: int = 0, callback=None):
         np.random.seed(seed)
         _split_point = len(self.indices[0])
         indices = np.concatenate((self.indices[0], self.indices[1]))
@@ -764,7 +766,15 @@ class RAPDORData:
             with multiprocessing.Pool(threads) as pool:
                 result = pool.starmap(self._calc_anosim, calls)
         else:
-            result = [self._calc_anosim(*call) for call in calls]
+            if callback:
+                result = []
+                m_len = len(calls)
+                for idx, call in enumerate(calls):
+                    perc = str(int((idx * 97) / m_len))
+                    callback(perc)
+                    result.append(self._calc_anosim(*call))
+            else:
+                result = [self._calc_anosim(*call) for call in calls]
         result = np.stack(result)
         self._anosim_distribution = result
 
@@ -785,7 +795,7 @@ class RAPDORData:
         self._permanova_distribution = result
 
     def calc_anosim_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None,
-                            mode: str = "local"):
+                            mode: str = "local", callback=None):
         """Calculates ANOSIM p-value via shuffling and stores it in :attr:`df`.
         Adjusts for multiple testing.
 
@@ -796,21 +806,22 @@ class RAPDORData:
             distance_cutoff (float): reduces number of tests via testing only proteins with mean distance above threshold.
             mode (str): either local or global. Global uses distribution of R value of all proteins as background.
                 Local uses protein specific distribution.
+            callback(Callable): A callback function that receives the progress in the form of a percent string e.g. "50".
+                This can be used in combination with a progress bar.
         """
         if "ANOSIM R" not in self.df.columns:
             self.calc_all_anosim_value()
-        self._calc_global_anosim_distribution(permutations, threads, seed)
+        self._calc_global_anosim_distribution(permutations, threads, seed, callback)
         distribution = self._anosim_distribution
-
         r_scores = self.df["ANOSIM R"].to_numpy()
         if mode == "global":
             distribution = distribution.flatten()
             distribution = distribution[~np.isnan(distribution)]
-            p_values = np.asarray(
-                [np.count_nonzero(distribution >= r_score) / distribution.shape[0] for r_score in r_scores]
-            )
+            p_values = np.sum(distribution >= r_scores[:, np.newaxis], axis=1) / distribution.shape[0]
         elif mode == "local":
             p_values = np.count_nonzero(distribution >= r_scores, axis=0) / distribution.shape[0]
+        if callback:
+            callback("100")
         mask = self.df["ANOSIM R"].isna()
         if distance_cutoff is not None:
             if "Mean Distance" not in self.df.columns:
