@@ -817,7 +817,9 @@ class RAPDORData:
         if mode == "global":
             distribution = distribution.flatten()
             distribution = distribution[~np.isnan(distribution)]
-            p_values = np.sum(distribution >= r_scores[:, np.newaxis], axis=1) / distribution.shape[0]
+            p_values = np.asarray(
+                [np.count_nonzero(distribution >= r_score) / distribution.shape[0] for r_score in r_scores]
+            )
         elif mode == "local":
             p_values = np.count_nonzero(distribution >= r_scores, axis=0) / distribution.shape[0]
         if callback:

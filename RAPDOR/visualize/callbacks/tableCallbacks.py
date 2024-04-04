@@ -9,6 +9,7 @@ from dash.exceptions import PreventUpdate
 from pandas.core.dtypes.common import is_numeric_dtype
 from dash.dash_table.Format import Format
 from RAPDOR.visualize.dataTable import SELECTED_STYLE, _create_table
+from RAPDOR.visualize import DISPLAY
 from RAPDOR.visualize.callbacks.mainCallbacks import remove_list_duplicates
 from dash_extensions.enrich import Serverside, State, callback
 import logging
@@ -413,79 +414,81 @@ def rank_table(btn, sel_columns, current_sorting, rapdordata, uid):
 
     return sel_columns, Serverside(rapdordata, key=uid), alert_msg
 
-@callback(
-    Output("table-selector", "value", allow_duplicate=True),
-    Output("data-store", "data", allow_duplicate=True),
-    Output("alert-div", "children", allow_duplicate=True),
-    Output("tbl", "data", allow_duplicate=True),
-    Output("progress_bar", "value"),
-    Input('anosim-btn', 'n_clicks'),
-    State("table-selector", "value"),
-    State("anosim-permutation-nr", "value"),
-    State("data-store", "data"),
-    State("unique-id", "data"),
-    background=True,
-    running=[
-        (Output('anosim-btn', 'disabled'), True, False),
-        (
-                Output("table-progress-container", "style"),
-                {"display": "flex", "height": "90%"},
-                {"display": "none"},
-        ),
-        (
-                Output("table-loading", "style"),
-                {"display": "none"},
-                {"display": "block", "height": "90%"},
-        ),
-    ],
-    progress=[Output("progress_bar", "value")],
-    prevent_initial_call=True
 
-)
-def run_anosim(set_progress, n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
-    alert_msg = dash.no_update
-    if n_clicks is None or n_clicks == 0:
-        raise PreventUpdate
-    else:
-        if anosim_permutations is None:
-            anosim_permutations = 999
-        if anosim_permutations > 9999:
-            alert_msg = f"Number of permutations ({anosim_permutations}) too high. " \
-                        f"Only less than {MAXPERMUTATIONS} supported."
-            alert_msg = html.Div(
-                dbc.Alert(
-                    alert_msg,
-                    color="danger",
-                    dismissable=True,
-                ),
-                className="p-2 align-items-center, alert-msg",
+if not DISPLAY:
+    @callback(
+        Output("table-selector", "value", allow_duplicate=True),
+        Output("data-store", "data", allow_duplicate=True),
+        Output("alert-div", "children", allow_duplicate=True),
+        Output("tbl", "data", allow_duplicate=True),
+        Output("progress_bar", "value"),
+        Input('anosim-btn', 'n_clicks'),
+        State("table-selector", "value"),
+        State("anosim-permutation-nr", "value"),
+        State("data-store", "data"),
+        State("unique-id", "data"),
+        background=True,
+        running=[
+            (Output('anosim-btn', 'disabled'), True, False),
+            (
+                    Output("table-progress-container", "style"),
+                    {"display": "flex", "height": "90%"},
+                    {"display": "none"},
+            ),
+            (
+                    Output("table-loading", "style"),
+                    {"display": "none"},
+                    {"display": "block", "height": "90%"},
+            ),
+        ],
+        progress=[Output("progress_bar", "value")],
+        prevent_initial_call=True
 
-            )
-            return dash.no_update, dash.no_update, alert_msg, dash.no_update
-
-        sel_columns += ["ANOSIM R"]
-
-        if rapdordata.permutation_sufficient_samples:
-            rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local", callback=set_progress)
-            sel_columns += ["local ANOSIM adj p-Value"]
-
+    )
+    def run_anosim(set_progress, n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
+        alert_msg = dash.no_update
+        if n_clicks is None or n_clicks == 0:
+            raise PreventUpdate
         else:
-            rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global", callback=set_progress)
-            sel_columns += ["global ANOSIM adj p-Value"]
+            if anosim_permutations is None:
+                anosim_permutations = 999
+            if anosim_permutations > 9999:
+                alert_msg = f"Number of permutations ({anosim_permutations}) too high. " \
+                            f"Only less than {MAXPERMUTATIONS} supported."
+                alert_msg = html.Div(
+                    dbc.Alert(
+                        alert_msg,
+                        color="danger",
+                        dismissable=True,
+                    ),
+                    className="p-2 align-items-center, alert-msg",
 
-            alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
-            " This might be unreliable"
-            alert_msg = html.Div(
-                dbc.Alert(
-                    alert_msg,
-                    color="danger",
-                    dismissable=True,
-                ),
-                className="p-2 align-items-center, alert-msg",
+                )
+                return dash.no_update, dash.no_update, alert_msg, dash.no_update
 
-            )
-    sel_columns = remove_list_duplicates(sel_columns)
-    return sel_columns, Serverside(rapdordata, key=uid), alert_msg, dash.no_update, "0"
+            sel_columns += ["ANOSIM R"]
+
+            if rapdordata.permutation_sufficient_samples:
+                rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="local", callback=set_progress)
+                sel_columns += ["local ANOSIM adj p-Value"]
+
+            else:
+                rapdordata.calc_anosim_p_value(permutations=anosim_permutations, threads=1, mode="global", callback=set_progress)
+                sel_columns += ["global ANOSIM adj p-Value"]
+
+                alert_msg = "Insufficient Number of Samples per Groups. P-Value is derived using all Proteins as background."
+                " This might be unreliable"
+                alert_msg = html.Div(
+                    dbc.Alert(
+                        alert_msg,
+                        color="danger",
+                        dismissable=True,
+                    ),
+                    className="p-2 align-items-center, alert-msg",
+
+                )
+        sel_columns = remove_list_duplicates(sel_columns)
+        return sel_columns, Serverside(rapdordata, key=uid), alert_msg, dash.no_update, "0"
 
 
 @callback(
