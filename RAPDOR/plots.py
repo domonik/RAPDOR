@@ -1239,23 +1239,34 @@ def plot_dimension_reduction(
             rapdordata,
             colors=colors,
             clusters=clusters,
-            highlight=highlight
+            highlight=highlight,
+            cutoff_type=cutoff_type,
+            cutoff_range=cutoff_range
         )
     else:
         raise ValueError("Unsupported dimensionality")
     return fig
 
 
-def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, highlight=None):
+def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, highlight=None, cutoff_range = None, cutoff_type = None):
     embedding = rapdordata.current_embedding
 
     fig = go.Figure()
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
+    cutoff_mask = np.zeros(embedding.shape[0], dtype=bool)
+
 
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
     hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
     data = rapdordata.df["Mean Distance"].to_numpy()
+    if cutoff_range is not None:
+        assert cutoff_type is not None
+        indices = rapdordata.df[
+            (rapdordata.df[cutoff_type] <= cutoff_range[1]) & (rapdordata.df[cutoff_type] >= cutoff_range[0])].index
+        cutoff_mask[indices] = 1
+    else:
+        cutoff_mask = np.ones(embedding.shape[0], dtype=bool)
 
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
@@ -1273,7 +1284,7 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
             font=(dict(size=28))
         )
     if np.any(clusters == -1):
-        c_mask = mask & (clusters == -1)
+        c_mask = mask & (clusters == -1) & cutoff_mask
         fig.add_trace(go.Scatter3d(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
@@ -1283,7 +1294,7 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
             marker=dict(color=colors[-2], size=4),
             name=f"Not Clustered",
         ))
-        nmask = ~mask & (clusters == -1)
+        nmask = ~mask & (clusters == -1) & cutoff_mask
         fig.add_trace(
             go.Scatter3d(
                 x=embedding[nmask, :][:, 0],
@@ -1297,7 +1308,7 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
             )
         )
     for color_idx, cluster in enumerate(range(min(n_cluster, len(colors) - 2))):
-        c_mask = mask & (clusters == cluster)
+        c_mask = mask & (clusters == cluster) & cutoff_mask
         fig.add_trace(go.Scatter3d(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
@@ -1307,7 +1318,7 @@ def _plot_dimension_reduction_result3d(rapdordata, colors=None, clusters=None, h
             marker=dict(color=colors[color_idx], size=4),
             name=f"Cluster {cluster}"
         ))
-        nmask = ~mask & (clusters == cluster)
+        nmask = ~mask & (clusters == cluster) & cutoff_mask
         fig.add_trace(
             go.Scatter3d(
                 x=embedding[nmask, :][:, 0],
