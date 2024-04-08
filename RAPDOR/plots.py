@@ -1424,7 +1424,7 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     if cutoff_range is not None:
         assert cutoff_type is not None
         indices = rapdordata.df[
-            (rapdordata.df[cutoff_type] < cutoff_range[1]) & (rapdordata.df[cutoff_type] >= cutoff_range[0])].index
+            (rapdordata.df[cutoff_type] <= cutoff_range[1]) & (rapdordata.df[cutoff_type] >= cutoff_range[0])].index
         cutoff_mask[indices] = 1
     else:
         cutoff_mask = np.ones(embedding.shape[0], dtype=bool)
