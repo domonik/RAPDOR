@@ -1,6 +1,6 @@
 statsmodels
 numpy
-scipy
+scipy==1.12
 plotly>=5.15
 pandas
 dash>=2.5
