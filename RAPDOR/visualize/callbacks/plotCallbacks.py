@@ -145,21 +145,26 @@ def update_westernblot(key, kernel_size, primary_color, secondary_color, night_m
 def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, distance_method, rapdordata):
     colors = primary_color, secondary_color
     if key is None:
-        raise PreventUpdate
-    if rapdordata is None:
-        raise PreventUpdate
+        fig = empty_figure(
+                "No row selected.<br>Click on a row in the table",
+                "black" if not night_mode else "white"
+            )
     else:
-        distances = rapdordata.distances[key]
-        fig = plot_heatmap(distances, rapdordata.internal_design_matrix, colors=colors)
-        fig.update_layout(
-            margin={"t": 0, "b": 0, "l": 0, "r": 0}
-        )
-        fig.update_yaxes(showline=False)
-        fig.update_xaxes(showline=False)
-    if not night_mode:
-        fig.layout.template = DEFAULT_TEMPLATE
-    else:
-        fig.layout.template = DEFAULT_TEMPLATE_DARK
+        if rapdordata is None:
+            raise PreventUpdate
+        else:
+            distances = rapdordata.distances[key]
+            fig = plot_heatmap(distances, rapdordata.internal_design_matrix, colors=colors)
+            fig.update_layout(
+                margin={"t": 0, "b": 0, "l": 0, "r": 0}
+            )
+            fig.update_yaxes(showline=False)
+            fig.update_xaxes(showline=False)
+        if not night_mode:
+            fig.layout.template = DEFAULT_TEMPLATE
+        else:
+            fig.layout.template = DEFAULT_TEMPLATE_DARK
+
     return fig, f"Sample {distance_method}"
 
 
