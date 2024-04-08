@@ -1,4 +1,5 @@
 import os
+import time
 
 import dash
 import dash_bootstrap_components as dbc
@@ -346,31 +347,49 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 #     return columns, data.to_dict('records'), dash.no_update, dash.no_update, dash.no_update, dash.no_update, dash.no_update
 
 
+if not DISPLAY:
+    @callback(
+        Output("table-selector", "value", allow_duplicate=True),
+        Output("data-store", "data", allow_duplicate=True),
+        Output("run-clustering", "data", allow_duplicate=True),
+        Input('score-btn', 'n_clicks'),
+        State("table-selector", "value"),
+        State("data-store", "data"),
+        State("unique-id", "data"),
+        background=True,
+        running=[
+            (Output('score-btn', 'disabled'), True, False),
+            (
+                    Output("table-progress-container", "style"),
+                    {"display": "flex", "height": "90%"},
+                    {"display": "none"},
+            ),
+            (
+                    Output("table-loading", "style"),
+                    {"display": "none"},
+                    {"display": "block", "height": "90%"},
+            ),
+        ],
+        progress=[Output("progress_bar", "value")],
 
-@callback(
-    Output("table-selector", "value", allow_duplicate=True),
-    Output("data-store", "data", allow_duplicate=True),
-    Output("run-clustering", "data", allow_duplicate=True),
-    Input('score-btn', 'n_clicks'),
-    State("table-selector", "value"),
-    State("data-store", "data"),
-    State("unique-id", "data")
+    )
+    def run_scoring(set_progress, n_clicks, sel_columns, rapdordata, uid):
+        if n_clicks == 0:
+            raise PreventUpdate
+        else:
+            set_progress("50")
+            rapdordata.calc_all_scores()
+            sel_columns += ["ANOSIM R", "Mean Distance", "position strongest shift"]
+            if not rapdordata.categorical_fraction:
+                peak_names = rapdordata.score_columns[-2:]
+                if isinstance(peak_names, np.ndarray):
+                    peak_names = peak_names.tolist()
+                sel_columns += ["shift direction", "relative fraction shift"]
+                sel_columns += peak_names
+            sel_columns = remove_list_duplicates(sel_columns)
+            set_progress("100")
 
-)
-def run_scoring(n_clicks, sel_columns, rapdordata, uid):
-    if n_clicks == 0:
-        raise PreventUpdate
-    else:
-        rapdordata.calc_all_scores()
-        sel_columns += ["ANOSIM R", "Mean Distance", "position strongest shift"]
-        if not rapdordata.categorical_fraction:
-            peak_names = rapdordata.score_columns[-2:]
-            if isinstance(peak_names, np.ndarray):
-                peak_names = peak_names.tolist()
-            sel_columns += ["shift direction", "relative fraction shift"]
-            sel_columns += peak_names
-        sel_columns = remove_list_duplicates(sel_columns)
-    return sel_columns, Serverside(rapdordata, key=uid), True
+        return sel_columns, Serverside(rapdordata, key=uid), True
 
 
 @callback(
