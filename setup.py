@@ -42,7 +42,8 @@ setup(
         "kaleido",
         "dash_daq",
         "dash_extensions",
-        "pyYAML"
+        "pyYAML",
+        "dash[diskcache]"
     ],
     setup_requires=["pytest-runner"],
     tests_require=["pytest"],
