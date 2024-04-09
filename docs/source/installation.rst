@@ -54,7 +54,5 @@ Building a conda package is in planning but not done yet
 macOS
 *****
 
-.. note::
-    Unfortunately we don´t have the opportunity to test mac os versions of the tool.
-    However all dependencies are available for mac. We thus expect that at least the pypi version can be installed just
-    like in linux
+You can install it just like in linux. However, there are no executables for macOS available. Consequently, you need to
+use the command line.
