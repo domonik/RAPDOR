@@ -2,7 +2,7 @@ import copy
 import multiprocessing
 import os
 import time
-
+import itertools as it
 from scipy.stats import ttest_ind
 import pandas as pd
 from pandas.api.types import is_float_dtype
@@ -759,9 +759,14 @@ class RAPDORData:
         _split_point = len(self.indices[0])
         indices = np.concatenate((self.indices[0], self.indices[1]))
         calls = []
-        for _ in range(nr_permutations):
-            shuffled = np.random.permutation(indices)
-            calls.append((shuffled[:_split_point], shuffled[_split_point:]))
+        if nr_permutations == -1:
+            perms = it.permutations(indices)
+            for shuffled in perms:
+                calls.append((shuffled[:_split_point], shuffled[_split_point:]))
+        else:
+            for _ in range(nr_permutations):
+                shuffled = np.random.permutation(indices)
+                calls.append((shuffled[:_split_point], shuffled[_split_point:]))
         if threads > 1:
             with multiprocessing.Pool(threads) as pool:
                 result = pool.starmap(self._calc_anosim, calls)
@@ -783,9 +788,14 @@ class RAPDORData:
         _split_point = len(self.indices[0])
         indices = np.concatenate((self.indices[0], self.indices[1]))
         calls = []
-        for _ in range(nr_permutations):
-            shuffled = np.random.permutation(indices)
-            calls.append((shuffled[:_split_point], shuffled[_split_point:]))
+        if nr_permutations == -1:
+            perms = it.permutations(indices)
+            for shuffled in perms:
+                calls.append((shuffled[:_split_point], shuffled[_split_point:]))
+        else:
+            for _ in range(nr_permutations):
+                shuffled = np.random.permutation(indices)
+                calls.append((shuffled[:_split_point], shuffled[_split_point:]))
         if threads > 1:
             with multiprocessing.Pool(threads) as pool:
                 result = pool.starmap(self._calc_permanova_f, calls)
@@ -800,7 +810,8 @@ class RAPDORData:
         Adjusts for multiple testing.
 
         Args:
-            permutations (int): number of permutations used to calculate p-value
+            permutations (int): number of permutations used to calculate p-value. Set to -1 to use all possible distinct
+                permutations
             threads (int): number of threads used for calculation
             seed (int): seed for random permutation
             distance_cutoff (float): reduces number of tests via testing only proteins with mean distance above threshold.
