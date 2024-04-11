@@ -11,8 +11,6 @@ from RAPDOR.datastructures import RAPDORData
 import logging
 import traceback
 from pandas.api.types import is_numeric_dtype
-from PIL import Image
-import os
 logger = logging.getLogger(__name__)
 
 @callback(
