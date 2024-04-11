@@ -11,11 +11,9 @@ from RAPDOR.datastructures import RAPDORData
 import logging
 import traceback
 from pandas.api.types import is_numeric_dtype
-
+from PIL import Image
+import os
 logger = logging.getLogger(__name__)
-
-
-
 
 @callback(
     Output("distribution-graph", "figure"),
@@ -69,6 +67,24 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
         else:
             fig.layout.template = DEFAULT_TEMPLATE_DARK
 
+        q_x = fig.layout.legend.x - 0.01
+        q_y = (fig.layout.legend2.y - fig.layout.legend.y) / 2 + fig.layout.legend.y
+        fig.add_annotation(
+            text=" <b>?</b> ",
+            hovertext="Click on legend traces to de-/activate them",
+            x=q_x,
+            y=q_y,
+            xref="paper",
+            yref="paper",
+            xanchor="right",
+            yanchor="bottom",
+            showarrow=False,
+            bgcolor="white" if night_mode else "grey",
+            font=dict(color="black" if night_mode else "white", size=20),
+
+        )
+
+
     fig.update_layout(
         margin={"t": 0, "b": 0, "r": 50, "l": 100},
         font=dict(
@@ -77,6 +93,7 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
         legend=dict(font=dict(size=14)),
         legend2=dict(font=dict(size=14))
     )
+
     fig.update_xaxes(dtick=1, title=None)
     fig.update_xaxes(fixedrange=True)
     return fig

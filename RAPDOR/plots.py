@@ -184,7 +184,7 @@ def plot_replicate_distribution(
                     marker=dict(color=colors[eidx]),
                     name=f"Replicate {rep}",
                     legend=legend,
-                    line=dict(width=5)
+                    line=dict(width=3)
                 )
             )
     fig.add_traces(values)
@@ -865,7 +865,8 @@ def plot_distribution(
             marker=dict(color=colors[eidx]),
             name="Median",
             legend=legend,
-            line=dict(width=3, dash="dot")
+            line=dict(dash="dot"),
+            mode="lines"
 
         ))
         means.append(go.Scatter(
@@ -874,7 +875,7 @@ def plot_distribution(
             marker=dict(color=colors[eidx]),
             name="Mean",
             legend=legend,
-            line=dict(width=5)
+            line=dict(width=3)
 
         ))
         y = np.concatenate((upper_quantile, np.flip(lower_quantile)), axis=0)
