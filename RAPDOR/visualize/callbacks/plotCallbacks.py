@@ -65,22 +65,37 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
         else:
             fig.layout.template = DEFAULT_TEMPLATE_DARK
 
-        q_x = fig.layout.legend.x - 0.01
+        q_x = fig.layout.legend.x - 0.02
         q_y = (fig.layout.legend2.y - fig.layout.legend.y) / 2 + fig.layout.legend.y
         fig.add_annotation(
-            text=" <b>?</b> ",
+            text=u"\u2B24",
+            hovertext="Click on legend traces to de-/activate them",
+            x=q_x,
+            y=q_y + 0.01,
+            xref="paper",
+            yref="paper",
+            xanchor="center",
+            yanchor="bottom",
+            showarrow=False,
+            #bgcolor="white" if night_mode else "grey",
+            font=dict(color="white" if night_mode else "black", size=24, family="Font Awesome 6 Free"),
+
+        )
+        fig.add_annotation(
+            text="<b>?</b>",
             hovertext="Click on legend traces to de-/activate them",
             x=q_x,
             y=q_y,
             xref="paper",
             yref="paper",
-            xanchor="right",
+            xanchor="center",
             yanchor="bottom",
             showarrow=False,
-            bgcolor="white" if night_mode else "grey",
-            font=dict(color="black" if night_mode else "white", size=20),
+            #bgcolor="white" if night_mode else "grey",
+            font=dict(color="black" if night_mode else "white", size=20, family="Font Awesome 6 Free"),
 
         )
+
 
 
     fig.update_layout(
