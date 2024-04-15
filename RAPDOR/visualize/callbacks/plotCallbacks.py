@@ -349,11 +349,12 @@ def update_range_slider(cutoff_type, rapdordata: RAPDORData):
     Input('cluster-marker-slider', 'value'),
     Input('3d-plot', 'on'),
     Input('cutoff-range', 'value'),
+    Input("additional-header-dd", "value"),
+
     State('cutoff-type', 'value'),
     State('data-store', "data"),
-    State("additional-header-dd", "value"),
 )
-def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, cutoff_type, rapdordata: RAPDORData, add_header):
+def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, add_header, cutoff_type, rapdordata: RAPDORData):
     logger.info(f"running cluster plot triggered via - {ctx.triggered_id}")
     dim = 2 if not td_plot else 3
     if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
