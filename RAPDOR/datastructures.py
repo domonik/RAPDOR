@@ -3,7 +3,7 @@ import multiprocessing
 import os
 import time
 import itertools as it
-from scipy.stats import ttest_ind
+from functools import cached_property
 import pandas as pd
 from pandas.api.types import is_float_dtype
 import numpy as np
@@ -57,6 +57,7 @@ def check_equality(value, other_item):
 class RAPDORState:
     distance_method: str = None
     kernel_size: int = None
+    beta: float = None
     eps: float = None
     permanova: str = None
     permanova_permutations: int = None
@@ -425,7 +426,7 @@ class RAPDORData:
         self.df["Mean Distance"] = jsd
 
 
-    def determine_peaks(self):
+    def determine_peaks(self, beta: float = 100):
         """Determines the Mean Distance, Peak Positions and shift direction.
 
         The Peaks are determined the following way:
@@ -435,11 +436,10 @@ class RAPDORData:
         #. Calculate $D$ which is either:
             * Relative position-wise entropy of both groups to the mixture distribution if distance method is KL-Divergence or Jensen-Shannon
             * position-wise euclidean distance of both groups to the mixture distribution if distance method is Eucledian-Distance
-        #. For both groups $D = 0\ if\ D < 0$
-        #. Min max normalize $D$
-        #. Calculate a weighted average over the Fraction indices using $D$ as weights
+        #. Apply a soft-argmax to this using beta hyperparameter to find the relative position shift
 
         """
+        self.state.beta = beta
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             rnase_false = np.nanmean(self.norm_array[:, self.indices[0]], axis=-2)
@@ -457,18 +457,20 @@ class RAPDORData:
             rel2 = rnase_true - mid
         else:
             raise ValueError(f"Peak determination failed due to bug in source code")
-        rel1[rel1 < 0] = 0
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
-            rel1 = (rel1 / np.sum(rel1, axis=-1, keepdims=True)) * range
-            r1 = np.sum(rel1, axis=-1)
+            #rel1[(rel1 <= 0)] = np.nan
+            softmax1 = ((np.exp(beta * rel1)) / np.nansum(np.exp(beta * rel1), axis=-1, keepdims=True))
+            r1 = np.nansum(softmax1 * range, axis=-1)
             self.df[f"{self.treatment_levels[0]} expected shift"] = r1.round(decimals=DECIMALS)
 
-            rel2[rel2 < 0] = 0
-            rel2 = (rel2 / np.sum(rel2, axis=-1, keepdims=True)) * range
-            r2 = np.sum(rel2, axis=-1)
+            #rel2[(rel2 <= 0)] = np.nan
+            softmax2 = ((np.exp(beta* rel2)) / np.nansum(np.exp(beta * rel2), axis=-1, keepdims=True))
+            r2 = np.nansum(softmax2 * range, axis=-1)
+            #r2 = np.nanargmax(rel2, axis=-1)
 
-        self.df[f"{self.treatment_levels[1]} expected shift"] = r2.round(decimals=DECIMALS)
+
+            self.df[f"{self.treatment_levels[1]} expected shift"] = r2.round(decimals=DECIMALS)
         side = r2 - r1
         self.df["relative fraction shift"] = side
         side[side < 0] = -1
@@ -997,15 +999,14 @@ def _analysis_executable_wrapper(args):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv("../testData/sanitized_df.tsv", sep="\t", index_col=0)
+    df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
     # sdf = df[[col for col in df.columns if "LFQ" in col]]
     sdf = df
     sdf.index = sdf.index.astype(str)
-    design = pd.read_csv("../testData/sanitized_design.tsv", sep="\t")
-    rapdor = RAPDORData(sdf, design)
-    rapdor.normalize_and_get_distances("jensenshannon", 3)
+    design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
+    rapdor = RAPDORData(sdf, design, logbase=2)
+    rapdor.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
     rapdor.calc_all_scores()
-    rapdor.calc_cluster_features(kernel_range=3)
     clusters = rapdor.cluster_data()
     embedding = rapdor.reduce_dim()
     import plotly.graph_objs as go
