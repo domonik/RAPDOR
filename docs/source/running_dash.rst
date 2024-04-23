@@ -51,16 +51,4 @@ You can upload your design and intensities files that you prepared earlier
 (see :ref:`Data Prepatation<data-prep-tutorial>`) via the upload page.
 
 
-DISPLAY mode
-------------
-
-You can run the app in display mode. This will disable most of the buttons and is ment for displaying pre-analyzed data.
-To achieve this you need to set the environment variable :code:`RAPDOR_DISPLAY_MODE=True`.
-
-.. note::
-
-    You need to add the pre-analyzed data when you run the dash app e.g. via the :code:`--input` flag.
-    Otherwise you can setup your own server (see :ref:`Server Setup<server-setup>`)
-
-
 

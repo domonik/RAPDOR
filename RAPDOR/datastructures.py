@@ -438,7 +438,7 @@ class RAPDORData:
         jsd = self._calc_distance_via(self.state.distance_method, rnase_true, rnase_false, axis=-1)
         self.df["Mean Distance"] = jsd
 
-    def determine_peaks(self, beta: float = 100):
+    def determine_peaks(self, beta: float = 1000):
         """Determines the Mean Distance, Peak Positions and shift direction.
 
         The Peaks are determined the following way:

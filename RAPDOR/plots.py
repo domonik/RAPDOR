@@ -948,7 +948,9 @@ def _update_distribution_layout(fig, names, x, offset, yname):
             font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace', size=16)
 
         )
-
+    )
+    fig.update_layout(
+        showlegend=True
     )
     return fig
 
