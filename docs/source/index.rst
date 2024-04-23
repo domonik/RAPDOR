@@ -1,5 +1,5 @@
 
-RAPDOR documentation
+RAPDOR
 ================================
 .. toctree::
    :maxdepth: 1
@@ -12,10 +12,16 @@ RAPDOR documentation
 
 
 
+--------------------------------------
 
-RAPDOR
+**R**\ apid **A**\ NOSIM using **P**\ robability **D**\ istance for estimati\ **O**\ n of **R**\ edistribution (RAPDOR) is a
+package to identify changes in probability distribution profiles originating from two different conditions. The Key idea is to
+measure a probability distribution for each condition multiple times (replicates) and calculate a probability distance between each
+measurement. The resulting distance heatmap is used together with treatment labels to evaluate whether the treatment led to a shift in the distribution via either ANOSIM or
+PERMANOVA.
 
 --------------------------------------
+
 
 .. grid:: 1 1 2 2
     :gutter: 3
