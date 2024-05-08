@@ -1174,6 +1174,7 @@ def plot_dimension_reduction(
         rapdordata: RAPDORData,
         colors: Iterable[str] = None,
         highlight: Iterable[Any] = None,
+        highlight_color: str = None,
         show_cluster: bool = False,
         dimensions: int = 2,
         marker_max_size: int = 40,
@@ -1183,7 +1184,8 @@ def plot_dimension_reduction(
         legend_spread: float = 0.1,
         title_col: str = None,
         cutoff_range: Tuple[float, float] = None,
-        cutoff_type: str = None
+        cutoff_type: str = None,
+        show_lfc: bool = False,
 ):
     """Plots a dimension reduction using relative distribution change, relative fraction shift and the Mean Distance
 
@@ -1192,6 +1194,7 @@ def plot_dimension_reduction(
             are calculated and the array is normalized already.
         colors (Iterable[str]): An iterable of color strings to use for plotting
         highlight (Iterable[Any]): RAPDORids to highlight in the plot
+        highlight_color (str): html color used to highlight selected bubbles
         show_cluster (bool): If set to true it will show clusters in different colors.
             (Only works if rapdordata is clustered)
         dimensions (int): Either 2 or 3. 2 will produce a plot where the mean distance axis is represented via a marker
@@ -1207,8 +1210,10 @@ def plot_dimension_reduction(
             (This has no effect if dimensions is 3)
         cutoff_type (str): column in the dataframe of :class:`~RAPDOR.datastructures.RAPDORData` used for cutoff. Muste
             be numerical
-        cutoff_range (Iterable[float): uses index one as lower bound and index two as upper bound for data to display in
+        cutoff_range (Iterable[float]): uses index one as lower bound and index two as upper bound for data to display in
             the plot
+        show_lfc (bool): Shows lfs via a colorscale and the bubble colors. No effect if dimension is 3
+
 
     Returns: go.Figure()
 
@@ -1235,7 +1240,9 @@ def plot_dimension_reduction(
             legend_spread,
             title_col,
             cutoff_type=cutoff_type,
-            cutoff_range=cutoff_range
+            cutoff_range=cutoff_range,
+            highlight_color=highlight_color,
+            show_lfc=show_lfc,
         )
     elif dimensions == 3:
         fig = _plot_dimension_reduction_result3d(
@@ -1368,12 +1375,21 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
                                        bubble_legend_color: str = "black", legend_start: float = 0.2,
                                        legend_spread: float = 0.1,
                                        sel_column=None, cutoff_range: Tuple[float, float] = None,
-                                       cutoff_type: str = None
+                                       cutoff_type: str = None, highlight_color: str = None, show_lfc: bool = False,
+
                                        ):
     embedding = rapdordata.current_embedding
+    raw_diff = rapdordata.raw_lfc
+    highlight_color = colors[-1] if highlight_color is None else highlight_color
     displayed_text = rapdordata.df["RAPDORid"] if sel_column is None else rapdordata.df[sel_column]
     fig = make_subplots(rows=2, cols=1, row_width=[0.85, 0.15], vertical_spacing=0.0)
-    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
+    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str) + "<br>Raw Log2FC: " + np.around(raw_diff, decimals=2).astype(str)
+    if sel_column:
+        if pd.api.types.is_float_dtype(rapdordata.df[f"{sel_column}"]):
+            add =  np.around(rapdordata.df[f"{sel_column}"], decimals=2).astype(str)
+        else:
+            add =  rapdordata.df[f"{sel_column}"].astype(str)
+        hovertext = hovertext + f"<br>{sel_column}: " + add
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
@@ -1381,7 +1397,6 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     data = rapdordata.df["Mean Distance"]
     desired_min = 1
     min_data, max_data = np.nanmin(data), np.nanmax(data)
-
     marker_size = desired_min + (data - min_data) * (marker_max_size - desired_min) / (max_data - min_data)
     marker_size[np.isnan(marker_size)] = 1
     fig.add_shape(type="rect",
@@ -1446,7 +1461,10 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
-
+    colorscale = [colors[-1], colors[-2], colors[-1]]
+    cmin = -1
+    cmax = 1
+    ccscale = dict(cmin=cmin, cmax=cmax, colorscale=colorscale)
     if n_cluster > len(colors) - 2:
         fig.add_annotation(
             xref="paper",
@@ -1464,19 +1482,31 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
 
     if np.any(clusters == -1):
         c_mask = mask & (clusters == -1) & cutoff_mask
+        marker_color = raw_diff[c_mask] if show_lfc else colors[-2]
         fig.add_trace(go.Scatter(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
             mode="markers",
             hovertext=hovertext[c_mask],
-            marker=dict(color=colors[-2], size=marker_size[c_mask]),
+            marker=dict(color=marker_color, size=marker_size[c_mask],
+                        colorbar=dict(
+                            thickness=20,
+                            nticks=3,
+                            dtick=1,
+                            title="Raw Log2FC",
+                            tick0=0,
+
+                        ),
+                        **ccscale,),
             name=f"Not Clustered",
+
         ),
             row=2,
             col=1
         )
         nmask = ~mask & (clusters == -1) & cutoff_mask
         texts = displayed_text[nmask]
+        marker_color = raw_diff[nmask] if show_lfc else colors[-2]
         embx = embedding[nmask, :][:, 0]
         emby = embedding[nmask, :][:, 1]
         for idx, text in enumerate(texts):
@@ -1499,7 +1529,7 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
                 y=emby,
                 mode="markers",
                 hovertext=hovertext[nmask],
-                marker=dict(color=colors[-2], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
+                marker=dict(color=marker_color, size=marker_size[nmask], line=dict(color=highlight_color, width=4), **ccscale),
                 name="Not Clustered",
 
             ),
@@ -1508,26 +1538,32 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
         )
     for color_idx, cluster in enumerate(range(min(n_cluster, len(colors) - 2))):
         c_mask = mask & (clusters == cluster) & cutoff_mask
+        marker_color = raw_diff[c_mask] if show_lfc else colors[color_idx]
+
+
         fig.add_trace(go.Scatter(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
             mode="markers",
             hovertext=hovertext[c_mask],
-            marker=dict(color=colors[color_idx], size=marker_size[c_mask]),
-            name=f"Cluster {cluster}"
+            marker=dict(color=marker_color, size=marker_size[c_mask], **ccscale),
+            name=f"Cluster {cluster}",
+
         ),
             row=2,
             col=1
         )
         nmask = ~mask & (clusters == cluster) & cutoff_mask
+        marker_color = raw_diff[nmask] if show_lfc else colors[color_idx]
+
         fig.add_trace(
             go.Scatter(
                 x=embedding[nmask, :][:, 0],
                 y=embedding[nmask, :][:, 1],
                 mode="markers",
                 hovertext=hovertext[nmask],
-                marker=dict(color=colors[color_idx], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
-                name=f"Cluster {cluster}"
+                marker=dict(color=marker_color, size=marker_size[nmask], line=dict(color=highlight_color, width=4), **ccscale),
+                name=f"Cluster {cluster}",
             ),
             row=2,
             col=1
@@ -1542,7 +1578,6 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
         ),
         margin=dict(r=0, l=0)
     )
-
     fig.update_layout(
         xaxis2=dict(title="relative fraction shift"),
         yaxis2=dict(title="relative distribution change"),
@@ -1551,7 +1586,14 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
         xaxis=dict(range=[0, 1], showgrid=False, showline=False, showticklabels=False, zeroline=False, ticklen=0,
                    fixedrange=True),
         legend={'itemsizing': 'constant'},
+        showlegend=not show_lfc,
+
+
     )
+    if not show_lfc:
+        fig.update_traces(marker=dict(colorbar=None, colorscale=None, showscale=False))
+        fig.update_layout(coloraxis_colorbar=None, coloraxis=None, coloraxis_showscale=False)
+    fig.update_xaxes(categoryorder='array', categoryarray=rapdordata.fractions)
     return fig
 
 

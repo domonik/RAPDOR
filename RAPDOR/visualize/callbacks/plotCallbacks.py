@@ -350,11 +350,11 @@ def update_range_slider(cutoff_type, rapdordata: RAPDORData):
     Input('3d-plot', 'on'),
     Input('cutoff-range', 'value'),
     Input("additional-header-dd", "value"),
-
+    Input("showLFC", "on"),
     State('cutoff-type', 'value'),
     State('data-store', "data"),
 )
-def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, add_header, cutoff_type, rapdordata: RAPDORData):
+def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, add_header, show_lfc, cutoff_type, rapdordata: RAPDORData):
     logger.info(f"running cluster plot triggered via - {ctx.triggered_id}")
     dim = 2 if not td_plot else 3
     if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
@@ -376,7 +376,10 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
         else:
             if "p-Value" in cutoff_type:
                 cutoff_range = 10 ** cutoff_range[0], 10 ** cutoff_range[1]
-
+        if show_lfc:
+            highlight_color = "white" if night_mode else "black"
+        else:
+            highlight_color = None
         fig = plot_dimension_reduction(
             rapdordata,
             dimensions=dim,
@@ -388,7 +391,9 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
             bubble_legend_color="black" if not night_mode else "white",
             title_col=add_header,
             cutoff_range=cutoff_range,
-            cutoff_type=cutoff_type
+            cutoff_type=cutoff_type,
+            highlight_color=highlight_color,
+            show_lfc=show_lfc
 
         )
     if not night_mode:

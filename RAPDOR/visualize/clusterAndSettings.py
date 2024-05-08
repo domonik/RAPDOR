@@ -96,25 +96,46 @@ def _get_cluster_panel(disabled: bool = False):
                                     className="row justify-content-center p-2"
                                 ),
                                 html.Div(
+
                                     [
                                         html.Div(
-                                            html.Span("3D", style={"text-align": "center"}),
-                                            className="col-3 col-md-3 justify-content-center align-self-center"
+                                            [
+                                                html.Span("Cluster", ),
+                                                daq.BooleanSwitch(
+                                                    label='',
+                                                    labelPosition='left',
+                                                    color="var(--primary-color)",
+                                                    on=False,
+                                                    id="showLFC",
+                                                    className="align-self-center px-2",
+                                                    disabled=disabled
+                                                ),
+                                                html.Span("LFC",),
+
+                                            ],
+                                            className="col-5 d-flex justify-content-center text-align-center"
                                         ),
                                         html.Div(
-                                            daq.BooleanSwitch(
-                                                label='',
-                                                labelPosition='left',
-                                                color="var(--primary-color)",
-                                                on=False,
-                                                id="3d-plot",
-                                                className="align-self-center px-2",
-                                                persistence=True,
-                                                disabled=disabled
+                                            [
+                                                html.Span("2D", ),
 
-                                            ),
-                                            className="col-7 justify-content-center text-align-center"
-                                        )
+                                                daq.BooleanSwitch(
+                                                    label='',
+                                                    labelPosition='left',
+                                                    color="var(--primary-color)",
+                                                    on=False,
+                                                    id="3d-plot",
+                                                    className="align-self-center px-2",
+                                                    persistence=True,
+                                                    disabled=disabled
+
+                                                ),
+                                                html.Span("3D", ),
+
+                                            ],
+
+                                            className="col-5 d-flex justify-content-center text-align-center"
+                                        ),
                                     ],
                                     className="row justify-content-center p-2"
                                 ),
