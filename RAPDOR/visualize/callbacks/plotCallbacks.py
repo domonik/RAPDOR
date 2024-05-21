@@ -334,6 +334,16 @@ def update_range_slider(cutoff_type, rapdordata: RAPDORData):
 
 
 
+@callback(
+    Output("showLFC", "on"),
+    Output("showLFC", "disabled"),
+    Input("3d-plot", "on")
+)
+def disable_lfc_on_3d(tdplot):
+    if tdplot:
+        return False, True
+    else:
+        return dash.no_update, False
 
 
 
