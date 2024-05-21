@@ -108,10 +108,10 @@ If you dont like the default colors you can change them here. There are several 
 
 
 
-5 Dimension Reduction
+5 Bubble Plot
 ---------------------
 
-Here you can see a dimension reduction of all shifts. On the x-axis you will see the relative fraction shift. This
+Here you can see a bubble plot of all shifts. On the x-axis you will see the relative fraction shift. This
 is caclulated via subtracting the average control shift position from the RNase treated ones. On the y-axis you can see
 whether the protein has a broader (more negative) or sharper (more positive) distribution after treatment.
 

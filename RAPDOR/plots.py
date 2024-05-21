@@ -1187,7 +1187,7 @@ def plot_dimension_reduction(
         cutoff_type: str = None,
         show_lfc: bool = False,
 ):
-    """Plots a dimension reduction using relative distribution change, relative fraction shift and the Mean Distance
+    """Plots a bubble plot using relative distribution change, relative fraction shift and the Mean Distance
 
     Args:
         rapdordata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object where distances

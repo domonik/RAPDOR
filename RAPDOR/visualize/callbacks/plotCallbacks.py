@@ -241,7 +241,7 @@ def calc_clusters(
         if rapdordata.cluster_features is None:
             rapdordata.calc_distribution_features()
             logger.info("Calculated Cluster Features")
-            logger.info("Running Dimension Reduction - because cluster features changed")
+            logger.info("Running Bubble Plot - because cluster features changed")
         if cluster_method is not None:
             if cluster_method == "HDBSCAN":
                 kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)

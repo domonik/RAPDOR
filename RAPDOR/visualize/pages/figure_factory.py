@@ -228,7 +228,7 @@ def _figure_type():
                         options=[
                             {'label': 'Distribution', 'value': 0},
                             {'label': 'Westernblot', 'value': 2},
-                            {'label': 'Dimension Reduction', 'value': 3},
+                            {'label': 'Bubble Plot', 'value': 3},
                         ],
                         value=0,
                         className="d-flex justify-content-around radio-items row",
