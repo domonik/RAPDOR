@@ -26,7 +26,31 @@ from statsmodels.distributions.empirical_distribution import ECDF
 import warnings
 from io import StringIO
 
+try:
+    from numba import guvectorize, float_, vectorize
+    NUMBA = True
+
+except ImportError:
+    print("NUMBA not available p-value calculation might be slow")
+    NUMBA = False
+
+
+
 DECIMALS = 15
+
+
+if NUMBA:
+    @guvectorize([(float_, float_[:], float_)], "(),(m)->()")
+    def calc_num_elements_greater(x, y, res):
+        pass
+else:
+    def calc_num_elements_greater(x, arr):
+        result = 0
+        for y in arr:
+            if x > y:
+                result += 1
+        return result
+
 
 
 def check_equality(value, other_item):
@@ -436,7 +460,10 @@ class RAPDORData:
             if self.categorical_fraction:
                 positions = np.argmax(test, axis=-1)
                 positions += self.state.kernel_size // 2
-                positions = self.fractions[positions]
+                print(self.state.kernel_size)
+                print(positions.dtype)
+                positions = np.asarray(self.fractions)[positions]
+                print("Here")
             else:
 
                 i = self.state.kernel_size // 2
@@ -728,7 +755,7 @@ class RAPDORData:
             self.determine_peaks()
         self.determine_strongest_shift()
 
-    def _calc_anosim(self, indices_false, indices_true, ignore_nan: bool = True):
+    def _calc_anosim(self, indices_false, indices_true, ignore_nan: bool = True, ignore_zero_distances: bool = True):
         outer_group_distances = self._get_outer_group_distances(indices_false, indices_true)
         inner_group_distances = self._get_innergroup_distances(indices_false, indices_true)
         stat_distances = np.concatenate((outer_group_distances, inner_group_distances), axis=-1)
@@ -750,6 +777,8 @@ class RAPDORData:
                 r = (rb - rw) / (ranks.shape[-1] / 2)
                 r[mask] = np.nan
         r[self.df["min replicates per group"] < self.min_replicates] = np.nan
+        if ignore_zero_distances:
+            r[np.all(self.distances == 0, axis=(1, 2))] = np.nan
         return r
 
     def _calc_permanova_f(self, indices_false, indices_true):
@@ -873,7 +902,7 @@ class RAPDORData:
             raise ValueError("mode not supported")
         if callback:
             callback("100")
-
+        #p_values[np.isnan(r_scores)] = np.nan
         p_values[mask] = np.nan
         self.df[f"{mode} ANOSIM raw p-Value"] = p_values
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
@@ -1027,6 +1056,7 @@ def _analysis_executable_wrapper(args):
 
 if __name__ == '__main__':
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
+    import time
     # sdf = df[[col for col in df.columns if "LFQ" in col]]
     sdf = df
     sdf.index = sdf.index.astype(str)
@@ -1034,6 +1064,11 @@ if __name__ == '__main__':
     rapdor = RAPDORData(sdf, design, logbase=2)
     rapdor.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
     rapdor.calc_all_scores()
+    s = time.time()
+    rapdor.calc_permanova_p_value(9999, threads=1, mode="global")
+    e = time.time()
+    print(e-s)
+    exit()
     clusters = rapdor.cluster_data()
     embedding = rapdor.reduce_dim()
     import plotly.graph_objs as go
@@ -1044,7 +1079,5 @@ if __name__ == '__main__':
                                           clusters=clusters, name="bla")
     fig.show()
     exit()
-    rapdor.calc_anosim_p_value(100, threads=2, mode="global")
-    rapdor.calc_permanova_p_value(100, threads=2, mode="global")
     rapdor.rank_table(["ANOSIM R"], ascending=(True,))
     # rapdor.calc_welchs_t_test()
