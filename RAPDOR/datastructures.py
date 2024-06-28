@@ -889,10 +889,11 @@ class RAPDORData:
             raise ValueError("mode not supported")
         if callback:
             callback("100")
-        #p_values[np.isnan(r_scores)] = np.nan
+        mask[np.isnan(r_scores)] = True
         p_values[mask] = np.nan
         self.df[f"{mode} ANOSIM raw p-Value"] = p_values
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
+        print(p_values)
         self.df[f"{mode} ANOSIM adj p-Value"] = p_values
 
     def calc_permanova_p_value(self, permutations: int, threads: int, seed: int = 0,
@@ -925,7 +926,7 @@ class RAPDORData:
             mask = self.df["PERMANOVA F"].isna()
         else:
             raise ValueError("mode not supported")
-
+        mask[np.isnan(f_scores)] = True
         p_values[mask] = np.nan
         self.df[f"{mode} ANOSIM raw p-Value"] = p_values
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
