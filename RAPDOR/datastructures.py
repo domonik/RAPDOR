@@ -26,30 +26,13 @@ from statsmodels.distributions.empirical_distribution import ECDF
 import warnings
 from io import StringIO
 
-try:
-    from numba import guvectorize, float_, vectorize
-    NUMBA = True
 
-except ImportError:
-    print("NUMBA not available p-value calculation might be slow")
-    NUMBA = False
 
 
 
 DECIMALS = 15
 
 
-if NUMBA:
-    @guvectorize([(float_, float_[:], float_)], "(),(m)->()")
-    def calc_num_elements_greater(x, y, res):
-        pass
-else:
-    def calc_num_elements_greater(x, arr):
-        result = 0
-        for y in arr:
-            if x > y:
-                result += 1
-        return result
 
 
 
@@ -890,9 +873,13 @@ class RAPDORData:
         if mode == "global":
             distribution = distribution.flatten()
             distribution = distribution[~np.isnan(distribution)]
-            p_values = np.asarray(
-                [np.count_nonzero(distribution >= r_score) / distribution.shape[0] for r_score in r_scores]
-            )
+            # Sort the distribution array
+            distribution = np.sort(distribution)
+            # Use searchsorted to find the insertion points for r_scores
+            indices = np.searchsorted(distribution, r_scores, side='left')
+
+            p_values = (len(distribution) - indices) / len(distribution)
+
             mask = self.df["contains empty replicate"].to_numpy()
             p_values[mask] = np.nan
         elif mode == "local":
@@ -1056,6 +1043,7 @@ def _analysis_executable_wrapper(args):
 
 if __name__ == '__main__':
     df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
+    df = pd.concat(([df] * 5))
     import time
     # sdf = df[[col for col in df.columns if "LFQ" in col]]
     sdf = df
@@ -1065,7 +1053,7 @@ if __name__ == '__main__':
     rapdor.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
     rapdor.calc_all_scores()
     s = time.time()
-    rapdor.calc_permanova_p_value(9999, threads=1, mode="global")
+    rapdor.calc_anosim_p_value(999, threads=1, mode="global")
     e = time.time()
     print(e-s)
     exit()
