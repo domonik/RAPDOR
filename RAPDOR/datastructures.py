@@ -186,8 +186,6 @@ class RAPDORData:
         self.norm_array = None
         self.kernel_array = None
         self.distances = None
-        self._anosim_distribution = None
-        self._permanova_distribution = None
         self._data_rows = None
         self._current_eps = None
         self.indices = None
@@ -827,7 +825,7 @@ class RAPDORData:
             else:
                 result = [self._calc_anosim(*call) for call in calls]
         result = np.stack(result)
-        self._anosim_distribution = result
+        return result
 
     def _calc_global_permanova_distribution(self, nr_permutations: int, threads: int, seed: int = 0):
         np.random.seed(seed)
@@ -848,7 +846,7 @@ class RAPDORData:
         else:
             result = [self._calc_permanova_f(*call) for call in calls]
         result = np.stack(result)
-        self._permanova_distribution = result
+        return result
 
     def calc_anosim_p_value(self, permutations: int, threads: int, seed: int = 0,
                             mode: str = "local", callback=None):
@@ -864,11 +862,13 @@ class RAPDORData:
                 Local uses protein specific distribution.
             callback(Callable): A callback function that receives the progress in the form of a percent string e.g. "50".
                 This can be used in combination with a progress bar.
+        Returns:
+            p-values (np.ndarray): fdr corrected p-values for each protein
+            distribution (np.ndarray): distribution of R values used to calculate p-values
         """
         if "ANOSIM R" not in self.df.columns:
             self.calc_all_anosim_value()
-        self._calc_global_anosim_distribution(permutations, threads, seed, callback)
-        distribution = self._anosim_distribution
+        distribution = self._calc_global_anosim_distribution(permutations, threads, seed, callback)
         r_scores = self.df["ANOSIM R"].to_numpy()
         if mode == "global":
             distribution = distribution.flatten()
@@ -893,8 +893,8 @@ class RAPDORData:
         p_values[mask] = np.nan
         self.df[f"{mode} ANOSIM raw p-Value"] = p_values
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
-        print(p_values)
         self.df[f"{mode} ANOSIM adj p-Value"] = p_values
+        return p_values, distribution
 
     def calc_permanova_p_value(self, permutations: int, threads: int, seed: int = 0,
                                mode: str = "local"):
@@ -907,11 +907,13 @@ class RAPDORData:
             seed (int): seed for random permutation
             mode (str): either local or global. Global uses distribution of pseudo F value of all proteins as background.
                 Local uses protein specific distribution.
+        Returns:
+            p-values (np.ndarray): fdr corrected p-values for each protein
+            distribution (np.ndarray): distribution of R values used to calculate p-values
         """
         if "PERMANOVA F" not in self.df.columns:
             self.calc_all_permanova_f()
-        self._calc_global_permanova_distribution(permutations, threads, seed)
-        distribution = self._permanova_distribution
+        distribution = self._calc_global_permanova_distribution(permutations, threads, seed)
         f_scores = self.df["PERMANOVA F"].to_numpy()
         if mode == "global":
             distribution = distribution.flatten()
@@ -933,6 +935,7 @@ class RAPDORData:
         self.df[f"{mode} PERMANOVA adj p-Value"] = p_values
         self.state.permanova = mode
         self.state.permanova_permutations = permutations
+        return p_values, distribution
 
     def export_csv(self, file: str, sep: str = ","):
         """Exports the :attr:`extra_df` to a file.
