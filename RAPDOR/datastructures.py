@@ -868,10 +868,10 @@ class RAPDORData:
         """
         if "ANOSIM R" not in self.df.columns:
             self.calc_all_anosim_value()
-        distribution = self._calc_global_anosim_distribution(permutations, threads, seed, callback)
+        o_distribution = self._calc_global_anosim_distribution(permutations, threads, seed, callback)
         r_scores = self.df["ANOSIM R"].to_numpy()
         if mode == "global":
-            distribution = distribution.flatten()
+            distribution = o_distribution.flatten()
             distribution = distribution[~np.isnan(distribution)]
             # Sort the distribution array
             distribution = np.sort(distribution)
@@ -883,7 +883,7 @@ class RAPDORData:
             mask = self.df["contains empty replicate"].to_numpy()
             p_values[mask] = np.nan
         elif mode == "local":
-            p_values = np.count_nonzero(distribution >= r_scores, axis=0) / distribution.shape[0]
+            p_values = np.count_nonzero(o_distribution >= r_scores, axis=0) / o_distribution.shape[0]
             mask = self.df["ANOSIM R"].isna()
         else:
             raise ValueError("mode not supported")
@@ -894,7 +894,7 @@ class RAPDORData:
         self.df[f"{mode} ANOSIM raw p-Value"] = p_values
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
         self.df[f"{mode} ANOSIM adj p-Value"] = p_values
-        return p_values, distribution
+        return p_values, o_distribution
 
     def calc_permanova_p_value(self, permutations: int, threads: int, seed: int = 0,
                                mode: str = "local"):
@@ -913,10 +913,10 @@ class RAPDORData:
         """
         if "PERMANOVA F" not in self.df.columns:
             self.calc_all_permanova_f()
-        distribution = self._calc_global_permanova_distribution(permutations, threads, seed)
+        o_distribution = self._calc_global_permanova_distribution(permutations, threads, seed)
         f_scores = self.df["PERMANOVA F"].to_numpy()
         if mode == "global":
-            distribution = distribution.flatten()
+            distribution = o_distribution.flatten()
             distribution = distribution[~np.isnan(distribution)]
             p_values = np.asarray(
                 [np.count_nonzero(distribution >= f_score) / distribution.shape[0] for f_score in f_scores]
@@ -924,7 +924,7 @@ class RAPDORData:
             mask = self.df["contains empty replicate"].to_numpy()
             p_values[mask] = np.nan
         elif mode == "local":
-            p_values = np.count_nonzero(distribution >= f_scores, axis=0) / distribution.shape[0]
+            p_values = np.count_nonzero(o_distribution >= f_scores, axis=0) / o_distribution.shape[0]
             mask = self.df["PERMANOVA F"].isna()
         else:
             raise ValueError("mode not supported")
@@ -935,7 +935,7 @@ class RAPDORData:
         self.df[f"{mode} PERMANOVA adj p-Value"] = p_values
         self.state.permanova = mode
         self.state.permanova_permutations = permutations
-        return p_values, distribution
+        return p_values, o_distribution
 
     def export_csv(self, file: str, sep: str = ","):
         """Exports the :attr:`extra_df` to a file.
