@@ -106,6 +106,12 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
         legend=dict(font=dict(size=14)),
         legend2=dict(font=dict(size=14))
     )
+    if isinstance(rapdordata.fractions[0], str):
+        fig.update_xaxes(
+            tickvals=rapdordata.fractions,
+            ticktext=[val.replace(" ", "<br>").replace("<br>&<br>", " &<br>") for val in rapdordata.fractions],
+            tickmode="array"
+        )
 
     fig.update_xaxes(dtick=1, title=None)
     fig.update_xaxes(fixedrange=True)
