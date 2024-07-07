@@ -1495,6 +1495,9 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
                             dtick=1,
                             title="Raw Log2FC",
                             tick0=0,
+                            ticktext=[u"\u2264 -1", "0", u"\u2265 1"],
+                            tickvals=[-1, 0, 1],
+                            tickmode="array"
 
                         ),
                         **ccscale,),
@@ -1596,10 +1599,12 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     fig.update_xaxes(categoryorder='array', categoryarray=rapdordata.fractions)
     return fig
 
-def plot_distance_and_var(rapdordata: RAPDORData, colors, var_type: str = "ANOSIM R", title_col: str = "RAPDORid", highlight = None):
+def plot_distance_and_var(rapdordata: RAPDORData, colors, var_type: str = "ANOSIM R", title_col: str = "RAPDORid", highlight = None, show_lfc: bool = False):
     fig = go.Figure()
     mask = np.ones(rapdordata.df.shape[0], dtype=bool)
     hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
+    raw_diff = rapdordata.raw_lfc
+
     if title_col:
         if pd.api.types.is_float_dtype(rapdordata.df[f"{title_col}"]):
             add = np.around(rapdordata.df[f"{title_col}"], decimals=2).astype(str)
@@ -1612,17 +1617,40 @@ def plot_distance_and_var(rapdordata: RAPDORData, colors, var_type: str = "ANOSI
         indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
     y = rapdordata.df[var_type]
+    if show_lfc:
+        hovertext = hovertext + "<br>Raw Log2FC: " + np.around(raw_diff, decimals=2).astype(str)
     if "p-Value" in var_type:
         y = -1 * np.log10(y)
         var_type = f"-log<sub>10</sub>({var_type})"
+    colorscale = [colors[-1], colors[-2], colors[-1]]
+    cmin = -1
+    cmax = 1
+    ccscale = dict(cmin=cmin, cmax=cmax, colorscale=colorscale)
+
+
     fig.add_trace(
         go.Scatter(
             y=y[mask],
             x=rapdordata.df[mask]["Mean Distance"],
             mode="markers",
             hovertext=hovertext[mask],
-            marker=dict(color=colors[0]),
-            showlegend=False
+            marker=dict(
+                color=raw_diff[mask] if show_lfc else colors[0],
+                colorbar=dict(
+                    thickness=20,
+                    nticks=3,
+                    dtick=1,
+                    title="Raw Log2FC",
+                    tick0=0,
+                    ticktext=[u"\u2264 -1", "0", u"\u2265 1"],
+                    tickvals=[-1, 0, 1],
+                    tickmode="array"
+
+                ),
+                **ccscale
+            ),
+            showlegend=False,
+
         ),
     )
     fig.add_trace(
@@ -1633,7 +1661,7 @@ def plot_distance_and_var(rapdordata: RAPDORData, colors, var_type: str = "ANOSI
             name="highlighted",
             showlegend=False,
             hovertext=hovertext[~mask],
-            marker=dict(color=colors[1])
+            marker=dict(color=raw_diff[mask] if show_lfc else colors[0], line=dict(width=4, color=colors[1]), **ccscale)
         ),
     )
     texts = rapdordata.df[~mask][title_col]
@@ -1654,6 +1682,19 @@ def plot_distance_and_var(rapdordata: RAPDORData, colors, var_type: str = "ANOSI
             )
     fig.update_xaxes(title="Mean Distance")
     fig.update_yaxes(title=var_type)
+    if not show_lfc:
+        fig.update_traces(marker=dict(colorbar=None, colorscale=None, showscale=False))
+        fig.update_layout(coloraxis_colorbar=None, coloraxis=None, coloraxis_showscale=False)
+    else:
+        fig.update_layout(
+            showlegend=show_lfc,
+            #coloraxis_colorbar=True,
+            #coloraxis=True,
+            coloraxis_showscale=True
+        )
+    fig.update_xaxes(categoryorder='array', categoryarray=rapdordata.fractions)
+
+
     return fig
 
 def _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titles, y_0, x_0):
@@ -1893,7 +1934,7 @@ if __name__ == '__main__':
     rapdor.calc_all_scores()
     rapdor.calc_distribution_features()
     rapdor.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
-    fig = plot_distance_and_var(rapdor, colors=COLOR_SCHEMES["Dolphin"])
+    fig = plot_distance_and_var(rapdor, colors=COLOR_SCHEMES["Dolphin"], show_lfc=True)
     fig.show()
     exit()
     print(rapdor.df["Gene"].str.contains('rpl|Rpl'))

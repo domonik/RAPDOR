@@ -24,7 +24,7 @@ def _get_cluster_panel(disabled: bool = False):
                                     [
                                         dcc.Store(id="plot-dim-red", data=False),
                                         dcc.Graph(id="cluster-graph", figure=empty_figure(),
-                                                  style={"min-width": "1000px", "height": "400px"}),
+                                                  style={"min-width": "800px", "height": "400px"}),
 
                                     ],
                                     color="var(--primary-color)",

@@ -367,7 +367,7 @@ def disable_lfc_and_3d(tdplot, plot_type):
         else:
             return dash.no_update, False, dash.no_update
     else:
-        return dash.no_update, True, True
+        return dash.no_update, False, True
 
 
 
@@ -437,7 +437,7 @@ def plot_cluster_results(night_mode, plot_type, color, color2, plotting, selecte
             if cutoff_type is None:
                 fig = empty_figure("Select Y Axis Type first")
             else:
-                fig = plot_distance_and_var(rapdordata, colors, title_col=add_header, highlight=highlight, var_type=cutoff_type)
+                fig = plot_distance_and_var(rapdordata, colors, title_col=add_header, highlight=highlight, var_type=cutoff_type, show_lfc=show_lfc)
                 fig.update_traces(marker=dict(size=marker_size))
     if not night_mode:
 
