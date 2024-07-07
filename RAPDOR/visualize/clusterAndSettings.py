@@ -40,6 +40,31 @@ def _get_cluster_panel(disabled: bool = False):
                                 html.Div(
                                     [
                                         html.Div(
+                                            html.Span(
+                                                [
+                                                    "Plot Type",
+                                                ],
+                                                style={"text-align": "center"}
+                                            ),
+                                            className="col-3 col-md-3 justify-content-center align-self-center"
+                                        ),
+                                        html.Div(
+                                            dcc.Dropdown(
+                                                ["Bubble Plot", "Distance vs Var"],
+                                                value="Bubble Plot",
+                                                className="justify-content-center",
+                                                id="dataset-plot-type",
+                                                clearable=False,
+
+                                            ),
+                                            className="col-7 justify-content-center text-align-center"
+                                        )
+                                    ],
+                                    className="row justify-content-center p-2"
+                                ),
+                                html.Div(
+                                    [
+                                        html.Div(
                                             html.Span("Marker Size", style={"text-align": "center"}),
                                             className="col-10 col-md-3 justify-content-center align-self-center"
                                         ),
@@ -60,10 +85,9 @@ def _get_cluster_panel(disabled: bool = False):
                                     [
                                         html.Div(
                                             html.Span(
-                                                [
-                                                    "Cutoff Type",
-                                                ],
-                                                style={"text-align": "center"}
+                                                "Cutoff Type",
+                                                style={"text-align": "center"},
+                                                id="plot-cutoff-name"
                                             ),
                                             className="col-3 col-md-3 justify-content-center align-self-center"
                                         ),

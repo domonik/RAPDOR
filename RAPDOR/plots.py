@@ -1596,6 +1596,65 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     fig.update_xaxes(categoryorder='array', categoryarray=rapdordata.fractions)
     return fig
 
+def plot_distance_and_var(rapdordata: RAPDORData, colors, var_type: str = "ANOSIM R", title_col: str = "RAPDORid", highlight = None):
+    fig = go.Figure()
+    mask = np.ones(rapdordata.df.shape[0], dtype=bool)
+    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
+    if title_col:
+        if pd.api.types.is_float_dtype(rapdordata.df[f"{title_col}"]):
+            add = np.around(rapdordata.df[f"{title_col}"], decimals=2).astype(str)
+        else:
+            add = rapdordata.df[f"{title_col}"].astype(str)
+        hovertext = hovertext + f"<br>{title_col}: " + add
+    if highlight is not None and len(highlight) > 0:
+        highlight = rapdordata[highlight]
+
+        indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
+        mask[indices] = 0
+    y = rapdordata.df[var_type]
+    if "p-Value" in var_type:
+        y = -1 * np.log10(y)
+        var_type = f"-log<sub>10</sub>({var_type})"
+    fig.add_trace(
+        go.Scatter(
+            y=y[mask],
+            x=rapdordata.df[mask]["Mean Distance"],
+            mode="markers",
+            hovertext=hovertext[mask],
+            marker=dict(color=colors[0]),
+            showlegend=False
+        ),
+    )
+    fig.add_trace(
+        go.Scatter(
+            y=y[~mask],
+            x=rapdordata.df[~mask]["Mean Distance"],
+            mode="markers",
+            name="highlighted",
+            showlegend=False,
+            hovertext=hovertext[~mask],
+            marker=dict(color=colors[1])
+        ),
+    )
+    texts = rapdordata.df[~mask][title_col]
+    embx = rapdordata.df[~mask]["Mean Distance"]
+    emby = y[~mask]
+    for idx, text in enumerate(texts):
+        if not pd.isna(text):
+            fig.add_annotation(
+                text=text,
+                x=embx.iloc[idx],
+                y=emby.iloc[idx],
+                xanchor="center",
+                yanchor="middle",
+                showarrow=False,
+                xref="x",
+                yref="y",
+
+            )
+    fig.update_xaxes(title="Mean Distance")
+    fig.update_yaxes(title=var_type)
+    return fig
 
 def _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titles, y_0, x_0):
     fig.add_trace(
@@ -1826,19 +1885,17 @@ def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman",
 if __name__ == '__main__':
     from RAPDOR.datastructures import RAPDORData
 
-    df = pd.read_csv("../testData/sanitized_df.tsv", sep="\t")
-    df["ribosomal protein"] = ((df["Gene"].str.contains('rpl|rps|Rpl|Rps', case=False)) | (
-        df['ProteinFunction'].str.contains('ribosomal protein', case=False)))
-    df["small ribo"] = df["Gene"].str.contains('rps|Rps', case=False)
-    df["large ribo"] = df["Gene"].str.contains('rpl|Rpl', case=False)
-    df["photosystem"] = df["Gene"].str.contains('psa|psb', case=False)
-    design = pd.read_csv("../testData/sanitized_design.tsv", sep="\t")
+    df = pd.read_csv("tests/testData/testFile.tsv", sep="\t")
+    design = pd.read_csv("tests/testData/testDesign.tsv", sep="\t")
     rapdor = RAPDORData(df, design, logbase=2, control="CTRL")
     rapdor.normalize_array_with_kernel(kernel_size=3)
     rapdor.calc_distances(method="Jensen-Shannon-Distance")
     rapdor.calc_all_scores()
     rapdor.calc_distribution_features()
     rapdor.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
+    fig = plot_distance_and_var(rapdor, colors=COLOR_SCHEMES["Dolphin"])
+    fig.show()
+    exit()
     print(rapdor.df["Gene"].str.contains('rpl|Rpl'))
     ids = list(rapdor.df[rapdor.df["small ribo"] == True]["RAPDORid"])[0:5]
     ids2 = list(rapdor.df[rapdor.df["large ribo"] == True]["RAPDORid"])

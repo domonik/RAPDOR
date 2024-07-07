@@ -123,9 +123,9 @@ if __name__ == '__main__':
     import os
     import multiprocessing
 
-    file = os.path.abspath("testData/testFile.tsv")
+    file = os.path.abspath("RAPDOR/tests/testData/testFile.tsv")
     assert os.path.exists(file)
     logger.setLevel(logging.INFO)
-    design = "testData/testDesign.tsv"
+    design = "RAPDOR/tests/testData/testDesign.tsv"
     logbase = 2
     gui_wrapper(file, design, host="127.0.0.1", port=8090, debug=True, logbase=logbase)
