@@ -130,7 +130,8 @@ def _create_table(rapdordata, selected_columns=None):
             style_data={
                 'color': 'var(--r-text-color)',
                 "border": "1px",
-                "font-family": "var(--bs-body-font-family)"
+                "font-family": "var(--bs-body-font-family)",
+                "cursor": "pointer"
 
             },
             style_data_conditional=SELECTED_STYLE,

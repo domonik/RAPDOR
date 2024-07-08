@@ -441,10 +441,7 @@ class RAPDORData:
             if self.categorical_fraction:
                 positions = np.argmax(test, axis=-1)
                 positions += self.state.kernel_size // 2
-                print(self.state.kernel_size)
-                print(positions.dtype)
                 positions = np.asarray(self.fractions)[positions]
-                print("Here")
             else:
 
                 i = self.state.kernel_size // 2
@@ -452,8 +449,8 @@ class RAPDORData:
                 positions = t.sum(axis=-1) / np.count_nonzero(t, axis=-1)
                 positions = np.floor(positions).astype(int)
         # Get the middle occurrence index
-
         self.df["position strongest shift"] = positions
+        self.df.loc[self.df["Mean Distance"].isna(), "position strongest shift"] = pd.NA
 
     def calc_mean_distance(self):
         with warnings.catch_warnings():
