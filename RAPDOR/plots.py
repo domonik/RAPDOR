@@ -297,8 +297,8 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                 if x1s and col_idx == 0:
                     ma = x1s[idx] - i + zoom_fractions
                     mi = x1s[idx] - 1 - i - zoom_fractions
-                    ma = min(ma, array.shape[-1])
-                    mi = max(mi, 0)
+                    ma = int(min(ma, array.shape[-1]))
+                    mi = int(max(mi, 0))
                     wmax = np.nanmax(array[:, mi:ma])
                     wmin = np.nanmin(array[:, mi:ma])
                     margin = (wmax - wmin) * 0.025
