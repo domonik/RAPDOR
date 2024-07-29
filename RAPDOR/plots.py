@@ -56,11 +56,12 @@ DEFAULT_TEMPLATE.update(
         "layout": {
             # e.g. you want to change the background to transparent
             "paper_bgcolor": "rgba(255,255,255,1)",
-            "plot_bgcolor": " rgba(0,0,0,0)",
+            "plot_bgcolor": "rgba(0,0,0,0)",
             "font": dict(color="black"),
             "xaxis": dict(linecolor="black", showline=True, mirror=True),
             "yaxis": dict(linecolor="black", showline=True, mirror=True),
-            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black", tickfont=dict(color="black")))
+            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black", tickfont=dict(color="black"))),
+            "legend": dict(bgcolor="rgba(0,0,0,0)")
         }
     }
 )
@@ -166,7 +167,10 @@ def plot_replicate_distribution(
     if colors is None:
         colors = DEFAULT_COLORS
     indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
-    x = list(range(offset + 1, subdata.shape[1] + offset + 1))
+    if offset:
+        x = list(range(offset + 1, subdata.shape[1] + offset + 1))
+    else:
+        x = list(range(subdata.shape[1]))
     fig = go.Figure()
     names = []
     values = []
@@ -243,6 +247,11 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
         else:
             cols = 1
         rows = len(proteins)
+    if "barmode" in kwargs:
+        barmode = kwargs["barmode"]
+        del kwargs["barmode"]
+    else:
+        barmode = "overlay"
     x1s = None
     if rows * cols < len(proteins):
         raise ValueError(f"Not enough columns ({cols}) and rows ({rows}) to place {len(proteins)} figures")
@@ -303,8 +312,9 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                 if mode == "line":
                     fig = plot_distribution(array, rapdordata.internal_design_matrix, offset=i, colors=colors)
                 elif mode == "bar":
-                    fig = plot_bars(array, rapdordata.internal_design_matrix, offset=i, colors=colors,
+                    fig = plot_bars(array, rapdordata.internal_design_matrix, offset=i, colors=colors, barmode=barmode,
                                     x=rapdordata.fractions)
+
                 else:
                     raise ValueError("mode must be one of line or bar")
                 if plot_type not in ("mixed", "zoomed") or col_idx == 1:
@@ -324,6 +334,18 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                         trace['showlegend'] = False
                     fig_subplots.add_trace(trace, row=row_idx + 1, col=col_idx + 1)
                 idx += 1
+    if mode == "bar":
+        fig_subplots.update_layout(
+            barmode="overlay",
+            bargroupgap=0,
+            bargap=0,
+        )
+        fig_subplots.update_xaxes(
+            tickvals=list(range(len(rapdordata.fractions))),
+            ticktext=[val.replace(" ", "<br>").replace("<br>&<br>", " &<br>") for val in rapdordata.fractions],
+            tickmode="array",
+            col=1
+        )
     if plot_type == "mixed":
         fig_subplots.add_annotation(
             text=f"rel. {rapdordata.measure_type} {rapdordata.measure}",
@@ -728,7 +750,7 @@ def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORDat
     return fig
 
 
-def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount"):
+def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount", barmode: str = "overlay"):
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure(layout=go.Layout(yaxis2=go.layout.YAxis(
@@ -738,78 +760,92 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
         anchor="x",
     )))
     indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
-    x = x[offset: subdata.shape[1] + offset]
+    origininal_x = x[offset: subdata.shape[1] + offset]
+    x = list(range(len(origininal_x)))
+    print(x)
+
     names = []
     j_val = max([len(name) for name in indices.keys()])
 
     for eidx, (name, idx) in enumerate(indices.items()):
         name = f"{name}".ljust(j_val, " ")
         legend = f"legend{eidx + 1}"
+        offset = -0.05 if eidx else 0.05
+        offset_x = [v+offset for v in x]
         names.append(name)
         mean_values = np.nanmean(subdata[idx,], axis=0)
         upper_quantile = np.nanquantile(subdata[idx,], 0.75, axis=0) - mean_values
         lower_quantile = mean_values - np.nanquantile(subdata[idx,], 0.25, axis=0)
         fig.add_trace(go.Bar(
             y=mean_values,
-            x=x,
+            x=offset_x if barmode != "overlay" else x,
             name="Bar",
             offsetgroup=str(eidx),
             # offset=(eidx - 1) * 1 / 3,
-            marker_color=colors[eidx],
             legend=legend,
-            marker=dict(line=dict(width=1, color="black"))
+            marker=dict(color=colors[eidx], opacity=0.5,),
+            width=.1 if barmode != "overlay" else None
         ))
-        fig.add_trace(go.Bar(
-            y=mean_values,
-            x=x,
-            name="Q.25-Q.75",
-            offsetgroup=str(eidx),
-            # offset=(eidx - 1) * 1 / 3,
-            error_y=dict(
-                type='data',  # value of error bar given in data coordinates
-                array=upper_quantile,
-                arrayminus=lower_quantile,
-                symmetric=False,
-                visible=True,
-                color="black",
-                thickness=2,
-                width=10
-            ),
-            yaxis=f"y2",
-            marker_color="rgba(0, 0, 0, 0)",
-            legend=legend,
-            marker=dict(line=dict(width=1, color="black"))
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=offset_x,
+                y=mean_values,
+                offsetgroup=str(eidx),
+                mode="markers",
+                marker=dict(color=colors[eidx], size=20),
+                error_y = dict(
+                    type='data',  # value of error bar given in data coordinates
+                    array=upper_quantile,
+                    arrayminus=lower_quantile,
+                    symmetric=False,
+                    visible=True,
+                    color=colors[eidx],
+                    thickness=2,
+                    width=10
+                ),
+                legend=legend,
+                name="Dot & Q.25-Q.75"
+
+            )
+        )
+        # fig.add_trace(go.Bar(
+        #     y=mean_values,
+        #     x=x,
+        #     name="Q.25-Q.75",
+        #     offsetgroup=str(eidx),
+        #     # offset=(eidx - 1) * 1 / 3,
+        #     error_y=dict(
+        #         type='data',  # value of error bar given in data coordinates
+        #         array=upper_quantile,
+        #         arrayminus=lower_quantile,
+        #         symmetric=False,
+        #         visible=True,
+        #         color="black",
+        #         thickness=2,
+        #         width=10
+        #     ),
+        #     yaxis=f"y2",
+        #     marker_color="rgba(0, 0, 0, 0)",
+        #     legend=legend,
+        #     marker=dict(line=dict(width=1, color="black"))
+        # ))
     fig.update_layout(hovermode="x")
     fig.update_layout(
         yaxis_title=yname,
     )
     fig.update_layout(
-        xaxis=dict(title="Fraction"),
-        legend=dict(
-            title=names[0],
-            orientation="h",
-            yanchor="bottom",
-            y=1.03,
-            xanchor="left",
-            x=0,
-            itemsizing="constant",
-            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace')
-
-        ),
-        legend2=dict(
-            title=names[1],
-            orientation="h",
-            yanchor="bottom",
-            y=1.15,
-            xanchor="left",
-            x=0,
-            itemsizing="constant",
-            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace')
-
-        )
-
+        bargroupgap=0,
+        bargap=0,
+        barmode="overlay"
     )
+    fig.update_layout(
+        xaxis=dict(
+            tickmode='array',
+            tickvals=x,
+            ticktext=origininal_x
+        )
+    )
+    fig = _update_distribution_layout(fig, names, x, offset, yname)
     return fig
 
 
@@ -844,7 +880,10 @@ def plot_distribution(
     medians = []
     means = []
     errors = []
-    x = list(range(offset + 1, subdata.shape[1] + offset + 1))
+    if offset:
+        x = list(range(offset + 1, subdata.shape[1] + offset + 1))
+    else:
+        x = list(range(subdata.shape[1]))
     names = []
     j_val = max([len(name) for name in indices.keys()])
     for eidx, (name, idx) in enumerate(indices.items()):
@@ -930,7 +969,7 @@ def _update_distribution_layout(fig, names, x, offset, yname):
             title=names[0],
             orientation="h",
             yanchor="bottom",
-            y=1.05,
+            y=1.02,
             xanchor="left",
             x=0,
             itemsizing="constant",
@@ -1934,6 +1973,13 @@ if __name__ == '__main__':
     rapdor.calc_all_scores()
     rapdor.calc_distribution_features()
     rapdor.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
+    rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureMouse/mobilityScore/mobilityegf_2min.json")
+    subdata = rapdor.norm_array[0]
+    fig = plot_protein_distributions([rapdor.df.iloc[0]["RAPDORid"]], rapdor, colors=COLOR_SCHEMES["Dolphin"], mode="bar",barmode="f")
+
+    fig.update_layout(width=600)
+    fig.show()
+    exit()
     fig = plot_distance_and_var(rapdor, colors=COLOR_SCHEMES["Dolphin"], show_lfc=True)
     fig.show()
     exit()

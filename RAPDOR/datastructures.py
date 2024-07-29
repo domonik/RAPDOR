@@ -153,7 +153,7 @@ class RAPDORData:
     # prevents setting these attributes when loading from json
     _blacklisted_fields = [
         "internal_design_matrix",
-        "_data_rows",
+        "_data_cols",
         "indices",
         "control",
         "measure",
@@ -186,7 +186,7 @@ class RAPDORData:
         self.norm_array = None
         self.kernel_array = None
         self.distances = None
-        self._data_rows = None
+        self._data_cols = None
         self._current_eps = None
         self.indices = None
         self.cluster_features = None
@@ -259,17 +259,21 @@ class RAPDORData:
         l = []
         rnames = []
         for idx, row in tmp.iterrows():
-            sub_df = self.df[row["Name"]].to_numpy()
             rnames += row["Name"]
+        self._data_cols = np.asarray(rnames)
+        for col in self._data_cols:
+            self.df.loc[:,col] = pd.to_numeric(self.df.loc[:, col], errors="coerce")
+
+        for idx, row in tmp.iterrows():
+            sub_df = self.df[row["Name"]].to_numpy(dtype=float)
             l.append(sub_df)
         self.df["RAPDORid"] = self.df.iloc[:, 0]
         self.df["id"] = self.df.index
-        self._data_rows = np.asarray(rnames)
         array = np.stack(l, axis=1)
         if self.logbase is not None:
             array = np.power(self.logbase, array)
-            mask = np.isnan(array)
-            array[mask] = 0
+        mask = np.isnan(array)
+        array[mask] = 0
         self.array = array
         self.internal_design_matrix = tmp
         indices = self.internal_design_matrix.groupby("Treatment", group_keys=True, observed=False).apply(
@@ -323,9 +327,9 @@ class RAPDORData:
         Returns: pd.Dataframe
 
         """
-        if self._data_rows is None:
+        if self._data_cols is None:
             return None
-        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_rows)]
+        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_cols)]
 
     @staticmethod
     def _normalize_rows(array, eps: float = 0):
@@ -1043,14 +1047,14 @@ def _analysis_executable_wrapper(args):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
-    df = pd.concat(([df] * 5))
-    import time
-    # sdf = df[[col for col in df.columns if "LFQ" in col]]
-    sdf = df
-    sdf.index = sdf.index.astype(str)
-    design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-    rapdor = RAPDORData(sdf, design, logbase=2)
+    f = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureSpatial/RawData/egf_2min_raw_intensities.tsv"
+    d = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureSpatial/RawData/egf_2min_design.tsv"
+    #f  = "../testData/testFile.tsv"
+    #d  = "../testData/testDesign.tsv"
+    df = pd.read_csv(f, sep="\t", index_col=0)
+
+    design = pd.read_csv(d, sep="\t")
+    rapdor = RAPDORData(df, design, logbase=None)
     rapdor.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
     rapdor.calc_all_scores()
     s = time.time()

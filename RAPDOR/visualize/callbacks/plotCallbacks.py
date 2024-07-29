@@ -56,8 +56,7 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
             if rapdordata.categorical_fraction:
                 fig = plot_bars(array, rapdordata.internal_design_matrix, x=rapdordata.fractions, offset=i,
                                 colors=colors, yname=yname)
-                if night_mode:
-                    fig.update_traces(error_y=dict(color="white"), marker=dict(line=dict(width=1, color="white")))
+                fig.update_traces(error_y=dict(width=15))
             else:
                 fig = plot_distribution(array, rapdordata.internal_design_matrix, offset=i, colors=colors, show_outliers=True, yname=yname)
         if not night_mode:
@@ -108,7 +107,7 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
     )
     if isinstance(rapdordata.fractions[0], str):
         fig.update_xaxes(
-            tickvals=rapdordata.fractions,
+            tickvals=list(range(len(rapdordata.fractions))),
             ticktext=[val.replace(" ", "<br>").replace("<br>&<br>", " &<br>") for val in rapdordata.fractions],
             tickmode="array"
         )
