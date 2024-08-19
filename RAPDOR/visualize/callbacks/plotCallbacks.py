@@ -368,9 +368,9 @@ def update_range_slider(cutoff_type, plot_type, rapdordata: RAPDORData):
 def disable_lfc_and_3d(tdplot, plot_type):
     if plot_type == "Bubble Plot":
         if tdplot:
-            return False, True, dash.no_update
+            return False, True, False
         else:
-            return dash.no_update, False, dash.no_update
+            return dash.no_update, False, False
     else:
         return dash.no_update, False, True
 
