@@ -70,11 +70,11 @@ def multi_intensities(intensities):
 
 def drop_replicates(design, rnase_rep, ctrl_rep):
     if rnase_rep > 0:
-        rnase = design[design["Treatment"] == "RNase"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=rnase_rep).sum()
+        rnase = design[design["Treatment"] == "RNase"].groupby("Replicate").apply(lambda x: list(x.index), include_groups=False).sample(n=rnase_rep).sum()
     else:
         rnase = []
     if ctrl_rep > 0:
-        ctrl = design[design["Treatment"] == "Control"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=ctrl_rep).sum()
+        ctrl = design[design["Treatment"] == "Control"].groupby("Replicate").apply(lambda x: list(x.index), include_groups=False).sample(n=ctrl_rep).sum()
     else:
         ctrl = []
     rnase = design.loc[rnase]
@@ -147,14 +147,13 @@ def test_different_columns(intensities, design):
 
 
 @pytest.mark.parametrize(
-    "normalize,kernel_size,distance,permanova,nr_samples, distance_cutoff",
+    "normalize,kernel_size,distance,permanova,nr_samples",
     [
-        (True, 3, "Jensen-Shannon-Distance", True, 10, 0.1),
-        (True, 3, "Jensen-Shannon-Distance", True, 10, 0),
-        (False, None, None, False, None, None)
+        (True, 3, "Jensen-Shannon-Distance", True, 10),
+        (False, None, None, False, None)
     ]
 )
-def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, distance_cutoff, rapdordata):
+def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, rapdordata):
     if normalize:
         rapdordata.normalize_array_with_kernel(kernel_size)
     if distance:
@@ -164,7 +163,7 @@ def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, 
         rapdordata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
 
 
-        rapdordata.calc_permanova_p_value(10, threads=1, distance_cutoff=distance_cutoff)
+        rapdordata.calc_permanova_p_value(10, threads=1)
     s = rapdordata.to_jsons()
     loaded_data = RAPDORData.from_json(s)
     assert loaded_data == rapdordata

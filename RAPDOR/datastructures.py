@@ -10,6 +10,7 @@ import numpy as np
 from typing import Callable
 from scipy.spatial.distance import jensenshannon
 from scipy.special import rel_entr
+from scipy.stats import entropy
 # from RAPDOR.stats import fit_ecdf, get_permanova_results
 from multiprocessing import Pool
 from statsmodels.stats.multitest import multipletests
@@ -25,7 +26,14 @@ from statsmodels.distributions.empirical_distribution import ECDF
 import warnings
 from io import StringIO
 
+
+
+
+
 DECIMALS = 15
+
+
+
 
 
 def check_equality(value, other_item):
@@ -118,10 +126,14 @@ class RAPDORData:
         "Rank",
         "ANOSIM R",
         "global ANOSIM adj p-Value",
+        "global ANOSIM raw p-Value",
         "local ANOSIM adj p-Value",
+        "local ANOSIM raw p-Value",
         "PERMANOVA F",
         "global PERMANOVA adj p-Value",
+        "global PERMANOVA raw p-Value",
         "local PERMANOVA adj p-Value",
+        "local PERMANOVA raw p-Value",
         "Mean Distance",
         "shift direction",
         "relative fraction shift",
@@ -141,7 +153,7 @@ class RAPDORData:
     # prevents setting these attributes when loading from json
     _blacklisted_fields = [
         "internal_design_matrix",
-        "_data_rows",
+        "_data_cols",
         "indices",
         "control",
         "measure",
@@ -174,9 +186,7 @@ class RAPDORData:
         self.norm_array = None
         self.kernel_array = None
         self.distances = None
-        self._anosim_distribution = None
-        self._permanova_distribution = None
-        self._data_rows = None
+        self._data_cols = None
         self._current_eps = None
         self.indices = None
         self.cluster_features = None
@@ -249,21 +259,25 @@ class RAPDORData:
         l = []
         rnames = []
         for idx, row in tmp.iterrows():
-            sub_df = self.df[row["Name"]].to_numpy()
             rnames += row["Name"]
+        self._data_cols = np.asarray(rnames)
+        for col in self._data_cols:
+            self.df.loc[:,col] = pd.to_numeric(self.df.loc[:, col], errors="coerce")
+
+        for idx, row in tmp.iterrows():
+            sub_df = self.df[row["Name"]].to_numpy(dtype=float)
             l.append(sub_df)
         self.df["RAPDORid"] = self.df.iloc[:, 0]
         self.df["id"] = self.df.index
-        self._data_rows = np.asarray(rnames)
         array = np.stack(l, axis=1)
         if self.logbase is not None:
             array = np.power(self.logbase, array)
-            mask = np.isnan(array)
-            array[mask] = 0
+        mask = np.isnan(array)
+        array[mask] = 0
         self.array = array
         self.internal_design_matrix = tmp
         indices = self.internal_design_matrix.groupby("Treatment", group_keys=True, observed=False).apply(
-            lambda x: list(x.index))
+            lambda x: list(x.index), include_groups=False)
         self.indices = tuple(np.asarray(index) for index in indices)
 
         p = ~np.any(self.array, axis=-1)
@@ -276,6 +290,16 @@ class RAPDORData:
         tmp = np.any(p, axis=-1)
         self.df["contains empty replicate"] = tmp
         self.df["min replicates per group"] = np.min(np.stack((pt, pf), axis=-1), axis=-1)
+
+    @cached_property
+    def raw_lfc(self):
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=RuntimeWarning)
+            rnase_false = np.nansum(np.nanmean(self.array[:, self.indices[0]], axis=-2),axis=-1)
+            rnase_true = np.nansum(np.nanmean(self.array[:, self.indices[1]], axis=-2), axis=-1)
+        ret = np.log2(rnase_true/rnase_false)
+        return ret
+
 
     @classmethod
     def from_files(cls, intensities: str, design: str, logbase: int = None, sep: str = ","):
@@ -303,9 +327,9 @@ class RAPDORData:
         Returns: pd.Dataframe
 
         """
-        if self._data_rows is None:
+        if self._data_cols is None:
             return None
-        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_rows)]
+        return self.df.iloc[:, ~np.isin(self.df.columns, self._data_cols)]
 
     @staticmethod
     def _normalize_rows(array, eps: float = 0):
@@ -350,6 +374,7 @@ class RAPDORData:
         self.norm_array = self._normalize_rows(array, eps=eps)
         self.state.kernel_size = kernel_size
         self.state.eps = eps
+
 
     def _calc_distance_via(self, method, array1, array2, axis: int = -1):
         if method == "Jensen-Shannon-Distance":
@@ -420,7 +445,7 @@ class RAPDORData:
             if self.categorical_fraction:
                 positions = np.argmax(test, axis=-1)
                 positions += self.state.kernel_size // 2
-                positions = self.fractions[positions]
+                positions = np.asarray(self.fractions)[positions]
             else:
 
                 i = self.state.kernel_size // 2
@@ -428,8 +453,8 @@ class RAPDORData:
                 positions = t.sum(axis=-1) / np.count_nonzero(t, axis=-1)
                 positions = np.floor(positions).astype(int)
         # Get the middle occurrence index
-
         self.df["position strongest shift"] = positions
+        self.df.loc[self.df["Mean Distance"].isna(), "position strongest shift"] = pd.NA
 
     def calc_mean_distance(self):
         with warnings.catch_warnings():
@@ -522,13 +547,18 @@ class RAPDORData:
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             rnase_false, rnase_true = self._treatment_means
 
-            mixture = rnase_true + rnase_false
-            uni_nonzero = mixture > 0
-            uniform = (np.ones((mixture.shape[0], mixture.shape[1])) / np.count_nonzero(uni_nonzero, axis=-1,
-                                                                                        keepdims=True)) * uni_nonzero
 
-            false_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_false, uniform, axis=-1)
-            true_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_true, uniform, axis=-1)
+            if self.state.distance_method in ["Jensen-Shannon-Distance", "KL-Divergence"]:
+                false_uni_distance = entropy(rnase_false, axis=-1)
+                true_uni_distance = entropy(rnase_true, axis=-1)
+            else:
+                mixture = rnase_true + rnase_false
+                uni_nonzero = mixture > 0
+                uniform = (np.ones((mixture.shape[0], mixture.shape[1])) / np.count_nonzero(uni_nonzero, axis=-1,
+                                                                                            keepdims=True)) * uni_nonzero
+                false_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_false, uniform, axis=-1)
+                true_uni_distance = self._calc_distance_via(self.state.distance_method, rnase_true, uniform, axis=-1)
+
         diff = false_uni_distance - true_uni_distance
         if self.categorical_fraction:
             shift = self.df["position strongest shift"].to_numpy()
@@ -701,13 +731,13 @@ class RAPDORData:
         """Calculates ANOSIM R, shift direction, peak positions and Mean Sample Distance.
 
         """
-        self.calc_all_anosim_value()
         self.calc_mean_distance()
+        self.calc_all_anosim_value()
         if not self.categorical_fraction:
             self.determine_peaks()
         self.determine_strongest_shift()
 
-    def _calc_anosim(self, indices_false, indices_true, ignore_nan: bool = True):
+    def _calc_anosim(self, indices_false, indices_true, ignore_nan: bool = True, ignore_zero_distances: bool = True):
         outer_group_distances = self._get_outer_group_distances(indices_false, indices_true)
         inner_group_distances = self._get_innergroup_distances(indices_false, indices_true)
         stat_distances = np.concatenate((outer_group_distances, inner_group_distances), axis=-1)
@@ -729,6 +759,8 @@ class RAPDORData:
                 r = (rb - rw) / (ranks.shape[-1] / 2)
                 r[mask] = np.nan
         r[self.df["min replicates per group"] < self.min_replicates] = np.nan
+        if ignore_zero_distances:
+            r[np.all(self.distances == 0, axis=(1, 2))] = np.nan
         return r
 
     def _calc_permanova_f(self, indices_false, indices_true):
@@ -754,12 +786,16 @@ class RAPDORData:
         """Calculates PERMANOVA F for each protein and stores it in :py:attr:`df`
         """
         f = self._calc_permanova_f(self.indices[0], self.indices[1])
+        f[self.df["Mean Distance"] == 0] = np.nan
+
         self.df["PERMANOVA F"] = f.round(decimals=DECIMALS)
         self.state.permanova_f = True
 
     def calc_all_anosim_value(self):
         """Calculates ANOSIM R for each protein and stores it in :py:attr:`df`"""
         r = self._calc_anosim(self.indices[0], self.indices[1])
+        r[self.df["Mean Distance"] == 0] = np.nan
+
         self.df["ANOSIM R"] = r.round(decimals=DECIMALS)
         self.state.anosim_r = True
 
@@ -790,7 +826,7 @@ class RAPDORData:
             else:
                 result = [self._calc_anosim(*call) for call in calls]
         result = np.stack(result)
-        self._anosim_distribution = result
+        return result
 
     def _calc_global_permanova_distribution(self, nr_permutations: int, threads: int, seed: int = 0):
         np.random.seed(seed)
@@ -811,9 +847,9 @@ class RAPDORData:
         else:
             result = [self._calc_permanova_f(*call) for call in calls]
         result = np.stack(result)
-        self._permanova_distribution = result
+        return result
 
-    def calc_anosim_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None,
+    def calc_anosim_p_value(self, permutations: int, threads: int, seed: int = 0,
                             mode: str = "local", callback=None):
         """Calculates ANOSIM p-value via shuffling and stores it in :attr:`df`.
         Adjusts for multiple testing.
@@ -823,37 +859,45 @@ class RAPDORData:
                 permutations
             threads (int): number of threads used for calculation
             seed (int): seed for random permutation
-            distance_cutoff (float): reduces number of tests via testing only proteins with mean distance above threshold.
             mode (str): either local or global. Global uses distribution of R value of all proteins as background.
                 Local uses protein specific distribution.
             callback(Callable): A callback function that receives the progress in the form of a percent string e.g. "50".
                 This can be used in combination with a progress bar.
+        Returns:
+            p-values (np.ndarray): fdr corrected p-values for each protein
+            distribution (np.ndarray): distribution of R values used to calculate p-values
         """
         if "ANOSIM R" not in self.df.columns:
             self.calc_all_anosim_value()
-        self._calc_global_anosim_distribution(permutations, threads, seed, callback)
-        distribution = self._anosim_distribution
+        o_distribution = self._calc_global_anosim_distribution(permutations, threads, seed, callback)
         r_scores = self.df["ANOSIM R"].to_numpy()
         if mode == "global":
-            distribution = distribution.flatten()
+            distribution = o_distribution.flatten()
             distribution = distribution[~np.isnan(distribution)]
-            p_values = np.asarray(
-                [np.count_nonzero(distribution >= r_score) / distribution.shape[0] for r_score in r_scores]
-            )
+            # Sort the distribution array
+            distribution = np.sort(distribution)
+            # Use searchsorted to find the insertion points for r_scores
+            indices = np.searchsorted(distribution, r_scores, side='left')
+
+            p_values = (len(distribution) - indices) / len(distribution)
+
+            mask = self.df["contains empty replicate"].to_numpy()
+            p_values[mask] = np.nan
         elif mode == "local":
-            p_values = np.count_nonzero(distribution >= r_scores, axis=0) / distribution.shape[0]
+            p_values = np.count_nonzero(o_distribution >= r_scores, axis=0) / o_distribution.shape[0]
+            mask = self.df["ANOSIM R"].isna()
+        else:
+            raise ValueError("mode not supported")
         if callback:
             callback("100")
-        mask = self.df["ANOSIM R"].isna()
-        if distance_cutoff is not None:
-            if "Mean Distance" not in self.df.columns:
-                raise ValueError("Need to run peak position estimation before please call self.determine_peaks()")
-            mask[self.df["Mean Distance"] < distance_cutoff] = True
+        mask[np.isnan(r_scores)] = True
         p_values[mask] = np.nan
+        self.df[f"{mode} ANOSIM raw p-Value"] = p_values
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
         self.df[f"{mode} ANOSIM adj p-Value"] = p_values
+        return p_values, o_distribution
 
-    def calc_permanova_p_value(self, permutations: int, threads: int, seed: int = 0, distance_cutoff: float = None,
+    def calc_permanova_p_value(self, permutations: int, threads: int, seed: int = 0,
                                mode: str = "local"):
         """Calculates PERMANOVA p-value via shuffling and stores it in :attr:`df`.
         Adjusts for multiple testing.
@@ -862,34 +906,37 @@ class RAPDORData:
             permutations (int): number of permutations used to calculate p-value
             threads (int): number of threads used for calculation
             seed (int): seed for random permutation
-            distance_cutoff (float): reduces number of tests via testing only proteins with mean distance above threshold.
             mode (str): either local or global. Global uses distribution of pseudo F value of all proteins as background.
                 Local uses protein specific distribution.
+        Returns:
+            p-values (np.ndarray): fdr corrected p-values for each protein
+            distribution (np.ndarray): distribution of R values used to calculate p-values
         """
         if "PERMANOVA F" not in self.df.columns:
             self.calc_all_permanova_f()
-        self._calc_global_permanova_distribution(permutations, threads, seed)
-        distribution = self._permanova_distribution
+        o_distribution = self._calc_global_permanova_distribution(permutations, threads, seed)
         f_scores = self.df["PERMANOVA F"].to_numpy()
         if mode == "global":
-            distribution = distribution.flatten()
+            distribution = o_distribution.flatten()
             distribution = distribution[~np.isnan(distribution)]
             p_values = np.asarray(
                 [np.count_nonzero(distribution >= f_score) / distribution.shape[0] for f_score in f_scores]
             )
+            mask = self.df["contains empty replicate"].to_numpy()
+            p_values[mask] = np.nan
         elif mode == "local":
-            p_values = np.count_nonzero(distribution >= f_scores, axis=0) / distribution.shape[0]
-        mask = self.df["PERMANOVA F"].isna()
-        if distance_cutoff is not None:
-            if "Mean Distance" not in self.df.columns:
-                raise ValueError("Need to run peak position estimation before please call self.determine_peaks()")
-            mask[self.df["Mean Distance"] < distance_cutoff] = True
+            p_values = np.count_nonzero(o_distribution >= f_scores, axis=0) / o_distribution.shape[0]
+            mask = self.df["PERMANOVA F"].isna()
+        else:
+            raise ValueError("mode not supported")
+        mask[np.isnan(f_scores)] = True
         p_values[mask] = np.nan
+        self.df[f"{mode} ANOSIM raw p-Value"] = p_values
         _, p_values[~mask], _, _ = multipletests(p_values[~mask], method="fdr_bh")
         self.df[f"{mode} PERMANOVA adj p-Value"] = p_values
         self.state.permanova = mode
         self.state.permanova_permutations = permutations
-        self.state.permanova_cutoff = distance_cutoff
+        return p_values, o_distribution
 
     def export_csv(self, file: str, sep: str = ","):
         """Exports the :attr:`extra_df` to a file.
@@ -1000,14 +1047,21 @@ def _analysis_executable_wrapper(args):
 
 
 if __name__ == '__main__':
-    df = pd.read_csv("../testData/testFile.tsv", sep="\t", index_col=0)
-    # sdf = df[[col for col in df.columns if "LFQ" in col]]
-    sdf = df
-    sdf.index = sdf.index.astype(str)
-    design = pd.read_csv("../testData/testDesign.tsv", sep="\t")
-    rapdor = RAPDORData(sdf, design, logbase=2)
+    f = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureSpatial/RawData/egf_2min_raw_intensities.tsv"
+    d = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureSpatial/RawData/egf_2min_design.tsv"
+    #f  = "../testData/testFile.tsv"
+    #d  = "../testData/testDesign.tsv"
+    df = pd.read_csv(f, sep="\t", index_col=0)
+
+    design = pd.read_csv(d, sep="\t")
+    rapdor = RAPDORData(df, design, logbase=None)
     rapdor.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
     rapdor.calc_all_scores()
+    s = time.time()
+    rapdor.calc_anosim_p_value(999, threads=1, mode="global")
+    e = time.time()
+    print(e-s)
+    exit()
     clusters = rapdor.cluster_data()
     embedding = rapdor.reduce_dim()
     import plotly.graph_objs as go
@@ -1018,7 +1072,5 @@ if __name__ == '__main__':
                                           clusters=clusters, name="bla")
     fig.show()
     exit()
-    rapdor.calc_anosim_p_value(100, threads=2, mode="global")
-    rapdor.calc_permanova_p_value(100, threads=2, mode="global")
     rapdor.rank_table(["ANOSIM R"], ascending=(True,))
     # rapdor.calc_welchs_t_test()

@@ -854,10 +854,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             ["Figure Creation", null, "/figure_factory", false, simulateClickFormCheckInput(0)],
             ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, simulateClickID("ff-default", 1)],
             ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
-            ["Dimension Reduction", null, "/analysis", true],
-            ["Dimension Reduction", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
-            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
-            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Bubble Plot", null, "/analysis", true],
+            ["Bubble Plot", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Bubble Plot", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Bubble Plot", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
             ["Finish",null, null, false, simulateClickID("dim-red-tab", "dim-red-tut")],
 
 
@@ -901,10 +901,10 @@ window.dash_clientside = Object.assign({}, window.dash_clientside, {
             ["Figure Creation", null, "/figure_factory", false, simulateClickFormCheckInput(0)],
             ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, simulateClickID("ff-default", 1)],
             ["Figure Creation", ["ff-tut-preview"], "/figure_factory", false, multiClickInOne([simulateClickFormCheckInput(2), simulateClickID("ff-default", null) ])],
-            ["Dimension Reduction", null, "/analysis", true],
-            ["Dimension Reduction", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
-            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
-            ["Dimension Reduction", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Bubble Plot", null, "/analysis", true],
+            ["Bubble Plot", ["distribution-panel", "dim-red-tab", "dim-red-tut"], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Bubble Plot", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
+            ["Bubble Plot", ["dim-red-tut", "distribution-panel", "dim-red-tab", ], "/analysis", true, simulateClickID("dim-red-tab", "dim-red-tut")],
             ["Finish",null, null, false, simulateClickID("dim-red-tab", "dim-red-tut")],
 
         ]

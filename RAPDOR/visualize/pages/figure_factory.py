@@ -228,7 +228,7 @@ def _figure_type():
                         options=[
                             {'label': 'Distribution', 'value': 0},
                             {'label': 'Westernblot', 'value': 2},
-                            {'label': 'Dimension Reduction', 'value': 3},
+                            {'label': 'Bubble Plot', 'value': 3},
                         ],
                         value=0,
                         className="d-flex justify-content-around radio-items row",
@@ -628,7 +628,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
                     marker_max_size=40,
                     second_bg_color="white",
                     bubble_legend_color="black",
-                    sel_column=displayed_col
+                    sel_column=displayed_col,
                 )
 
                 fig.update_xaxes(mirror=True, row=2)

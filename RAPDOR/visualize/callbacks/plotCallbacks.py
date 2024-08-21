@@ -5,7 +5,7 @@ import dash
 from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
 from RAPDOR.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
-    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK, plot_bars
+    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK, plot_bars, plot_distance_and_var
 from dash_extensions.enrich import Serverside, callback
 from RAPDOR.datastructures import RAPDORData
 import logging
@@ -56,8 +56,7 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
             if rapdordata.categorical_fraction:
                 fig = plot_bars(array, rapdordata.internal_design_matrix, x=rapdordata.fractions, offset=i,
                                 colors=colors, yname=yname)
-                if night_mode:
-                    fig.update_traces(error_y=dict(color="white"), marker=dict(line=dict(width=1, color="white")))
+                fig.update_traces(error_y=dict(width=15))
             else:
                 fig = plot_distribution(array, rapdordata.internal_design_matrix, offset=i, colors=colors, show_outliers=True, yname=yname)
         if not night_mode:
@@ -106,6 +105,12 @@ def update_distribution_plot(key, recomp, primary_color, secondary_color, replic
         legend=dict(font=dict(size=14)),
         legend2=dict(font=dict(size=14))
     )
+    if isinstance(rapdordata.fractions[0], str):
+        fig.update_xaxes(
+            tickvals=list(range(len(rapdordata.fractions))),
+            ticktext=[val.replace(" ", "<br>").replace("<br>&<br>", " &<br>") for val in rapdordata.fractions],
+            tickmode="array"
+        )
 
     fig.update_xaxes(dtick=1, title=None)
     fig.update_xaxes(fixedrange=True)
@@ -241,7 +246,7 @@ def calc_clusters(
         if rapdordata.cluster_features is None:
             rapdordata.calc_distribution_features()
             logger.info("Calculated Cluster Features")
-            logger.info("Running Dimension Reduction - because cluster features changed")
+            logger.info("Running Bubble Plot - because cluster features changed")
         if cluster_method is not None:
             if cluster_method == "HDBSCAN":
                 kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
@@ -267,22 +272,33 @@ def calc_clusters(
 @callback(
     Output("cutoff-type", "value"),
     Output("cutoff-type", "options"),
+    Output("plot-cutoff-name", "children"),
+    Output("cutoff-type", "clearable"),
     Input("data-store", "data"),
+    Input("dataset-plot-type", "value"),
     State("cutoff-type", "value"),
 
 )
-def update_cutoff_selection(rapdordata: RAPDORData, current_selection):
+def update_cutoff_selection(rapdordata: RAPDORData, plot_type, current_selection):
     if rapdordata is None:
         raise PreventUpdate
     options = [option for option in rapdordata.score_columns if
                option in rapdordata.df and is_numeric_dtype(rapdordata.df[option])]
     selection = dash.no_update
+
+    if plot_type == "Bubble Plot":
+        name = "Cutoff Type"
+        clearable = True
+    else:
+        name = "Y Axis"
+        selection = "ANOSIM R" if len(options) > 0 and current_selection not in options else selection
+        clearable = False
+        options = [option for option in options if ("p-Value" in option) or option in ("ANOSIM R", "PERMANOVA F")]
     if len(options) > 0 and current_selection not in options:
         selection = None
     elif len(options) == 0:
         options = dash.no_update
-
-    return selection, options
+    return selection, options, name, clearable
 
 @callback(
     Output("cutoff-range", "min"),
@@ -291,10 +307,16 @@ def update_cutoff_selection(rapdordata: RAPDORData, current_selection):
     Output("cutoff-range", "value"),
     Output("cutoff-range", "disabled"),
     Input("cutoff-type", "value"),
+    Input("dataset-plot-type", "value"),
     State("data-store", "data")
 
 )
-def update_range_slider(cutoff_type, rapdordata: RAPDORData):
+def update_range_slider(cutoff_type, plot_type, rapdordata: RAPDORData):
+    if plot_type != "Bubble Plot":
+        marks = [0, 1]
+        marks_t = {i: f"" for i in marks}
+        marks = []
+        return 0, 1, marks_t, marks, True
     if cutoff_type is not None:
         min_v = np.nanmin(rapdordata.df[cutoff_type])
         max_v = np.nanmax(rapdordata.df[cutoff_type])
@@ -302,12 +324,13 @@ def update_range_slider(cutoff_type, rapdordata: RAPDORData):
         max_v = np.ceil(max_v * 100) / 100
         if "p-Value" in cutoff_type:
             min_v = min(1e-5, min_v)
+            if min_v == 0:
+                min_v = 1e-20
             max_v = 1
             min_v = np.floor(np.log10(min_v))
             max_v = np.ceil(np.log10(max_v))
             marks = np.linspace(min_v, max_v, 5)
             marks = np.floor(marks)
-
             p = np.log10(0.05)
             iidx = np.searchsorted(marks, p)
             marks = np.insert(marks, iidx, p)
@@ -329,11 +352,27 @@ def update_range_slider(cutoff_type, rapdordata: RAPDORData):
         marks_t = None
         d_max = None
         disabled = True
+    logger.info(f"updating range slider: {min_v, max_v, marks_t, d_max, disabled}")
     return min_v, max_v, marks_t, (min_v, d_max), disabled
 
 
 
 
+@callback(
+    Output("showLFC", "on"),
+    Output("showLFC", "disabled"),
+    Output("3d-plot", "disabled"),
+    Input("3d-plot", "on"),
+    Input("dataset-plot-type", "value"),
+)
+def disable_lfc_and_3d(tdplot, plot_type):
+    if plot_type == "Bubble Plot":
+        if tdplot:
+            return False, True, False
+        else:
+            return dash.no_update, False, False
+    else:
+        return dash.no_update, False, True
 
 
 
@@ -342,6 +381,7 @@ def update_range_slider(cutoff_type, rapdordata: RAPDORData):
 @callback(
     Output("cluster-graph", "figure"),
     Input("night-mode", "on"),
+    Input("dataset-plot-type", "value"),
     Input("primary-color", "data"),
     Input("secondary-color", "data"),
     Input("plot-dim-red", "data"),
@@ -350,19 +390,16 @@ def update_range_slider(cutoff_type, rapdordata: RAPDORData):
     Input('3d-plot', 'on'),
     Input('cutoff-range', 'value'),
     Input("additional-header-dd", "value"),
-
+    Input("showLFC", "on"),
     State('cutoff-type', 'value'),
     State('data-store', "data"),
 )
-def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, add_header, cutoff_type, rapdordata: RAPDORData):
+def plot_cluster_results(night_mode, plot_type, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, add_header, show_lfc, cutoff_type, rapdordata: RAPDORData):
     logger.info(f"running cluster plot triggered via - {ctx.triggered_id}")
-    dim = 2 if not td_plot else 3
-    if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
-        raise PreventUpdate
-    colors = [color, color2]
     if rapdordata is None:
         raise PreventUpdate
-
+    colors = [color, color2]
+    dim = 2 if not td_plot else 3
     if not plotting:
         fig = empty_figure("Data not Calculated<br> Get Scores first")
     else:
@@ -370,27 +407,43 @@ def plot_cluster_results(night_mode, color, color2, plotting, selected_rows, mar
             highlight = rapdordata.df.loc[selected_rows, "RAPDORid"]
         else:
             highlight = None
-        logger.info(f"Cutoff - {cutoff_range}")
-        if cutoff_type is None:
-            cutoff_range = None
+        if plot_type == "Bubble Plot":
+            if dim == 3 and ctx.triggered_id == "cluster-marker-slider":
+                raise PreventUpdate
+
+            logger.info(f"Cutoff - {cutoff_range}")
+            logger.info(f"highlight - {highlight}")
+            if cutoff_type is None:
+                cutoff_range = None
+            else:
+                if "p-Value" in cutoff_type:
+                    cutoff_range = 10 ** cutoff_range[0], 10 ** cutoff_range[1]
+            if show_lfc:
+                highlight_color = "white" if night_mode else "black"
+            else:
+                highlight_color = None
+            fig = plot_dimension_reduction(
+                rapdordata,
+                dimensions=dim,
+                colors=colors,
+                highlight=highlight,
+                show_cluster=True if "Cluster" in rapdordata.df else False,
+                marker_max_size=marker_size,
+                second_bg_color="white" if not night_mode else "#181818",
+                bubble_legend_color="black" if not night_mode else "white",
+                title_col=add_header,
+                cutoff_range=cutoff_range,
+                cutoff_type=cutoff_type,
+                highlight_color=highlight_color,
+                show_lfc=show_lfc
+
+            )
         else:
-            if "p-Value" in cutoff_type:
-                cutoff_range = 10 ** cutoff_range[0], 10 ** cutoff_range[1]
-
-        fig = plot_dimension_reduction(
-            rapdordata,
-            dimensions=dim,
-            colors=colors,
-            highlight=highlight,
-            show_cluster=True if "Cluster" in rapdordata.df else False,
-            marker_max_size=marker_size,
-            second_bg_color="white" if not night_mode else "#181818",
-            bubble_legend_color="black" if not night_mode else "white",
-            title_col=add_header,
-            cutoff_range=cutoff_range,
-            cutoff_type=cutoff_type
-
-        )
+            if cutoff_type is None:
+                fig = empty_figure("Select Y Axis Type first")
+            else:
+                fig = plot_distance_and_var(rapdordata, colors, title_col=add_header, highlight=highlight, var_type=cutoff_type, show_lfc=show_lfc)
+                fig.update_traces(marker=dict(size=marker_size))
     if not night_mode:
 
         fig.layout.template = DEFAULT_TEMPLATE

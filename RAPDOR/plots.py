@@ -56,11 +56,12 @@ DEFAULT_TEMPLATE.update(
         "layout": {
             # e.g. you want to change the background to transparent
             "paper_bgcolor": "rgba(255,255,255,1)",
-            "plot_bgcolor": " rgba(0,0,0,0)",
+            "plot_bgcolor": "rgba(0,0,0,0)",
             "font": dict(color="black"),
             "xaxis": dict(linecolor="black", showline=True, mirror=True),
             "yaxis": dict(linecolor="black", showline=True, mirror=True),
-            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black", tickfont=dict(color="black")))
+            "coloraxis": dict(colorbar=dict(outlinewidth=1, outlinecolor="black", tickfont=dict(color="black"))),
+            "legend": dict(bgcolor="rgba(0,0,0,0)")
         }
     }
 )
@@ -166,7 +167,10 @@ def plot_replicate_distribution(
     if colors is None:
         colors = DEFAULT_COLORS
     indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
-    x = list(range(offset + 1, subdata.shape[1] + offset + 1))
+    if offset:
+        x = list(range(offset + 1, subdata.shape[1] + offset + 1))
+    else:
+        x = list(range(subdata.shape[1]))
     fig = go.Figure()
     names = []
     values = []
@@ -243,6 +247,11 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
         else:
             cols = 1
         rows = len(proteins)
+    if "barmode" in kwargs:
+        barmode = kwargs["barmode"]
+        del kwargs["barmode"]
+    else:
+        barmode = "overlay"
     x1s = None
     if rows * cols < len(proteins):
         raise ValueError(f"Not enough columns ({cols}) and rows ({rows}) to place {len(proteins)} figures")
@@ -288,8 +297,8 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                 if x1s and col_idx == 0:
                     ma = x1s[idx] - i + zoom_fractions
                     mi = x1s[idx] - 1 - i - zoom_fractions
-                    ma = min(ma, array.shape[-1])
-                    mi = max(mi, 0)
+                    ma = int(min(ma, array.shape[-1]))
+                    mi = int(max(mi, 0))
                     wmax = np.nanmax(array[:, mi:ma])
                     wmin = np.nanmin(array[:, mi:ma])
                     margin = (wmax - wmin) * 0.025
@@ -303,8 +312,9 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                 if mode == "line":
                     fig = plot_distribution(array, rapdordata.internal_design_matrix, offset=i, colors=colors)
                 elif mode == "bar":
-                    fig = plot_bars(array, rapdordata.internal_design_matrix, offset=i, colors=colors,
+                    fig = plot_bars(array, rapdordata.internal_design_matrix, offset=i, colors=colors, barmode=barmode,
                                     x=rapdordata.fractions)
+
                 else:
                     raise ValueError("mode must be one of line or bar")
                 if plot_type not in ("mixed", "zoomed") or col_idx == 1:
@@ -324,6 +334,18 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
                         trace['showlegend'] = False
                     fig_subplots.add_trace(trace, row=row_idx + 1, col=col_idx + 1)
                 idx += 1
+    if mode == "bar":
+        fig_subplots.update_layout(
+            barmode="overlay",
+            bargroupgap=0,
+            bargap=0,
+        )
+        fig_subplots.update_xaxes(
+            tickvals=list(range(len(rapdordata.fractions))),
+            ticktext=[val.replace(" ", "<br>").replace("<br>&<br>", " &<br>") for val in rapdordata.fractions],
+            tickmode="array",
+            col=1
+        )
     if plot_type == "mixed":
         fig_subplots.add_annotation(
             text=f"rel. {rapdordata.measure_type} {rapdordata.measure}",
@@ -728,7 +750,7 @@ def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORDat
     return fig
 
 
-def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount"):
+def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount", barmode: str = "overlay"):
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure(layout=go.Layout(yaxis2=go.layout.YAxis(
@@ -738,78 +760,92 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
         anchor="x",
     )))
     indices = design.groupby("Treatment", group_keys=True).apply(lambda x: list(x.index))
-    x = x[offset: subdata.shape[1] + offset]
+    origininal_x = x[offset: subdata.shape[1] + offset]
+    x = list(range(len(origininal_x)))
+    print(x)
+
     names = []
     j_val = max([len(name) for name in indices.keys()])
 
     for eidx, (name, idx) in enumerate(indices.items()):
         name = f"{name}".ljust(j_val, " ")
         legend = f"legend{eidx + 1}"
+        offset = -0.05 if eidx else 0.05
+        offset_x = [v+offset for v in x]
         names.append(name)
         mean_values = np.nanmean(subdata[idx,], axis=0)
         upper_quantile = np.nanquantile(subdata[idx,], 0.75, axis=0) - mean_values
         lower_quantile = mean_values - np.nanquantile(subdata[idx,], 0.25, axis=0)
         fig.add_trace(go.Bar(
             y=mean_values,
-            x=x,
+            x=offset_x if barmode != "overlay" else x,
             name="Bar",
             offsetgroup=str(eidx),
             # offset=(eidx - 1) * 1 / 3,
-            marker_color=colors[eidx],
             legend=legend,
-            marker=dict(line=dict(width=1, color="black"))
+            marker=dict(color=colors[eidx], opacity=0.5,),
+            width=.1 if barmode != "overlay" else None
         ))
-        fig.add_trace(go.Bar(
-            y=mean_values,
-            x=x,
-            name="Q.25-Q.75",
-            offsetgroup=str(eidx),
-            # offset=(eidx - 1) * 1 / 3,
-            error_y=dict(
-                type='data',  # value of error bar given in data coordinates
-                array=upper_quantile,
-                arrayminus=lower_quantile,
-                symmetric=False,
-                visible=True,
-                color="black",
-                thickness=2,
-                width=10
-            ),
-            yaxis=f"y2",
-            marker_color="rgba(0, 0, 0, 0)",
-            legend=legend,
-            marker=dict(line=dict(width=1, color="black"))
-        ))
+        fig.add_trace(
+            go.Scatter(
+                x=offset_x,
+                y=mean_values,
+                offsetgroup=str(eidx),
+                mode="markers",
+                marker=dict(color=colors[eidx], size=20),
+                error_y = dict(
+                    type='data',  # value of error bar given in data coordinates
+                    array=upper_quantile,
+                    arrayminus=lower_quantile,
+                    symmetric=False,
+                    visible=True,
+                    color=colors[eidx],
+                    thickness=2,
+                    width=10
+                ),
+                legend=legend,
+                name="Dot & Q.25-Q.75"
+
+            )
+        )
+        # fig.add_trace(go.Bar(
+        #     y=mean_values,
+        #     x=x,
+        #     name="Q.25-Q.75",
+        #     offsetgroup=str(eidx),
+        #     # offset=(eidx - 1) * 1 / 3,
+        #     error_y=dict(
+        #         type='data',  # value of error bar given in data coordinates
+        #         array=upper_quantile,
+        #         arrayminus=lower_quantile,
+        #         symmetric=False,
+        #         visible=True,
+        #         color="black",
+        #         thickness=2,
+        #         width=10
+        #     ),
+        #     yaxis=f"y2",
+        #     marker_color="rgba(0, 0, 0, 0)",
+        #     legend=legend,
+        #     marker=dict(line=dict(width=1, color="black"))
+        # ))
     fig.update_layout(hovermode="x")
     fig.update_layout(
         yaxis_title=yname,
     )
     fig.update_layout(
-        xaxis=dict(title="Fraction"),
-        legend=dict(
-            title=names[0],
-            orientation="h",
-            yanchor="bottom",
-            y=1.03,
-            xanchor="left",
-            x=0,
-            itemsizing="constant",
-            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace')
-
-        ),
-        legend2=dict(
-            title=names[1],
-            orientation="h",
-            yanchor="bottom",
-            y=1.15,
-            xanchor="left",
-            x=0,
-            itemsizing="constant",
-            font=dict(family='SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace')
-
-        )
-
+        bargroupgap=0,
+        bargap=0,
+        barmode="overlay"
     )
+    fig.update_layout(
+        xaxis=dict(
+            tickmode='array',
+            tickvals=x,
+            ticktext=origininal_x
+        )
+    )
+    fig = _update_distribution_layout(fig, names, x, offset, yname)
     return fig
 
 
@@ -844,7 +880,10 @@ def plot_distribution(
     medians = []
     means = []
     errors = []
-    x = list(range(offset + 1, subdata.shape[1] + offset + 1))
+    if offset:
+        x = list(range(offset + 1, subdata.shape[1] + offset + 1))
+    else:
+        x = list(range(subdata.shape[1]))
     names = []
     j_val = max([len(name) for name in indices.keys()])
     for eidx, (name, idx) in enumerate(indices.items()):
@@ -930,7 +969,7 @@ def _update_distribution_layout(fig, names, x, offset, yname):
             title=names[0],
             orientation="h",
             yanchor="bottom",
-            y=1.05,
+            y=1.02,
             xanchor="left",
             x=0,
             itemsizing="constant",
@@ -1174,6 +1213,7 @@ def plot_dimension_reduction(
         rapdordata: RAPDORData,
         colors: Iterable[str] = None,
         highlight: Iterable[Any] = None,
+        highlight_color: str = None,
         show_cluster: bool = False,
         dimensions: int = 2,
         marker_max_size: int = 40,
@@ -1183,15 +1223,17 @@ def plot_dimension_reduction(
         legend_spread: float = 0.1,
         title_col: str = None,
         cutoff_range: Tuple[float, float] = None,
-        cutoff_type: str = None
+        cutoff_type: str = None,
+        show_lfc: bool = False,
 ):
-    """Plots a dimension reduction using relative distribution change, relative fraction shift and the Mean Distance
+    """Plots a bubble plot using relative distribution change, relative fraction shift and the Mean Distance
 
     Args:
         rapdordata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object where distances
             are calculated and the array is normalized already.
         colors (Iterable[str]): An iterable of color strings to use for plotting
         highlight (Iterable[Any]): RAPDORids to highlight in the plot
+        highlight_color (str): html color used to highlight selected bubbles
         show_cluster (bool): If set to true it will show clusters in different colors.
             (Only works if rapdordata is clustered)
         dimensions (int): Either 2 or 3. 2 will produce a plot where the mean distance axis is represented via a marker
@@ -1207,8 +1249,10 @@ def plot_dimension_reduction(
             (This has no effect if dimensions is 3)
         cutoff_type (str): column in the dataframe of :class:`~RAPDOR.datastructures.RAPDORData` used for cutoff. Muste
             be numerical
-        cutoff_range (Iterable[float): uses index one as lower bound and index two as upper bound for data to display in
+        cutoff_range (Iterable[float]): uses index one as lower bound and index two as upper bound for data to display in
             the plot
+        show_lfc (bool): Shows lfs via a colorscale and the bubble colors. No effect if dimension is 3
+
 
     Returns: go.Figure()
 
@@ -1235,7 +1279,9 @@ def plot_dimension_reduction(
             legend_spread,
             title_col,
             cutoff_type=cutoff_type,
-            cutoff_range=cutoff_range
+            cutoff_range=cutoff_range,
+            highlight_color=highlight_color,
+            show_lfc=show_lfc,
         )
     elif dimensions == 3:
         fig = _plot_dimension_reduction_result3d(
@@ -1368,12 +1414,21 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
                                        bubble_legend_color: str = "black", legend_start: float = 0.2,
                                        legend_spread: float = 0.1,
                                        sel_column=None, cutoff_range: Tuple[float, float] = None,
-                                       cutoff_type: str = None
+                                       cutoff_type: str = None, highlight_color: str = None, show_lfc: bool = False,
+
                                        ):
     embedding = rapdordata.current_embedding
+    raw_diff = rapdordata.raw_lfc
+    highlight_color = colors[-1] if highlight_color is None else highlight_color
     displayed_text = rapdordata.df["RAPDORid"] if sel_column is None else rapdordata.df[sel_column]
     fig = make_subplots(rows=2, cols=1, row_width=[0.85, 0.15], vertical_spacing=0.0)
-    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
+    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str) + "<br>Raw Log2FC: " + np.around(raw_diff, decimals=2).astype(str)
+    if sel_column:
+        if pd.api.types.is_float_dtype(rapdordata.df[f"{sel_column}"]):
+            add =  np.around(rapdordata.df[f"{sel_column}"], decimals=2).astype(str)
+        else:
+            add =  rapdordata.df[f"{sel_column}"].astype(str)
+        hovertext = hovertext + f"<br>{sel_column}: " + add
     clusters = np.full(embedding.shape[0], -1) if clusters is None else clusters
     n_cluster = int(np.nanmax(clusters)) + 1
     mask = np.ones(embedding.shape[0], dtype=bool)
@@ -1381,7 +1436,6 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     data = rapdordata.df["Mean Distance"]
     desired_min = 1
     min_data, max_data = np.nanmin(data), np.nanmax(data)
-
     marker_size = desired_min + (data - min_data) * (marker_max_size - desired_min) / (max_data - min_data)
     marker_size[np.isnan(marker_size)] = 1
     fig.add_shape(type="rect",
@@ -1446,7 +1500,10 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
     if highlight is not None and len(highlight) > 0:
         indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
         mask[indices] = 0
-
+    colorscale = [colors[-1], colors[-2], colors[-1]]
+    cmin = -1
+    cmax = 1
+    ccscale = dict(cmin=cmin, cmax=cmax, colorscale=colorscale)
     if n_cluster > len(colors) - 2:
         fig.add_annotation(
             xref="paper",
@@ -1464,19 +1521,34 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
 
     if np.any(clusters == -1):
         c_mask = mask & (clusters == -1) & cutoff_mask
+        marker_color = raw_diff[c_mask] if show_lfc else colors[-2]
         fig.add_trace(go.Scatter(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
             mode="markers",
             hovertext=hovertext[c_mask],
-            marker=dict(color=colors[-2], size=marker_size[c_mask]),
+            marker=dict(color=marker_color, size=marker_size[c_mask],
+                        colorbar=dict(
+                            thickness=20,
+                            nticks=3,
+                            dtick=1,
+                            title="Raw Log2FC",
+                            tick0=0,
+                            ticktext=[u"\u2264 -1", "0", u"\u2265 1"],
+                            tickvals=[-1, 0, 1],
+                            tickmode="array"
+
+                        ),
+                        **ccscale,),
             name=f"Not Clustered",
+
         ),
             row=2,
             col=1
         )
         nmask = ~mask & (clusters == -1) & cutoff_mask
         texts = displayed_text[nmask]
+        marker_color = raw_diff[nmask] if show_lfc else colors[-2]
         embx = embedding[nmask, :][:, 0]
         emby = embedding[nmask, :][:, 1]
         for idx, text in enumerate(texts):
@@ -1499,7 +1571,7 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
                 y=emby,
                 mode="markers",
                 hovertext=hovertext[nmask],
-                marker=dict(color=colors[-2], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
+                marker=dict(color=marker_color, size=marker_size[nmask], line=dict(color=highlight_color, width=4), **ccscale),
                 name="Not Clustered",
 
             ),
@@ -1508,26 +1580,32 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
         )
     for color_idx, cluster in enumerate(range(min(n_cluster, len(colors) - 2))):
         c_mask = mask & (clusters == cluster) & cutoff_mask
+        marker_color = raw_diff[c_mask] if show_lfc else colors[color_idx]
+
+
         fig.add_trace(go.Scatter(
             x=embedding[c_mask, :][:, 0],
             y=embedding[c_mask, :][:, 1],
             mode="markers",
             hovertext=hovertext[c_mask],
-            marker=dict(color=colors[color_idx], size=marker_size[c_mask]),
-            name=f"Cluster {cluster}"
+            marker=dict(color=marker_color, size=marker_size[c_mask], **ccscale),
+            name=f"Cluster {cluster}",
+
         ),
             row=2,
             col=1
         )
         nmask = ~mask & (clusters == cluster) & cutoff_mask
+        marker_color = raw_diff[nmask] if show_lfc else colors[color_idx]
+
         fig.add_trace(
             go.Scatter(
                 x=embedding[nmask, :][:, 0],
                 y=embedding[nmask, :][:, 1],
                 mode="markers",
                 hovertext=hovertext[nmask],
-                marker=dict(color=colors[color_idx], size=marker_size[nmask], line=dict(color=colors[-1], width=4)),
-                name=f"Cluster {cluster}"
+                marker=dict(color=marker_color, size=marker_size[nmask], line=dict(color=highlight_color, width=4), **ccscale),
+                name=f"Cluster {cluster}",
             ),
             row=2,
             col=1
@@ -1542,7 +1620,6 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
         ),
         margin=dict(r=0, l=0)
     )
-
     fig.update_layout(
         xaxis2=dict(title="relative fraction shift"),
         yaxis2=dict(title="relative distribution change"),
@@ -1551,9 +1628,113 @@ def _plot_dimension_reduction_result2d(rapdordata: RAPDORData, colors=None, clus
         xaxis=dict(range=[0, 1], showgrid=False, showline=False, showticklabels=False, zeroline=False, ticklen=0,
                    fixedrange=True),
         legend={'itemsizing': 'constant'},
+        showlegend=not show_lfc,
+
+
     )
+    if not show_lfc:
+        fig.update_traces(marker=dict(colorbar=None, colorscale=None, showscale=False))
+        fig.update_layout(coloraxis_colorbar=None, coloraxis=None, coloraxis_showscale=False)
+    fig.update_xaxes(categoryorder='array', categoryarray=rapdordata.fractions)
     return fig
 
+def plot_distance_and_var(rapdordata: RAPDORData, colors, var_type: str = "ANOSIM R", title_col: str = "RAPDORid", highlight = None, show_lfc: bool = False):
+    fig = go.Figure()
+    mask = np.ones(rapdordata.df.shape[0], dtype=bool)
+    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
+    raw_diff = rapdordata.raw_lfc
+
+    if title_col:
+        if pd.api.types.is_float_dtype(rapdordata.df[f"{title_col}"]):
+            add = np.around(rapdordata.df[f"{title_col}"], decimals=2).astype(str)
+        else:
+            add = rapdordata.df[f"{title_col}"].astype(str)
+        hovertext = hovertext + f"<br>{title_col}: " + add
+    if highlight is not None and len(highlight) > 0:
+        highlight = rapdordata[highlight]
+
+        indices = np.asarray([rapdordata.df.index.get_loc(idx) for idx in highlight])
+        mask[indices] = 0
+    y = rapdordata.df[var_type]
+    if show_lfc:
+        hovertext = hovertext + "<br>Raw Log2FC: " + np.around(raw_diff, decimals=2).astype(str)
+    if "p-Value" in var_type:
+        y = -1 * np.log10(y)
+        var_type = f"-log<sub>10</sub>({var_type})"
+    colorscale = [colors[-1], colors[-2], colors[-1]]
+    cmin = -1
+    cmax = 1
+    ccscale = dict(cmin=cmin, cmax=cmax, colorscale=colorscale)
+
+
+    fig.add_trace(
+        go.Scatter(
+            y=y[mask],
+            x=rapdordata.df[mask]["Mean Distance"],
+            mode="markers",
+            hovertext=hovertext[mask],
+            marker=dict(
+                color=raw_diff[mask] if show_lfc else colors[0],
+                colorbar=dict(
+                    thickness=20,
+                    nticks=3,
+                    dtick=1,
+                    title="Raw Log2FC",
+                    tick0=0,
+                    ticktext=[u"\u2264 -1", "0", u"\u2265 1"],
+                    tickvals=[-1, 0, 1],
+                    tickmode="array"
+
+                ),
+                **ccscale
+            ),
+            showlegend=False,
+
+        ),
+    )
+    fig.add_trace(
+        go.Scatter(
+            y=y[~mask],
+            x=rapdordata.df[~mask]["Mean Distance"],
+            mode="markers",
+            name="highlighted",
+            showlegend=False,
+            hovertext=hovertext[~mask],
+            marker=dict(color=raw_diff[mask] if show_lfc else colors[0], line=dict(width=4, color=colors[1]), **ccscale)
+        ),
+    )
+    texts = rapdordata.df[~mask][title_col]
+    embx = rapdordata.df[~mask]["Mean Distance"]
+    emby = y[~mask]
+    for idx, text in enumerate(texts):
+        if not pd.isna(text):
+            fig.add_annotation(
+                text=text,
+                x=embx.iloc[idx],
+                y=emby.iloc[idx],
+                xanchor="center",
+                yanchor="middle",
+                showarrow=False,
+                xref="x",
+                yref="y",
+
+            )
+    fig.update_xaxes(title="Mean Distance")
+    fig.update_yaxes(title=var_type)
+    if not show_lfc:
+        fig.update_traces(marker=dict(colorbar=None, colorscale=None, showscale=False))
+        fig.update_layout(coloraxis_colorbar=None, coloraxis=None, coloraxis_showscale=False)
+    else:
+        fig.update_layout(
+            showlegend=show_lfc,
+            #coloraxis_colorbar=True,
+            #coloraxis=True,
+            coloraxis_showscale=True
+        )
+    fig.update_xaxes(categoryorder='array', categoryarray=rapdordata.fractions)
+
+
+    return fig
 
 def _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titles, y_0, x_0):
     fig.add_trace(
@@ -1784,19 +1965,24 @@ def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman",
 if __name__ == '__main__':
     from RAPDOR.datastructures import RAPDORData
 
-    df = pd.read_csv("../testData/sanitized_df.tsv", sep="\t")
-    df["ribosomal protein"] = ((df["Gene"].str.contains('rpl|rps|Rpl|Rps', case=False)) | (
-        df['ProteinFunction'].str.contains('ribosomal protein', case=False)))
-    df["small ribo"] = df["Gene"].str.contains('rps|Rps', case=False)
-    df["large ribo"] = df["Gene"].str.contains('rpl|Rpl', case=False)
-    df["photosystem"] = df["Gene"].str.contains('psa|psb', case=False)
-    design = pd.read_csv("../testData/sanitized_design.tsv", sep="\t")
+    df = pd.read_csv("tests/testData/testFile.tsv", sep="\t")
+    design = pd.read_csv("tests/testData/testDesign.tsv", sep="\t")
     rapdor = RAPDORData(df, design, logbase=2, control="CTRL")
     rapdor.normalize_array_with_kernel(kernel_size=3)
     rapdor.calc_distances(method="Jensen-Shannon-Distance")
     rapdor.calc_all_scores()
     rapdor.calc_distribution_features()
     rapdor.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
+    rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureMouse/mobilityScore/mobilityegf_2min.json")
+    subdata = rapdor.norm_array[0]
+    fig = plot_protein_distributions([rapdor.df.iloc[0]["RAPDORid"]], rapdor, colors=COLOR_SCHEMES["Dolphin"], mode="bar",barmode="f")
+
+    fig.update_layout(width=600)
+    fig.show()
+    exit()
+    fig = plot_distance_and_var(rapdor, colors=COLOR_SCHEMES["Dolphin"], show_lfc=True)
+    fig.show()
+    exit()
     print(rapdor.df["Gene"].str.contains('rpl|Rpl'))
     ids = list(rapdor.df[rapdor.df["small ribo"] == True]["RAPDORid"])[0:5]
     ids2 = list(rapdor.df[rapdor.df["large ribo"] == True]["RAPDORid"])
