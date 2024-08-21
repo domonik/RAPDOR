@@ -70,11 +70,11 @@ def multi_intensities(intensities):
 
 def drop_replicates(design, rnase_rep, ctrl_rep):
     if rnase_rep > 0:
-        rnase = design[design["Treatment"] == "RNase"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=rnase_rep).sum()
+        rnase = design[design["Treatment"] == "RNase"].groupby("Replicate").apply(lambda x: list(x.index), include_groups=False).sample(n=rnase_rep).sum()
     else:
         rnase = []
     if ctrl_rep > 0:
-        ctrl = design[design["Treatment"] == "Control"].groupby("Replicate").apply(lambda x: list(x.index)).sample(n=ctrl_rep).sum()
+        ctrl = design[design["Treatment"] == "Control"].groupby("Replicate").apply(lambda x: list(x.index), include_groups=False).sample(n=ctrl_rep).sum()
     else:
         ctrl = []
     rnase = design.loc[rnase]

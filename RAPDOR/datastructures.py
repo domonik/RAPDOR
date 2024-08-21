@@ -277,7 +277,7 @@ class RAPDORData:
         self.array = array
         self.internal_design_matrix = tmp
         indices = self.internal_design_matrix.groupby("Treatment", group_keys=True, observed=False).apply(
-            lambda x: list(x.index))
+            lambda x: list(x.index), include_groups=False)
         self.indices = tuple(np.asarray(index) for index in indices)
 
         p = ~np.any(self.array, axis=-1)
