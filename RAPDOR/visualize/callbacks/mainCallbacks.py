@@ -275,8 +275,9 @@ def display_mode_alert(uid, display_mode):
             [
                 html.H3("Display mode", style={"color": "white"}),
                 html.Div([
-                    "This is ment to inspect pre-analyzed data. The tool for data analysis can be downloaded here: ",
-                    html.A("https://github.com/domonik/RAPDOR/releases", target="_blank", href="https://github.com/domonik/RAPDOR/releases", id="displayModeLink")
+                    "This is ment to inspect pre-analyzed data. You can download the tool for data analysis here: ",
+                    html.Br(),
+                    html.A("https://github.com/domonik/RAPDOR/releases", target="_blank", href="https://github.com/domonik/RAPDOR/releases", id="displayModeLink", style={"line-break": "anywhere"})
                 ])
             ]
         )
@@ -287,7 +288,7 @@ def display_mode_alert(uid, display_mode):
                 color="var(--primary-color)",
                 dismissable=True,
             ),
-            className="p-2 align-items-center, alert-msg",
+            className="p-2 align-items-center, alert-msg col-md-5 col-12",
 
         )
         return False, alert_msg
