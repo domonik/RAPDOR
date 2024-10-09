@@ -36,14 +36,33 @@ of size 3.
 
 Since we only have 3 replicates per condition for this dataset, it is not reasonable to calculate a p-value. Instead we
 will calculate stats like the Jensen-Shannon-Distance of the means and the ANOSIM R value. We will then rank the table
-based on the R value and the mean distance. This is done via:
+based on the R value and the mean distance, which only takes a second for the test data. This is done via:
 
 .. code-block:: python
 
     rapdordata.calc_all_scores()
     rapdordata.rank_table(["ANOSIM R", "Mean Distance"], ascending=[False, False])
 
+You can always check your calculated parameters via accessing the `rapdordata.extra_df` or the `rapdordata.df` fields.
+The df contains also the data columns and might be messy. For the test data you can print the head of the table:
 
+.. code-block:: python
+
+    print(rapdordata.extra_df.head())
+
+The output should look as follows:
+
+.. code-block::
+
+       id  RAPDORid  ...  position strongest shift  Rank
+    0   0      1118  ...                      10.0    12
+    1   1      1115  ...                       4.0     7
+    2   2      1114  ...                       2.0     1
+    3   3      1721  ...                       7.0     2
+    4   4      1103  ...                       6.0     8
+    [5 rows x 12 columns]
+
+You can see that the protein with the RAPDORid 1114 is ranked on place 1.
 
 Finally we want to export the file as a csv table and as a JSON file. The JSON is further needed to display your data in
 a Dash webserver interface. You can learn more about it in the :ref:`server setup section<server-setup>`.
