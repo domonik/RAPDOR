@@ -204,72 +204,6 @@ def update_heatmap(key, recomp, primary_color, secondary_color, night_mode, dist
 
 
 @callback(
-    Output("data-store", "data", allow_duplicate=True),
-    Output("plot-dim-red", "data"),
-    Input('cluster-method', 'value'),
-    Input("recomputation", "children"),
-    Input("run-clustering", "data"),
-    Input("HDBSCAN-apply-settings-modal", "n_clicks"),
-    Input("DBSCAN-apply-settings-modal", "n_clicks"),
-    Input("K-Means-apply-settings-modal", "n_clicks"),
-    State('HDBSCAN-min_cluster_size-input', "value"),
-    State('HDBSCAN-cluster_selection_epsilon-input', "value"),
-    State('DBSCAN-eps-input', "value"),
-    State('DBSCAN-min_samples-input', "value"),
-    State('K-Means-n_clusters-input', "value"),
-    State('K-Means-random_state-input', "value"),
-    State('data-store', "data"),
-    State('unique-id', "data"),
-    prevent_intital_call="initial_duplicate"
-)
-def calc_clusters(
-        cluster_method,
-        recomp,
-        run_cluster,
-        apply_1,
-        apply_2,
-        apply_3,
-        hdb_min_cluster_size,
-        hdb_epsilon,
-        db_eps,
-        db_min_samples,
-        k_clusters,
-        k_random_state,
-        rapdordata: RAPDORData,
-        uid
-):
-    logger.info(f"{ctx.triggered_id} - triggered cluster-callback")
-    if rapdordata is None:
-        raise PreventUpdate
-    try:
-
-        if rapdordata.cluster_features is None:
-            rapdordata.calc_distribution_features()
-            logger.info("Calculated Cluster Features")
-            logger.info("Running Bubble Plot - because cluster features changed")
-        if cluster_method is not None:
-            if cluster_method == "HDBSCAN":
-                kwargs = dict(min_cluster_size=hdb_min_cluster_size, cluster_selection_epsilon=hdb_epsilon)
-            elif cluster_method == "DBSCAN":
-                kwargs = dict(eps=db_eps, min_samples=db_min_samples)
-            elif cluster_method == "K-Means":
-                kwargs = dict(n_clusters=k_clusters, random_state=k_random_state)
-            else:
-                raise NotImplementedError("Method Not Implemented")
-            if rapdordata.state.cluster_method != cluster_method or rapdordata.state.cluster_args != kwargs:
-                logger.info("Running Clustering")
-                clusters = rapdordata.cluster_data(method=cluster_method, **kwargs, )
-        else:
-            rapdordata.remove_clusters()
-        return Serverside(rapdordata, key=uid), True
-
-    except ValueError as e:
-        logger.info(traceback.format_exc())
-        return dash.no_update, False
-
-
-
-@callback(
     Output("cutoff-type", "value"),
     Output("cutoff-type", "options"),
     Output("plot-cutoff-name", "children"),
@@ -384,7 +318,6 @@ def disable_lfc_and_3d(tdplot, plot_type):
     Input("dataset-plot-type", "value"),
     Input("primary-color", "data"),
     Input("secondary-color", "data"),
-    Input("plot-dim-red", "data"),
     Input('current-row-ids', 'data'),
     Input('cluster-marker-slider', 'value'),
     Input('3d-plot', 'on'),
@@ -394,12 +327,19 @@ def disable_lfc_and_3d(tdplot, plot_type):
     State('cutoff-type', 'value'),
     State('data-store', "data"),
 )
-def plot_cluster_results(night_mode, plot_type, color, color2, plotting, selected_rows, marker_size, td_plot, cutoff_range, add_header, show_lfc, cutoff_type, rapdordata: RAPDORData):
+def plot_cluster_results(night_mode, plot_type, color, color2, selected_rows, marker_size, td_plot, cutoff_range, add_header, show_lfc, cutoff_type, rapdordata: RAPDORData):
     logger.info(f"running cluster plot triggered via - {ctx.triggered_id}")
     if rapdordata is None:
         raise PreventUpdate
     colors = [color, color2]
     dim = 2 if not td_plot else 3
+    plotting = True
+    if rapdordata.current_embedding is None:
+        try:
+            rapdordata.calc_distribution_features()
+        except ValueError as e:
+            logger.info(traceback.format_exc())
+            plotting = False
     if not plotting:
         fig = empty_figure("Data not Calculated<br> Get Scores first")
     else:
