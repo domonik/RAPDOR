@@ -2,12 +2,20 @@ import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
 from plotly.subplots import make_subplots
-from typing import Iterable, Tuple, List, Any, Dict
+import plotly.express as px
+from typing import Iterable, Tuple, List, Any, Dict, Union
 from plotly.colors import qualitative
 from RAPDOR.datastructures import RAPDORData
 import plotly.io as pio
 import copy
-from scipy.stats import spearmanr
+from scipy.stats import spearmanr, pearsonr
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler
+from plotly.validators.scatter.marker import SymbolValidator
+from plotly.validators.scatter3d.marker import SymbolValidator as SymbolValidator3D
+
+SYMBOLS = SymbolValidator().values[2::12]
+SYMBOLS3D = SymbolValidator3D().values
 
 DEFAULT_COLORS = {"primary": "rgb(138, 255, 172)", "secondary": "rgb(255, 138, 221)"}
 
@@ -1890,7 +1898,8 @@ def _sample_spearman(rapdordata: RAPDORData, colors: Iterable[str], x_0=1.1, y_0
                 line_dash="dot",
             )
     fig = _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titles, y_0, x_0)
-
+    fig.update_xaxes(range=[-1, 1])
+    fig.update_yaxes(autorange=True)
     return fig
 
 
@@ -1962,13 +1971,355 @@ def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman",
         raise ValueError(f"Mode {method} not supported")
 
 
+def _get_x(rapdordata, ntop, use_raw, summarize_fractions):
+    x = rapdordata.array if use_raw else rapdordata.norm_array
+
+    x = x.reshape(-1, x.shape[1]) if summarize_fractions else x.reshape(x.shape[0], -1)
+    ntop = x.shape[0] if ntop is None else ntop
+    if isinstance(ntop, float):
+        if not (0 <= ntop <= 1):
+            raise ValueError("ntop must be an integer or float between 0 and 1")
+        ntop = int(x.shape[0] * ntop)
+    var = np.var(x, axis=1)
+    x = x[~np.isnan(var)]
+    var = var[~np.isnan(var)]
+    top_indices = np.argsort(var)[-ntop:]
+    x = x[top_indices]
+    return x
+
+
+def _get_sorted_design(rapdordata, summarize_fractions, x):
+    sorted_df = rapdordata.internal_design_matrix.sort_values("index")
+    if not summarize_fractions:
+        if not rapdordata.categorical_fraction and rapdordata.state.kernel_size != 0:
+            i = int((rapdordata.state.kernel_size - 1) / 2)
+            fractions = rapdordata.fractions[i:-i]
+        else:
+            fractions = rapdordata.fractions
+        sorted_df = sorted_df.merge(pd.Series(fractions, name="Fraction"), how="cross")
+        sorted_df["displayName"] = sorted_df["Treatment"].astype(str) + " - " + sorted_df["Fraction"].astype(str) + " - " + \
+                                sorted_df["Replicate"].astype(str)
+        sorted_df = sorted_df.sort_values(["Treatment", "Fraction", "Replicate"])
+        x = x[: ,sorted_df.index]
+        sorted_df["legendGroup"] = sorted_df["Treatment"].astype(str) + "-" + sorted_df["Fraction"].astype(str)
+
+
+    else:
+        sorted_df["displayName"] = sorted_df["Treatment"].astype(str) + " - " + sorted_df["Replicate"].astype(str)
+        sorted_df["legendGroup"] = sorted_df["Treatment"].astype(str)
+
+    return sorted_df, x
+
+def _get_x_and_sorted_design(rapdordata, ntop, use_raw, summarize_fractions):
+    x = _get_x(rapdordata, ntop, use_raw, summarize_fractions)
+    sorted_df, x = _get_sorted_design(rapdordata, summarize_fractions, x)
+    return sorted_df, x
+
+
+def _2d_pca(plot_dims, pca, sorted_df, colors, summarize_fractions):
+    fig = go.Figure()
+    symbols = SYMBOLS
+    marker_colors = {treatment: colors[idx] for idx, treatment in enumerate(sorted_df["Treatment"].unique())}
+    shape_col = "Replicate" if summarize_fractions else "Fraction"
+    marker_shapes = {frac: symbols[idx] for idx, frac in enumerate(sorted_df[shape_col].unique())}
+    for idx, row in sorted_df.iterrows():
+        fig.add_trace(
+            go.Scatter(
+                x=[row[f"PCA{plot_dims[0]}"]],
+                y=[row[f"PCA{plot_dims[1]}"]],
+                name=row["displayName"] if not summarize_fractions else row["Replicate"],
+                legendgroup=row["legendGroup"],
+                legendgrouptitle=dict(text=row["legendGroup"]),
+                marker=dict(color=marker_colors[row["Treatment"]], size=10, symbol=marker_shapes[row[shape_col]]),
+                mode="markers"
+            )
+        )
+    fig.update_xaxes(
+        title=f"PC{plot_dims[0]} ({pca.explained_variance_ratio_[plot_dims[0]] * 100:.2f}%)"
+    )
+    fig.update_yaxes(
+        title=f"PC{plot_dims[1]} ({pca.explained_variance_ratio_[plot_dims[1]] * 100:.2f}%)"
+    )
+    return fig
+
+
+def _3d_pca(plot_dims, pca, sorted_df, colors, summarize_fractions ):
+    symbols = SYMBOLS3D
+    shape_col = "Replicate" if summarize_fractions else "Fraction"
+
+    fig = go.Figure()
+    marker_colors = {treatment: colors[idx] for idx, treatment in enumerate(sorted_df["Treatment"].unique())}
+    while len(symbols) < len(sorted_df[shape_col].unique()):
+        symbols = symbols + symbols
+    marker_shapes = {frac: symbols[idx] for idx, frac in enumerate(sorted_df[shape_col].unique())}
+
+    for idx, row in sorted_df.iterrows():
+        fig.add_trace(
+            go.Scatter3d(
+                x=[row[f"PCA{plot_dims[0]}"]],
+                y=[row[f"PCA{plot_dims[1]}"]],
+                z=[row[f"PCA{plot_dims[2]}"]],
+                name=row["displayName"],
+                legendgroup=row["legendGroup"],
+                legendgrouptitle=dict(text=row["legendGroup"]),
+                marker=dict(color=marker_colors[row["Treatment"]], size=5, symbol=marker_shapes[row[shape_col]]),
+                mode="markers"
+            )
+        )
+    fig.update_layout(
+        scene=go.layout.Scene(
+            xaxis=go.layout.scene.XAxis(
+                title=f"PC{plot_dims[0]} ({pca.explained_variance_ratio_[plot_dims[0]] * 100:.2f}%)",
+            ),
+            yaxis=go.layout.scene.YAxis(
+                title=f"PC{plot_dims[1]} ({pca.explained_variance_ratio_[plot_dims[1]] * 100:.2f}%)",
+
+            ),
+            zaxis=go.layout.scene.ZAxis(
+                title=f"PC{plot_dims[2]} ({pca.explained_variance_ratio_[plot_dims[2]] * 100:.2f}%)",
+
+            ),
+            aspectratio=dict(x=1, y=1, z=1)
+        )
+
+    )
+    return fig
+
+
+def plot_sample_pca(
+        rapdordata: RAPDORData,
+        plot_dims: Union[Tuple[int, int], Tuple[int, int, int]],
+        ntop=None,
+        summarize_fractions: bool = True,
+        use_raw: bool = False,
+        colors = None,
+
+):
+    """Creates PCA plot of the samples of an RAPDORdata object.
+    It can either produce a 3D or 2D PCA plot depending on the number of dimensions specified in plot_dims
+    If summarize_fractions is True it will flatten the fraction dimension.
+    If it is set to false it will treat each replicate, treatment, fraction combination as a separate sample.
+    Args:
+        rapdordata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object
+        plot_dims (Union[Tuple[int, int], Tuple[int, int, int]]): The principal components to plot. Either a Tuple of
+            three or two components. Three results in a 3D and two in a 2D plot.
+        ntop (int or float): use the n top entries regarding their variance if its an int. If it is a float it uses that
+            percentage of the data.
+        use_raw (bool): uses raw values instead of normalized values.
+        summarize_fractions (bool): flattens the fractions if True only displaying one point per sample and treatment.
+        colors (Iterable[str]): Iterable of color values
+
+    Returns: go.Figure()
+    """
+    if colors is None:
+        colors = list(DEFAULT_COLORS.values())
+
+    sorted, x = _get_x_and_sorted_design(rapdordata, ntop, use_raw, summarize_fractions)
+
+    pca = PCA(n_components=None)
+
+    principal_components = pca.fit_transform(x.T)
+    columns = {f"PCA{idx + 1}": principal_components[:, idx] for idx in range(principal_components.shape[1])}
+    sorted = pd.concat([sorted, pd.DataFrame(columns)], axis=1)
+
+    if len(plot_dims) == 2:
+        fig = _2d_pca(plot_dims, pca, sorted, colors, summarize_fractions)
+
+    elif len(plot_dims) == 3:
+        fig = _3d_pca(plot_dims, pca, sorted, colors, summarize_fractions)
+    else:
+        raise ValueError("Can only plot between 2 and 3 dimensions for PCA please adjust plot_dims")
+
+    fig.update_layout(
+        legend=dict(groupclick="toggleitem")
+
+    )
+    return fig
+
+
+def plot_sample_correlation(
+        rapdordata: RAPDORData,
+        ntop: Union[int, float] = None,
+        use_raw: bool = False,
+        summarize_fractions: bool = True,
+        method: str = "pearson",
+        colors: Iterable[str] = None,
+        highlight_replicates: bool = False
+):
+    """Creates a heatmap of correlations of different samples.
+    If summarize_fractions is True it will flatten the fraction dimension.
+    If it is set to false it will treat each replicate, treatment, fraction combination as a separate sample.
+
+    Args:
+        rapdordata (RAPDORData): A :class:`~RAPDOR.datastructures.RAPDORData` object
+        ntop (int or float): use the n top entries regarding their variance if it is an int. If it is a float it uses that
+            percentage of the data.
+        use_raw (bool): uses raw values instead of normalized values.
+        summarize_fractions (bool): Creates correlation heatmap using only samples and flattens the fractions if True.
+        method (str): One of spearman or pearson
+        colors (Iterable[str]): Iterable of color values
+        highlight_replicates: if True will but a box around replicates belonging to the same treatment. Only works with
+            summarize_fractions set to false
+
+    Returns: go.Figure()
+
+
+    """
+    if colors is None:
+        colors = list(DEFAULT_COLORS.values())
+        colors = [colors[0], "white", colors[1]]
+    fig = go.Figure()
+    sorted_df, x = _get_x_and_sorted_design(rapdordata, ntop, use_raw, summarize_fractions)
+    if method == "pearson":
+        x = x[~np.any(np.isnan(x), axis=1)]
+        res = np.corrcoef(x.T)
+    elif method == "spearman":
+        res, pvals = spearmanr(x, nan_policy="omit")
+    else:
+        raise ValueError("Unupported method. Must be one of pearson or spearman")
+    fig.add_trace(
+        go.Heatmap(
+            z=res,
+            x=sorted_df["displayName"],
+            y=sorted_df["displayName"],
+            colorscale=colors,
+            zmin=-1,
+            zmax=1
+
+        )
+    )
+    if highlight_replicates:
+        sorted_df["sortIDX"] = np.arange(sorted_df.shape[0])
+        indices = sorted_df.groupby(["Treatment", "Fraction"])["sortIDX"].aggregate(["min", "max"])
+        for _, row in indices.iterrows():
+            fig.add_shape(
+                type="rect",
+                x0=row["min"]-0.5,
+                x1=row["max"]+0.5,
+                y0=row["min"]-0.5,
+                y1=row["max"]+0.5
+
+            )
+    if not summarize_fractions:
+
+        sorted_df["sortIDX"] = np.arange(sorted_df.shape[0])
+        xrange = [sorted_df["sortIDX"].min(), sorted_df["sortIDX"].max()]
+        fig.update_xaxes(
+            tickvals=list(range(*xrange)),
+            ticktext=sorted_df["Replicate"],
+            tickmode="array",
+            range=xrange
+        )
+        fig.update_yaxes(
+            showticklabels=False,
+            range=xrange
+        )
+        indices = sorted_df.groupby(["Treatment"])["sortIDX"].aggregate(["min", "max"])
+        for _, row in indices.iterrows():
+            x = -0.05
+            scale_factor = 1
+            fig.add_shape(
+                type="line",
+                x0=x,
+                x1=x,
+                y0=row["min"],
+                y1=row["max"],
+                xref="paper"
+            )
+            fig.add_shape(
+                type="line",
+                x0=row["min"],
+                x1=row["max"],
+                y0=1-x * scale_factor,
+                y1=1-x * scale_factor,
+                yref="paper"
+            )
+            fig.add_annotation(
+                text=row.name,
+                x=x,
+                y=(row["min"] + row["max"]) / 2,
+                xanchor="right",
+                yanchor="middle",
+                xref="paper",
+                showarrow=False,
+                textangle=-90
+            )
+            fig.add_annotation(
+                text=row.name,
+                y=1-x * scale_factor,
+                x=(row["min"] + row["max"]) / 2,
+                yanchor="bottom",
+                xanchor="center",
+                yref="paper",
+                showarrow=False,
+            )
+        indices = sorted_df.groupby(["Treatment", "Fraction"])["sortIDX"].aggregate(["min", "max"])
+        for _, row in indices.iterrows():
+            x = -0.01
+            fig.add_shape(
+                type="line",
+                x0=x,
+                x1=x,
+                y0=row["min"]-0.25,
+                y1=row["max"]+0.25,
+                xref="paper"
+            )
+            fig.add_shape(
+                type="line",
+                y0=1-x,
+                y1=1-x,
+                x0=row["min"] - 0.25,
+                x1=row["max"] + 0.25,
+                yref="paper"
+            )
+            fig.add_annotation(
+                text=row.name[-1],
+                x=x,
+                y=(row["min"] + row["max"]) / 2,
+                yanchor="middle",
+                xanchor="right",
+                xref="paper",
+                showarrow=False,
+            )
+            fig.add_annotation(
+                text=row.name[-1],
+                y=1-x ,
+                x=(row["min"] + row["max"]) / 2,
+                yanchor="bottom",
+                xanchor="center",
+                yref="paper",
+                showarrow=False,
+                textangle=-90
+            )
+
+    fig.update_layout(
+        template=DEFAULT_TEMPLATE,
+        width=624,
+        height=624,
+        margin=dict(r=50, b=50)
+    )
+    return fig
+
+
+
 if __name__ == '__main__':
     from RAPDOR.datastructures import RAPDORData
 
     df = pd.read_csv("tests/testData/testFile.tsv", sep="\t")
+    df = pd.read_csv("../testData/sanitized_df.tsv", sep="\t")
     design = pd.read_csv("tests/testData/testDesign.tsv", sep="\t")
+    design = pd.read_csv("../testData/sanitized_design.tsv", sep="\t")
     rapdor = RAPDORData(df, design, logbase=2, control="CTRL")
-    rapdor.normalize_array_with_kernel(kernel_size=3)
+    dolphin = list(COLOR_SCHEMES["Dolphin"])
+    dolphin.insert(1, "white")
+    rapdor.normalize_array_with_kernel(kernel_size=0)
+    rapdor.calc_distances()
+    #fig = plot_sample_pca(rapdor, plot_dims=(1, 2,), ntop=0.2, colors=COLOR_SCHEMES["Dolphin"], use_raw=False, summarize_fractions=True, n_components=None)
+    fig = plot_sample_correlation(rapdor, method="pearson", summarize_fractions=False, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
+    fig.show()
+    fig = plot_sample_histogram(rapdordata=rapdor, method="jsd")
+    #fig.show()
+    exit()
     rapdor.calc_distances(method="Jensen-Shannon-Distance")
     rapdor.calc_all_scores()
     rapdor.calc_distribution_features()

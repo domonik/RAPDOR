@@ -26,10 +26,6 @@ from statsmodels.distributions.empirical_distribution import ECDF
 import warnings
 from io import StringIO
 
-
-
-
-
 DECIMALS = 15
 
 
@@ -393,7 +389,7 @@ class RAPDORData:
             raise ValueError(f"methhod: {method} is not supported")
         return distances
 
-    def calc_distances(self, method: str):
+    def calc_distances(self, method: str = None):
         """Calculates between sample distances.
                 
         Args:
@@ -404,6 +400,8 @@ class RAPDORData:
                 epsilon to the protein intensities
 
         """
+        if method is None:
+            method = self.methods[0]
         array1, array2 = self.norm_array[:, :, :, None], self.norm_array[:, :, :, None].transpose(0, 3, 2, 1)
         self.distances = self._calc_distance_via(method, array1=array1, array2=array2, axis=-2)
         self.state.distance_method = method
@@ -1049,13 +1047,14 @@ def _analysis_executable_wrapper(args):
 if __name__ == '__main__':
     f = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureSpatial/RawData/egf_2min_raw_intensities.tsv"
     d = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureSpatial/RawData/egf_2min_design.tsv"
-    #f  = "../testData/testFile.tsv"
-    #d  = "../testData/testDesign.tsv"
+    f  = "../testData/testFile.tsv"
+    d  = "../testData/testDesign.tsv"
     df = pd.read_csv(f, sep="\t", index_col=0)
 
     design = pd.read_csv(d, sep="\t")
     rapdor = RAPDORData(df, design, logbase=None)
     rapdor.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
+    rapdor.sample_pca()
     rapdor.calc_all_scores()
     s = time.time()
     rapdor.calc_anosim_p_value(999, threads=1, mode="global")
