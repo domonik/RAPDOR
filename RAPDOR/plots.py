@@ -1858,21 +1858,18 @@ def _sample_spearman(rapdordata: RAPDORData, colors: Iterable[str], x_0=1.1, y_0
         if key not in kwargs:
             kwargs[key] = value
     array = rapdordata.kernel_array
-    array = array.reshape(array.shape[1], array.shape[0], -1)
-    n, p, f = array.shape
+    #array = array.reshape(array.shape[1], array.shape[0], -1)
+    p, n, f = array.shape
     fig = make_subplots(rows=n - 1, cols=n - 1,
                         column_titles=column_titles, row_titles=row_titles, **kwargs
                         )
 
     for i in range(n):
         for j in range(i + 1, n):
-            # Calculate Pearson correlation coefficient between vectors i and j
-            mask = np.isnan(array[i]) | np.isnan(array[j])
-            mask = ~mask
             spears = np.empty(p)
             for protein in range(p):
-                sub_i = array[i][protein]
-                sub_j = array[j][protein]
+                sub_i = array[protein][i]
+                sub_j = array[protein][j]
                 if np.any(np.isnan(sub_i) | np.isnan(sub_j)):
                     pearson_coefficient = np.nan
                 else:
@@ -2314,11 +2311,11 @@ if __name__ == '__main__':
     dolphin.insert(1, "white")
     rapdor.normalize_array_with_kernel(kernel_size=0)
     rapdor.calc_distances()
-    #fig = plot_sample_pca(rapdor, plot_dims=(1, 2,), ntop=0.2, colors=COLOR_SCHEMES["Dolphin"], use_raw=False, summarize_fractions=True, n_components=None)
-    fig = plot_sample_correlation(rapdor, method="pearson", summarize_fractions=False, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
+    fig = plot_sample_pca(rapdor, plot_dims=(1, 2,), ntop=0.3, colors=COLOR_SCHEMES["Dolphin"], use_raw=False, summarize_fractions=True)
+    #fig = plot_sample_correlation(rapdor, method="pearson", summarize_fractions=False, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
     fig.show()
-    fig = plot_sample_histogram(rapdordata=rapdor, method="jsd")
-    #fig.show()
+    fig = plot_sample_histogram(rapdordata=rapdor, method="spearman")
+    fig.show()
     exit()
     rapdor.calc_distances(method="Jensen-Shannon-Distance")
     rapdor.calc_all_scores()
