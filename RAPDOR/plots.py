@@ -1970,8 +1970,11 @@ def plot_sample_histogram(rapdordata: RAPDORData, method: str = "spearman",
 
 def _get_x(rapdordata, ntop, use_raw, summarize_fractions):
     x = rapdordata.array if use_raw else rapdordata.norm_array
-
-    x = x.reshape(-1, x.shape[1]) if summarize_fractions else x.reshape(x.shape[0], -1)
+    if summarize_fractions:
+        x = np.transpose(x, (1, 2, 0))
+        x = x.reshape(x.shape[0], -1).T
+    else:
+        x = x.reshape(x.shape[0], -1)
     ntop = x.shape[0] if ntop is None else ntop
     if isinstance(ntop, float):
         if not (0 <= ntop <= 1):
@@ -2311,11 +2314,11 @@ if __name__ == '__main__':
     dolphin.insert(1, "white")
     rapdor.normalize_array_with_kernel(kernel_size=0)
     rapdor.calc_distances()
-    fig = plot_sample_pca(rapdor, plot_dims=(1, 2,), ntop=0.3, colors=COLOR_SCHEMES["Dolphin"], use_raw=False, summarize_fractions=True)
-    #fig = plot_sample_correlation(rapdor, method="pearson", summarize_fractions=False, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
+    #fig = plot_sample_pca(rapdor, plot_dims=(1, 2,), ntop=0.3, colors=COLOR_SCHEMES["Dolphin"], use_raw=False, summarize_fractions=True)
+    fig = plot_sample_correlation(rapdor, method="pearson", summarize_fractions=True, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
     fig.show()
-    fig = plot_sample_histogram(rapdordata=rapdor, method="spearman")
-    fig.show()
+    #fig = plot_sample_histogram(rapdordata=rapdor, method="spearman")
+    #fig.show()
     exit()
     rapdor.calc_distances(method="Jensen-Shannon-Distance")
     rapdor.calc_all_scores()
