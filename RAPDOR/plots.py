@@ -595,7 +595,8 @@ def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, o
               triangles: str = "inside", tri_x: float = 25, tri_y: float = 0.1):
     fig = go.Figure(layout=dict(template=DEFAULT_TEMPLATE))
     df = rapdordata.df.sort_values(by="Rank")
-    init_x = list(range(df["Rank"].min(), df.Rank.max() + 1))
+    df = df[~pd.isna(df["Rank"])]
+    init_x = list(range(int(df["Rank"].min()), int(df.Rank.max()) + 1))
     if triangles == "outside":
         trirefx = "paper" if orientation == "v" else "x"
         trirefy = "paper" if orientation == "h" else "y"
@@ -1987,6 +1988,83 @@ def _get_x(rapdordata, ntop, use_raw, summarize_fractions):
     x = x[top_indices]
     return x
 
+def plot_ep_vs_ep(rapdordata, use_raw: bool = False, colors: Tuple = COLOR_SCHEMES["Flamingo"], x_0=1.1, y_0=1.15, **kwargs):
+    x =rapdordata.norm_array
+    names = [f"{row['Replicate']}#-{row['Treatment']}" for idx, row in rapdordata.internal_design_matrix.iterrows()]
+    column_titles = [f"c{name}" for name in names[:-1]]
+    row_titles = [f"r{name}" for name in names[1:]]
+    mask = np.all(np.isnan(x), axis=-1)
+    i = rapdordata.state.kernel_size // 2
+    positions = np.asarray(rapdordata.fractions)
+    if i != 0:
+        positions = positions[i:-i]
+    x = (positions * x).sum(axis=-1)
+    p, n, f = rapdordata.norm_array.shape
+
+    fig = make_subplots(rows=n, cols=n,
+                        column_titles=column_titles, row_titles=row_titles, **kwargs
+                        )
+
+    hover = rapdordata.df["RAPDORid"].astype(str)
+    c = x[~np.any(np.isnan(x), axis=1)]
+    corrs = np.corrcoef(c.T)
+    for i in range(n):
+        for j in range(i + 1, n):
+            if i == 0 and j == 1:
+                p = 0
+            m = mask[:, i] | mask[:, j]
+            same = rapdordata.internal_design_matrix.iloc[i]["Treatment"] == rapdordata.internal_design_matrix.iloc[j][
+                "Treatment"]
+            fig.add_trace(
+                go.Scatter(
+                    x=x[:, i][~m],
+                    y=x[:, j][~m],
+                    showlegend=False,
+                    marker=dict(color=colors[0] if same else colors[1], size=2),
+                    mode="markers",
+                    hovertext=hover[~m]
+                ), row=j+1, col=i + 1
+            )
+            fig.add_trace(
+                go.Heatmap(
+                    x=[1],
+                    y=[1],
+                    z=[corrs[i, j]],
+                    colorscale=[colors[0], "white", colors[1]],
+                    zmin=-1,
+                    zmax=1,
+
+                ),
+                row=i + 1, col=j + 1
+            )
+            fig.add_annotation(
+                text=f"{corrs[i, j]:.3f}",
+                xanchor="center",
+                yanchor="middle",
+                x=1,
+                y=1,
+                showarrow=False,
+                row=i + 1, col=j + 1
+
+            )
+            fig.update_yaxes(showticklabels=False, showline=False, showgrid=False, row=i+1, col=j+1)
+            fig.update_xaxes(showticklabels=False, showline=False, showgrid=False, row=i+1, col=j+1)
+
+    fig = _update_sample_histo_layout(fig, rapdordata, colors, column_titles, row_titles, y_0, x_0)
+    fig.update_xaxes(showticklabels=False, showline=False, showgrid=False, row=1, col=1, zeroline=False)
+    fig.update_yaxes(showticklabels=False, showline=False, showgrid=False, row=1, col=1, zeroline=False)
+    fig.update_layout(
+        legend=dict(
+            xref="paper",
+            yref="paper",
+            xanchor="left",
+            yanchor="bottom"
+        )
+    )
+    fig.data = fig.data[:-1]
+    return fig
+
+
 
 def _get_sorted_design(rapdordata, summarize_fractions, x):
     sorted_df = rapdordata.internal_design_matrix.sort_values("index")
@@ -2134,6 +2212,36 @@ def plot_sample_pca(
         legend=dict(groupclick="toggleitem")
 
     )
+    return fig
+
+
+def plot_distance_stats(
+        rapdordata: RAPDORData,
+        colors: Iterable = COLOR_SCHEMES["Flamingo"]
+
+):
+    fig = make_subplots(2, 2, row_titles=rapdordata.treatment_levels, column_titles=["Mean", "Var"])
+    for i, treatment in enumerate(rapdordata.treatment_levels):
+        x = rapdordata.df[f"{treatment} distance mean"]
+        fig.add_trace(
+            go.Histogram(
+                x=x,
+                marker=dict(color=colors[i])
+            ),
+            row=i+1,
+            col=1
+        )
+        fig.add_trace(
+            go.Histogram(
+                x=rapdordata.df[f"{treatment} distance var"],
+                marker=dict(color=colors[i])
+
+            ),
+            row=i+1,
+            col=2
+        )
+        perc = np.nanpercentile(x, 95)
+        fig.add_vline(x= perc, row=i+1, col=1, annotation_text=f"{perc:.3f}")
     return fig
 
 
@@ -2314,8 +2422,16 @@ if __name__ == '__main__':
     dolphin.insert(1, "white")
     rapdor.normalize_array_with_kernel(kernel_size=0)
     rapdor.calc_distances()
-    #fig = plot_sample_pca(rapdor, plot_dims=(1, 2,), ntop=0.3, colors=COLOR_SCHEMES["Dolphin"], use_raw=False, summarize_fractions=True)
-    fig = plot_sample_correlation(rapdor, method="pearson", summarize_fractions=True, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
+    rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/RAPDORAnalysis/GradRData.json")
+    #rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/RAPDORonRDeeP/RDeePRAPDOR.json")
+
+    rapdor.df["RAPDORid"] = rapdor.df.index
+    fig = plot_sample_pca(rapdor, plot_dims=(1, 2), ntop=0.2, summarize_fractions=True,)
+    fig.show()
+    exit()
+    #rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/RAPDORonRDeeP/RDeePRAPDOR.json")
+    #fig = plot_sample_pca(rapdor, plot_dims=(1, 2, 3), ntop=0.2, colors=COLOR_SCHEMES["Dolphin"], use_raw=False, summarize_fractions=False)
+    fig = plot_sample_correlation(rapdor, method="spearman", summarize_fractions=True, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
     fig.show()
     #fig = plot_sample_histogram(rapdordata=rapdor, method="spearman")
     #fig.show()

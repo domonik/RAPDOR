@@ -145,8 +145,6 @@ def test_different_columns(intensities, design):
     assert loaded_data == rapdordata
 
 
-
-
 @pytest.mark.parametrize(
     "normalize,kernel_size,distance,permanova,nr_samples",
     [
