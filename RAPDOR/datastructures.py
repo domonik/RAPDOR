@@ -25,14 +25,41 @@ from pandas.testing import assert_frame_equal
 from statsmodels.distributions.empirical_distribution import ECDF
 import warnings
 from io import StringIO
-
-
-
-
+from sklearn.preprocessing import RobustScaler
+from sklearn.neighbors import NearestNeighbors
 
 DECIMALS = 15
 
 
+IMPUTE_R_CODE = """
+msnset_impute <- function(sub_df, pdata, min_rep, n_neighbors, indExpData, colnameForID = "Protein", 
+                          logData = FALSE, pep_prot_data = "protein", software = "maxquant") {
+    library(MSnbase)
+    library(DAPAR)
+
+    msnset <- createMSnset(
+        sub_df,
+        pdata,
+        indExpData = indExpData,
+        colnameForID = colnameForID,
+        logData = logData,
+        pep_prot_data = pep_prot_data,
+        software = software
+    )
+    level <- 'peptide'
+    pattern <- "Quantified"
+    type <- "AtLeastOneCond"
+    percent <- FALSE
+    op <- ">="
+    th <- min_rep
+    indices <- GetIndices_MetacellFiltering(msnset, level, pattern, type, percent, op, th)
+    msnset <- MetaCellFiltering(msnset, indices, "keep")$new
+    imputed_data <- wrapper.impute.KNN(msnset, n_neighbors)
+    imputed_counts <- exprs(imputed_data)
+    imputed_sub_df <- as.data.frame(imputed_counts)
+    return(imputed_sub_df)
+}
+"""
 
 
 
@@ -250,6 +277,7 @@ class RAPDORData:
         design_matrix = design_matrix.sort_values(by=["Fraction", "Treatment", "Replicate"])
         tmp = design_matrix.groupby(["Treatment", "Replicate"], as_index=False, observed=False)["Name"].agg(
             list).dropna().reset_index()
+        self.design = design_matrix
         self.df.index = np.arange(self.df.shape[0])
         self.df = self.df.round(decimals=DECIMALS)
         self.fractions = design_matrix["Fraction"].unique()
@@ -276,8 +304,8 @@ class RAPDORData:
         array[mask] = 0
         self.array = array
         self.internal_design_matrix = tmp
-        indices = self.internal_design_matrix.groupby("Treatment", group_keys=True, observed=False).apply(
-            lambda x: list(x.index), include_groups=False)
+        indices = self.internal_design_matrix.groupby("Treatment", group_keys=True, observed=False)["index"].apply(
+            lambda x: list(x.index))
         self.indices = tuple(np.asarray(index) for index in indices)
 
         p = ~np.any(self.array, axis=-1)
@@ -350,6 +378,135 @@ class RAPDORData:
         ret = np.stack((rnase_false, rnase_true))
         return ret
 
+    def _impute_using_all_fractions(self, n_perc, n_neighbors: int = 10, impute_quantile: float = 0.95):
+        self.calc_distance_stats()
+        for treatment, idx in zip(self.treatment_levels, self.indices):
+            min_rep = np.ceil(n_perc * len(idx))
+            subarray = self.array[:, idx, :]
+            x = self.df[f"{treatment} distance mean"]
+            perc = np.nanquantile(x, impute_quantile)
+            noise_mask = x > perc
+
+            replace_array = np.full(subarray.shape, np.nan)
+            for i in range(subarray.shape[-1]):
+                m = (subarray[:, :, i] > 0)
+                m1 = m.sum(axis=-1)
+                impute = (m1 >= min_rep) & (m1 < subarray.shape[1])
+                missing_all = np.any((subarray.sum(axis=-1) == 0), axis=1)
+                missing_all = missing_all | noise_mask
+
+                for j in range(subarray.shape[-2]):
+                    to_impute = (impute & (subarray[:, j, i] == 0)).reshape(-1)
+                    knn = NearestNeighbors(n_neighbors=n_neighbors)
+                    nn_array = np.log2(subarray.reshape(-1, subarray.shape[-1] * subarray.shape[-2]) + 1)
+                    mask = np.ones(subarray.shape[1:], dtype=bool)
+                    mask[j, i] = 0
+                    mask = mask.reshape(subarray.shape[-1] * subarray.shape[-2])
+                    if ~np.any(to_impute & ~missing_all):
+                        continue
+                    knn.fit(nn_array[~to_impute & ~missing_all][:, mask])
+                    id = self.df[self.df["old_locus_tag"] == "ssr3189"]["id"].iloc[0]
+                    neighbors = knn.kneighbors(nn_array[to_impute & ~missing_all][:, mask], return_distance=False)
+                    ns = nn_array[~to_impute & ~missing_all][neighbors].reshape(neighbors.shape[0], n_neighbors,
+                                                                                subarray.shape[1], -1)
+                    median = np.median(ns[:, :, j, i], axis=-1)
+
+                    replace_array[(to_impute & ~missing_all), j, i] = median
+
+            replace_array = (2 ** replace_array) - 1
+            replace_array[np.isnan(replace_array)] = 0
+            t = np.argwhere(~(replace_array == 0))
+            tmp = pd.DataFrame({"id": t[:, 0], f"{treatment} imputed": t[:, 1:].tolist()})
+            agg = tmp.groupby('id', as_index=False).agg({f"{treatment} imputed": list})
+            agg[f"{treatment} imputed"] = agg[f"{treatment} imputed"].astype(str)
+            self.df = self.df.merge(agg, on="id", how="left")
+            self.df[f"{treatment} imputed"].loc[noise_mask] = "too noisy"
+            self.array[:, idx] += replace_array
+
+
+    def _impute_via_rpy(self, n_perc=0.5, n_neighbors: int = 10, impute_quantile: float=0.95):
+        try:
+            from rpy2.robjects import r, pandas2ri
+        except ModuleNotFoundError as e:
+            raise ModuleNotFoundError("Missing optional dependency rpy2. Please install for dataimputation")
+        pandas2ri.activate()
+        for package in ("DAPAR", "MSnbase"):
+            t = r.require(package)[0]
+
+            if not t:
+                raise ImportError(f"Unable to import optional dependency: R package {package}. "
+                                  f"Please install the corresponding R package in your environment")
+
+        r(IMPUTE_R_CODE)
+        msnset_impute = r["msnset_impute"]
+
+        self.calc_distance_stats()
+        all_missing = self.array.sum(axis=-1) == 0
+        tmp_internal_design = self.internal_design_matrix.explode("Name").set_index("Name")
+        for treatment, idx in zip(self.treatment_levels, self.indices):
+            x = self.df[f"{treatment} distance mean"]
+            perc = np.nanquantile(x, impute_quantile)
+            noise_mask = x > perc
+            for fidx, fraction in enumerate(self.fractions):
+                min_rep = np.ceil(n_perc * len(idx))
+
+                sub_array = np.log2(self.array[:, :, fidx])
+                sub_array[np.isinf(sub_array)] = np.nan
+                sub_df = pd.DataFrame({
+                    "Protein": self.df["id"],
+                })
+                design = self.design[(self.design["Treatment"] == treatment) & (self.design["Fraction"] == fraction)]
+                rname = {"Treatment": "Condition","Replicate": "Bio.rep"}
+                design = design.rename(rname, axis=1)
+                design = design[list(rname.values()) + ["Name"]]
+                design["Sample.name"] = np.arange(design.shape[0])
+                design["Sample.name"] = "causeRcanthandledataframes" + design["Sample.name"].astype(str)
+                for hash, sname in design[["Sample.name", "Name"]].iterrows():
+                    iidx = tmp_internal_design.loc[sname["Name"]]["index"]
+                    sub_df[str(sname["Sample.name"])] = sub_array[:, iidx]
+                design = design.drop("Name", axis=1)
+                design.index = design["Sample.name"].tolist()
+
+                snames = [col for col in sub_df.columns[1:]]
+                sub_df = sub_df[ snames + ["Protein"]]
+                mask = np.all(np.isnan(sub_df[snames]), axis=1) | noise_mask
+                sub_df = sub_df[~mask]
+                if len(sub_df) == 0:
+                    continue
+                sub_df_r = pandas2ri.py2rpy(sub_df)
+                pdata_r = pandas2ri.py2rpy(design)
+
+                result = msnset_impute(sub_df_r, pdata_r, logData=False, min_rep=min_rep, n_neighbors=n_neighbors, indExpData=r.seq(1,sub_df.shape[1]-1))
+                result = pandas2ri.rpy2py_dataframe(result)
+                result = 2 ** result
+                proteins = result.index.astype(int)
+                result = result.to_numpy()
+                for i, id in enumerate(idx):
+                    self.array[proteins, id, fidx] = result[:, i]
+        self.array[all_missing] = 0  # prevents imputing where all fractions are zero
+
+    def _impute(self, n_perc, n_neighbors: int = 10, impute_quantile: float = 0.95):
+        pass
+
+
+    def _check_distances(self):
+        if self.distances is None:
+            raise ValueError("Distances not calculated yet. Need to calculate distances first for this operation")
+
+    def calc_distance_stats(self):
+        self._check_distances()
+        for treatment, idx in zip(self.treatment_levels, self.indices):
+            indices = np.triu_indices(len(idx), 1)
+            sub_distances = self.distances[:, idx][:, : , idx][:, indices[0], indices[1]]
+            d_mean = np.nanmean(sub_distances, axis=-1)
+            d_var = np.nanvar(sub_distances, axis=-1)
+            self.df[f"{treatment} distance mean"] = d_mean
+            self.df[f"{treatment} distance var"] = d_var
+
+
+
+
+
     def _del_treatment_means(self):
         if "_treatment_means" in self.__dict__:
             del self.__dict__["_treatment_means"]
@@ -364,7 +521,6 @@ class RAPDORData:
         """
         array = self.array
         self._del_treatment_means()
-
         if kernel_size:
             if not kernel_size % 2:
                 raise ValueError(f"Kernel size must be odd")
@@ -390,10 +546,10 @@ class RAPDORData:
         elif method == "Euclidean-Distance":
             distances = self._euclidean_distance(array1, array2, axis=axis)
         else:
-            raise ValueError(f"methhod: {method} is not supported")
+            raise ValueError(f"methhod: {method} is not supported. Must be one of {self.methods}")
         return distances
 
-    def calc_distances(self, method: str):
+    def calc_distances(self, method: str = None):
         """Calculates between sample distances.
                 
         Args:
@@ -404,7 +560,10 @@ class RAPDORData:
                 epsilon to the protein intensities
 
         """
-        array1, array2 = self.norm_array[:, :, :, None], self.norm_array[:, :, :, None].transpose(0, 3, 2, 1)
+        if method is None:
+            method = self.methods[0]
+        array = self.norm_array
+        array1, array2 = array[:, :, :, None], array[:, :, :, None].transpose(0, 3, 2, 1)
         self.distances = self._calc_distance_via(method, array1=array1, array2=array2, axis=-2)
         self.state.distance_method = method
 
@@ -421,10 +580,44 @@ class RAPDORData:
             method (str): One of the values from `methods`. The method used for sample distance calculation.
             kernel (int): Averaging kernel size. This kernel is applied to the fractions.
             eps (float): epsilon added to the intensities to overcome problems with zeros.
-
-
         """
+        warnings.warn("This function is deprecated use run_preprocessing instead", DeprecationWarning)
+        self.run_preprocessing(
+            method=method,
+            kernel=kernel,
+            eps=eps
+        )
+
+    def run_preprocessing(
+            self, method: str = None,
+            kernel: int = 0,
+            impute: bool = False,
+            impute_perc: float = 0.5,
+            impute_nn: int = 10,
+            impute_quantile: float = 0.95,
+            eps: float = 0
+    ):
+        """Normalizes the array, imputes missing values if needed and calculates sample distances.
+
+        Args:
+            method (str): One of the values from `methods`. The method used for sample distance calculation.
+            kernel (int): Averaging kernel size. This kernel is applied to the fractions.
+            impute (bool): Wheter to impute missing values using KNN
+            impute_perc (float): Maximum percentage of missing values per fraction and condition used for imputation.
+            impute_nn (int): N Neighbors to account in data imputation.
+            impute_quantile (int): Does only impute values for the quantile with the lowest mean distance between
+                replicates. Others are assumed to be too noisy and data imputation might cause problems.
+            eps (float): epsilon added to the intensities to overcome problems with zeros.
+        """
+        if method is None:
+            method = self.methods[0]
+
+        if impute:
+            self.normalize_array_with_kernel()
+            self.calc_distances(method)
+            self._impute_via_rpy(impute_perc, impute_nn, impute_quantile)
         self.normalize_array_with_kernel(kernel, eps)
+
         self.calc_distances(method)
         self._unset_scores_and_pvalues()
 
@@ -449,7 +642,8 @@ class RAPDORData:
             else:
 
                 i = self.state.kernel_size // 2
-                t = ((test == np.max(test, axis=-1, keepdims=True)) * self.fractions[i:-i])
+                f = self.fractions[i:-i] if i else self.fractions
+                t = ((test == np.max(test, axis=-1, keepdims=True)) * f)
                 positions = t.sum(axis=-1) / np.count_nonzero(t, axis=-1)
                 positions = np.floor(positions).astype(int)
         # Get the middle occurrence index
@@ -727,6 +921,7 @@ class RAPDORData:
         rdf = rdf[["Rank"]]
         self.df = self.df.join(rdf)
 
+
     def calc_all_scores(self):
         """Calculates ANOSIM R, shift direction, peak positions and Mean Sample Distance.
 
@@ -867,8 +1062,13 @@ class RAPDORData:
             p-values (np.ndarray): fdr corrected p-values for each protein
             distribution (np.ndarray): distribution of R values used to calculate p-values
         """
+        if "Mean Distance" not in self.df.columns:
+            self.calc_mean_distance()
+
         if "ANOSIM R" not in self.df.columns:
             self.calc_all_anosim_value()
+
+
         o_distribution = self._calc_global_anosim_distribution(permutations, threads, seed, callback)
         r_scores = self.df["ANOSIM R"].to_numpy()
         if mode == "global":
@@ -1047,30 +1247,35 @@ def _analysis_executable_wrapper(args):
 
 
 if __name__ == '__main__':
-    f = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureSpatial/RawData/egf_2min_raw_intensities.tsv"
-    d = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/NatureSpatial/RawData/egf_2min_design.tsv"
+    from RAPDOR.plots import COLOR_SCHEMES
+    from RAPDOR.plots import plot_distance_stats
+    f = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/VSNNorm/intensities_normalized_replaced.tsv"
+    f = "/home/rabsch/PythonProjects/synRDPMSpec/Data/synIntensitiesIBAQ.tsv"
+    d = "/home/rabsch/PythonProjects/synRDPMSpec/Data/synDesignIBAQ.tsv"
     #f  = "../testData/testFile.tsv"
     #d  = "../testData/testDesign.tsv"
-    df = pd.read_csv(f, sep="\t", index_col=0)
+    df = pd.read_csv(f, sep="\t")
+    dolphin = COLOR_SCHEMES["Dolphin"]
 
     design = pd.read_csv(d, sep="\t")
-    rapdor = RAPDORData(df, design, logbase=None)
-    rapdor.normalize_and_get_distances("Jensen-Shannon-Distance", 3)
-    rapdor.calc_all_scores()
-    s = time.time()
-    rapdor.calc_anosim_p_value(999, threads=1, mode="global")
-    e = time.time()
-    print(e-s)
+    rapdor = RAPDORData(df, design, logbase=2)
+    #rapdor._impute(2)
+    rapdor.run_preprocessing("Jensen-Shannon-Distance", kernel=3, impute=True, impute_quantile=0.95)
+    rapdor.calc_distances()
+    rapdor.calc_anosim_p_value(-1, threads=10, mode="global")
+    print(np.nanmax(rapdor.df[rapdor.df["ANOSIM R"] >=0.5]["global ANOSIM adj p-Value"]))
     exit()
-    clusters = rapdor.cluster_data()
-    embedding = rapdor.reduce_dim()
-    import plotly.graph_objs as go
-    from plotly.colors import qualitative
-    from RAPDOR.plots import plot_dimension_reduction_result
-
-    fig = plot_dimension_reduction_result(embedding, rapdor, colors=qualitative.Light24 + qualitative.Dark24,
-                                          clusters=clusters, name="bla")
+    #rapdor.calc_distance_stats()
+    fig = plot_distance_stats(rapdor, dolphin)
     fig.show()
+    rapdor.to_json("testfile.json")
+    from RAPDOR.plots import plot_sample_correlation, plot_ep_vs_ep, plot_sample_pca
+    #fig = plot_sample_correlation(rapdor, method="spearman")
+    fig = plot_sample_correlation(rapdor, summarize_fractions=True, method="spearman", colors=[dolphin[0], "white", dolphin[1]])
+    fig.show()
+    fig = plot_sample_pca(rapdor, summarize_fractions=True, ntop=0.2, plot_dims=(1, 2), colors=dolphin)
+    fig.show()
+
+
+    #fig.show()
     exit()
-    rapdor.rank_table(["ANOSIM R"], ascending=(True,))
-    # rapdor.calc_welchs_t_test()
