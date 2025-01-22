@@ -348,7 +348,7 @@ def update_table(table_data, page_current, page_size, sort_by, filter_query, sel
 
 
 if not DISPLAY:
-    @callback(
+    cb_list = [
         Output("table-selector", "value", allow_duplicate=True),
         Output("data-store", "data", allow_duplicate=True),
         Output("run-clustering", "data", allow_duplicate=True),
@@ -356,28 +356,44 @@ if not DISPLAY:
         State("table-selector", "value"),
         State("data-store", "data"),
         State("unique-id", "data"),
-        background=True,
-        running=[
-            (Output('score-btn', 'disabled'), True, False),
-            (
-                    Output("table-progress-container", "style"),
-                    {"display": "flex", "height": "90%"},
-                    {"display": "none"},
-            ),
-            (
-                    Output("table-loading", "style"),
-                    {"display": "none"},
-                    {"display": "block", "height": "90%"},
-            ),
-        ],
-        progress=[Output("progress_bar", "value")],
+    ]
+    if os.name != 'nt':
+        @callback(
+            *cb_list,
+            background=True,
+            running=[
+                (Output('score-btn', 'disabled'), True, False),
+                (
+                        Output("table-progress-container", "style"),
+                        {"display": "flex", "height": "90%"},
+                        {"display": "none"},
+                ),
+                (
+                        Output("table-loading", "style"),
+                        {"display": "none"},
+                        {"display": "block", "height": "90%"},
+                ),
+            ],
+            progress=[Output("progress_bar", "value")],
 
-    )
-    def run_scoring(set_progress, n_clicks, sel_columns, rapdordata, uid):
+        )
+        def run_scoring(set_progress, n_clicks, sel_columns, rapdordata, uid):
+            return _run_scoring(set_progress, n_clicks, sel_columns, rapdordata, uid)
+
+    else:
+        @callback(
+            *cb_list,
+            prevent_initial_call=True
+        )
+        def run_scoring_windows(n_clicks, sel_columns, rapdordata, uid):
+            return _run_scoring(None, n_clicks, sel_columns, rapdordata, uid)
+
+    def _run_scoring(set_progress, n_clicks, sel_columns, rapdordata, uid):
         if n_clicks == 0:
             raise PreventUpdate
         else:
-            set_progress("50")
+            if set_progress is not None:
+                set_progress("50")
             rapdordata.calc_all_scores()
             sel_columns += ["ANOSIM R", "Mean Distance", "position strongest shift"]
             if not rapdordata.categorical_fraction:
@@ -387,7 +403,9 @@ if not DISPLAY:
                 sel_columns += ["shift direction", "relative fraction shift"]
                 sel_columns += peak_names
             sel_columns = remove_list_duplicates(sel_columns)
-            set_progress("100")
+            if set_progress is not None:
+
+                set_progress("100")
 
         return sel_columns, Serverside(rapdordata, key=uid), True
 
@@ -435,7 +453,7 @@ def rank_table(btn, sel_columns, current_sorting, rapdordata, uid):
 
 
 if not DISPLAY:
-    @callback(
+    anosim_cb_list = [
         Output("table-selector", "value", allow_duplicate=True),
         Output("data-store", "data", allow_duplicate=True),
         Output("alert-div", "children", allow_duplicate=True),
@@ -446,25 +464,42 @@ if not DISPLAY:
         State("anosim-permutation-nr", "value"),
         State("data-store", "data"),
         State("unique-id", "data"),
-        background=True,
-        running=[
-            (Output('anosim-btn', 'disabled'), True, False),
-            (
-                    Output("table-progress-container", "style"),
-                    {"display": "flex", "height": "90%"},
-                    {"display": "none"},
-            ),
-            (
-                    Output("table-loading", "style"),
-                    {"display": "none"},
-                    {"display": "block", "height": "90%"},
-            ),
-        ],
-        progress=[Output("progress_bar", "value")],
-        prevent_initial_call=True
+    ]
+    if os.name != 'nt':
 
-    )
-    def run_anosim(set_progress, n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
+        @callback(
+            *anosim_cb_list,
+            background=True,
+            running=[
+                (Output('anosim-btn', 'disabled'), True, False),
+                (
+                        Output("table-progress-container", "style"),
+                        {"display": "flex", "height": "90%"},
+                        {"display": "none"},
+                ),
+                (
+                        Output("table-loading", "style"),
+                        {"display": "none"},
+                        {"display": "block", "height": "90%"},
+                ),
+            ],
+            progress=[Output("progress_bar", "value")],
+            prevent_initial_call=True
+
+        )
+        def run_anosim(set_progress, n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
+            return _run_anosim(set_progress, n_clicks, sel_columns, anosim_permutations, rapdordata, uid)
+
+    else:
+        @callback(
+            *anosim_cb_list,
+            prevent_initial_call=True
+
+        )
+        def run_anosim_windows(n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
+            return _run_anosim(None, n_clicks, sel_columns, anosim_permutations, rapdordata, uid)
+
+    def _run_anosim(set_progress, n_clicks, sel_columns, anosim_permutations, rapdordata, uid):
         alert_msg = dash.no_update
         if n_clicks is None or n_clicks == 0:
             raise PreventUpdate
