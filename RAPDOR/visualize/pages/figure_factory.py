@@ -617,8 +617,24 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
             fig = plot_protein_westernblots(keys, rapdordata, colors=colors, title_col=displayed_col, vspace=vspace, scale_max=False)
             settings = DEFAULT_WESTERNBLOT_SETTINGS
         elif plot_type == 3:
-            print(rapdordata.current_embedding)
-            if rapdordata.current_embedding is not None:
+            if rapdordata.current_embedding is None:
+                try:
+                    if not DISPLAY:
+                        rapdordata.calc_distribution_features()
+                        plotting = True
+                except ValueError as e:
+                    plotting = False
+            else:
+                plotting = False
+
+            if not plotting:
+                message = "Distances not Calculated.<br>Go to Analysis Page"
+                if not DISPLAY:
+                    message += "and click the Get Score Button."
+                else:
+                    " first"
+                fig = empty_figure(message)
+            else:
                 keys = rapdordata.df[rapdordata.df.loc[:, "RAPDORid"].isin(keys)].index
                 fig = _plot_dimension_reduction_result2d(
                     rapdordata,
@@ -633,13 +649,6 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
 
                 fig.update_xaxes(mirror=True, row=2)
                 fig.update_yaxes(mirror=True, row=2)
-            else:
-                message = "Distances not Calculated.<br>Go to Analysis Page"
-                if not DISPLAY:
-                    message += "and click the Get Score Button."
-                else:
-                    " first"
-                fig = empty_figure(message)
             settings = DEFAULT_DIMRED_SETTINGS
             bubble_style["display"] = "flex"
 
