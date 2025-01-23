@@ -2252,7 +2252,8 @@ def plot_sample_correlation(
         summarize_fractions: bool = True,
         method: str = "pearson",
         colors: Iterable[str] = None,
-        highlight_replicates: bool = False
+        highlight_replicates: bool = False,
+        show_values: bool = False
 ):
     """Creates a heatmap of correlations of different samples.
     If summarize_fractions is True it will flatten the fraction dimension.
@@ -2292,7 +2293,10 @@ def plot_sample_correlation(
             y=sorted_df["displayName"],
             colorscale=colors,
             zmin=-1,
-            zmax=1
+            zmax=1,
+            text=np.round(res, 2) if show_values else None,
+            texttemplate="%{text}" if show_values else None,
+            textfont=dict(size=12, color="black")
 
         )
     )
@@ -2426,12 +2430,11 @@ if __name__ == '__main__':
     #rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/RAPDORonRDeeP/RDeePRAPDOR.json")
 
     rapdor.df["RAPDORid"] = rapdor.df.index
-    fig = plot_sample_pca(rapdor, plot_dims=(1, 2), ntop=0.2, summarize_fractions=True,)
+    fig = plot_sample_correlation(rapdor, method="spearman", show_values=True, summarize_fractions=True, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
     fig.show()
     exit()
     #rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/RAPDORonRDeeP/RDeePRAPDOR.json")
     #fig = plot_sample_pca(rapdor, plot_dims=(1, 2, 3), ntop=0.2, colors=COLOR_SCHEMES["Dolphin"], use_raw=False, summarize_fractions=False)
-    fig = plot_sample_correlation(rapdor, method="spearman", summarize_fractions=True, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
     fig.show()
     #fig = plot_sample_histogram(rapdordata=rapdor, method="spearman")
     #fig.show()
