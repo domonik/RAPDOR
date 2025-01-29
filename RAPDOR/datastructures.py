@@ -422,6 +422,16 @@ class RAPDORData:
             self.df = self.df.merge(agg, on="id", how="left")
             self.df[f"{treatment} imputed"].loc[noise_mask] = "too noisy"
             self.array[:, idx] += replace_array
+        self._impute_fix_df()
+
+
+    def _impute_fix_df(self):
+        for _, row in self.internal_design_matrix.iterrows():
+            array = self.array[:, row["index"], :]
+            if self.logbase:
+                array = np.emath.logn(self.logbase, array)
+            array[np.isinf(array)] = np.nan
+            self.df[row["Name"]] = array
 
 
     def _impute_via_rpy(self, n_perc=0.5, n_neighbors: int = 10, impute_quantile: float=0.95):
@@ -484,6 +494,7 @@ class RAPDORData:
                 for i, id in enumerate(idx):
                     self.array[proteins, id, fidx] = result[:, i]
         self.array[all_missing] = 0  # prevents imputing where all fractions are zero
+        self._impute_fix_df()  # makessure values in the initial dataframe are similar to the ones in array
 
     def _impute(self, n_perc, n_neighbors: int = 10, impute_quantile: float = 0.95):
         pass
