@@ -113,7 +113,7 @@ def load_initital_state(uid, pathname, rapdordata: RAPDORData, selected_ad_heade
         sel_columns = dash.no_update
     dm = rapdordata.state.distance_method if rapdordata.state.distance_method is not None else dash.no_update
     logger.info(f"Initially Selected Columns: {sel_columns}")
-    options = list(set(rapdordata.extra_df) - set(rapdordata.score_columns + rapdordata._id_columns + rapdordata.replicate_info))
+    options = list(set(rapdordata.extra_df.select_dtypes(include=['object'])) - set(rapdordata.score_columns + rapdordata._id_columns + rapdordata.replicate_info))
     logger.info(selected_ad_header)
     if selected_ad_header is None:
         selected_ad_header = list(rapdordata.extra_df)[0] if "Gene" not in rapdordata.extra_df else "Gene"
