@@ -1149,6 +1149,22 @@ class RAPDORData:
         self.state.permanova_permutations = permutations
         return p_values, o_distribution
 
+    def pca(self):
+        p, r, f = self.norm_array.shape
+        X = self.norm_array.reshape(p, r * f)
+        valid_mask = ~np.isnan(X).any(axis=1)
+        X_valid = X[valid_mask]
+        # Step 2: Perform PCA on valid rows
+        pca = PCA(n_components=2)
+        X_valid_pca = pca.fit_transform(X_valid)
+        # Step 3: Create output array with NaNs
+        X_pca = np.full((X.shape[0], X_valid_pca.shape[1]), np.nan)
+        X_pca[valid_mask] = X_valid_pca
+        self.df["PC1"] = X_pca[:, 0]
+        self.df["PC2"] = X_pca[:, 1]
+        self.pca_var = pca.explained_variance_
+
+
     def export_csv(self, file: str, sep: str = ","):
         """Exports the :attr:`extra_df` to a file.
 

@@ -50,7 +50,7 @@ def _get_cluster_panel(disabled: bool = False):
                                         ),
                                         html.Div(
                                             dcc.Dropdown(
-                                                ["Bubble Plot", "Distance vs Var"],
+                                                ["Bubble Plot", "Distance vs Var", "PCA"],
                                                 value="Bubble Plot",
                                                 className="justify-content-center",
                                                 id="dataset-plot-type",

@@ -5,12 +5,14 @@ import dash
 from dash.exceptions import PreventUpdate
 from plotly import graph_objs as go
 from RAPDOR.plots import plot_replicate_distribution, plot_distribution, plot_barcode_plot, plot_heatmap, \
-    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK, plot_bars, plot_distance_and_var
+    plot_dimension_reduction, empty_figure, DEFAULT_TEMPLATE, DEFAULT_TEMPLATE_DARK, plot_bars, plot_distance_and_var, \
+    plot_protein_pca
 from dash_extensions.enrich import Serverside, callback
 from RAPDOR.datastructures import RAPDORData
 import logging
 import traceback
 from pandas.api.types import is_numeric_dtype
+
 logger = logging.getLogger(__name__)
 
 @callback(
@@ -223,6 +225,9 @@ def update_cutoff_selection(rapdordata: RAPDORData, plot_type, current_selection
     if plot_type == "Bubble Plot":
         name = "Cutoff Type"
         clearable = True
+    elif plot_type == "PCA":
+         name = "Cutoff Type"
+         clearable = True
     else:
         name = "Y Axis"
         selection = "ANOSIM R" if len(options) > 0 and current_selection not in options else selection
@@ -246,7 +251,7 @@ def update_cutoff_selection(rapdordata: RAPDORData, plot_type, current_selection
 
 )
 def update_range_slider(cutoff_type, plot_type, rapdordata: RAPDORData):
-    if plot_type != "Bubble Plot":
+    if plot_type == "Distance vs Var":
         marks = [0, 1]
         marks_t = {i: f"" for i in marks}
         marks = []
@@ -305,6 +310,8 @@ def disable_lfc_and_3d(tdplot, plot_type):
             return False, True, False
         else:
             return dash.no_update, False, False
+    elif plot_type == "PCA":
+        return False, True, True
     else:
         return dash.no_update, False, True
 
@@ -378,6 +385,25 @@ def plot_cluster_results(night_mode, plot_type, color, color2, selected_rows, ma
                 show_lfc=show_lfc
 
             )
+        elif plot_type == "PCA":
+            if "PC1" not in rapdordata.df:
+                fig = empty_figure("No PCA was performed on the data")
+            else:
+                if cutoff_type is None:
+                    cutoff_range = None
+                else:
+                    if "p-Value" in cutoff_type:
+                        cutoff_range = 10 ** cutoff_range[0], 10 ** cutoff_range[1]
+                fig = plot_protein_pca(
+                    rapdordata,
+                    highlight=highlight,
+                    hovername=add_header,
+                    colors=colors,
+                    cutoff_range=cutoff_range,
+                    cutoff_type=cutoff_type
+
+                )
+
         else:
             if cutoff_type is None:
                 fig = empty_figure("Select Y Axis Type first")

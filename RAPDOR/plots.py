@@ -92,6 +92,39 @@ DEFAULT_TEMPLATE_DARK.update(
 )
 
 
+def plot_protein_pca(rapdordata, highlight = None, hovername: str = None, cutoff_range = None, cutoff_type = None, colors: Iterable = COLOR_SCHEMES["Flamingo"]):
+    df = rapdordata.df
+    if highlight is not None:
+        df["highlight"] = rapdordata.df["RAPDORid"].isin(highlight)
+    else:
+        df["highlight"] = False
+
+    if cutoff_range is not None:
+        assert cutoff_type is not None
+        df = df[(df[cutoff_type] <= cutoff_range[1]) & (df[cutoff_type] >= cutoff_range[0])]
+
+    hovertext = rapdordata.df.index.astype(str) + ": " + rapdordata.df["RAPDORid"].astype(str)
+    if hovername is not None:
+        hovertext = hovertext + "<br>" + rapdordata.df[hovername].astype(str)
+    df["hovertext"] = hovertext
+    fig = px.scatter(
+        df,
+        x="PC1",
+        y=f"PC2",
+        color="highlight",  # Color by highlight
+        hover_name="hovertext",  # Show gene name on hover
+        symbol="highlight",
+        color_discrete_map={
+            True: colors[1],  # Highlighted genes
+            False: colors[0]  # All other genes
+        },
+    )
+    fig.update_xaxes(title=f"PC1 ({rapdordata.pca_var[0]:.2f})%")
+    fig.update_yaxes(title=f"PC2 ({rapdordata.pca_var[1]:.2f})%")
+    return fig
+
+
+
 def _color_to_calpha(color: str, alpha: float = 0.2):
     color = color.split("(")[-1].split(")")[0]
     return f"rgba({color}, {alpha})"
@@ -2413,6 +2446,35 @@ def plot_sample_correlation(
     return fig
 
 
+def plot_sum_of_intensities(rapdordata, colors: Iterable = COLOR_SCHEMES["Flamingo"], normalize: bool = False, show_last: bool = True):
+    fig = go.Figure()
+    z = np.nansum(rapdordata.array, axis=0)
+    title = "Intensity"
+    if normalize:
+        z = z / z.sum(axis=1, keepdims=True)
+        title = "Normalized intensity"
+    fractions = rapdordata.fractions
+
+    if not show_last:
+        z = z[:, :-1]
+        fractions = fractions[:-1]
+    names = (rapdordata.internal_design_matrix["Treatment"].astype(str) + " " + rapdordata.internal_design_matrix["Replicate"].astype(str)).tolist()
+    fig.add_trace(
+        go.Heatmap(
+            x=fractions,
+            y=names,
+            z=z,
+            colorscale=colors,
+            colorbar=dict(
+                title=title,
+            )
+        )
+    )
+    fig.update_xaxes(title="Fraction")
+    fig.update_yaxes(title="Replicate")
+
+    return fig
+
 
 if __name__ == '__main__':
     from RAPDOR.datastructures import RAPDORData
@@ -2430,7 +2492,12 @@ if __name__ == '__main__':
     #rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/RAPDORonRDeeP/RDeePRAPDOR.json")
 
     rapdor.df["RAPDORid"] = rapdor.df.index
-    fig = plot_sample_correlation(rapdor, method="spearman", show_values=True, summarize_fractions=True, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
+    #fig = plot_sample_correlation(rapdor, method="spearman", show_values=True, summarize_fractions=True, use_raw=False, highlight_replicates=False, ntop=None, colors=dolphin)
+    fig = plot_sum_of_intensities(rapdor, dolphin, normalize=False, show_last=True)
+    fig.write_image("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/SumOfIntensities.svg")
+
+    fig = plot_sum_of_intensities(rapdor, dolphin, normalize=True, show_last=True)
+    fig.write_image("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/SumOfIntensitiesNormalized.svg")
     fig.show()
     exit()
     #rapdor = RAPDORData.from_file("/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/RAPDORonRDeeP/RDeePRAPDOR.json")
