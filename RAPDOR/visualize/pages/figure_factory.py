@@ -16,6 +16,7 @@ from RAPDOR.visualize import BOOTSH5, BOOTSROW
 from RAPDOR.visualize.callbacks.colorCallbacks import *
 import pandas as pd
 import plotly.io as pio
+import traceback
 
 dash.register_page(__name__, path='/figure_factory')
 
@@ -619,13 +620,12 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
         elif plot_type == 3:
             if rapdordata.current_embedding is None:
                 try:
-                    if not DISPLAY:
-                        rapdordata.calc_distribution_features()
-                        plotting = True
+                    rapdordata.calc_distribution_features()
                 except ValueError as e:
+                    logger.info(traceback.format_exc())
                     plotting = False
             else:
-                plotting = False
+                plotting = True
 
             if not plotting:
                 message = "Distances not Calculated.<br>Go to Analysis Page"
