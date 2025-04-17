@@ -16,7 +16,7 @@ ASSETS_DIR = os.path.join(FILEDIR, "assets")
 
 
 app = DashProxy(
-    "RAPDOR Dashboard",
+    __name__,
     title="RAPDOR Visualizer",
     external_stylesheets=[dbc.themes.DARKLY, "https://use.fontawesome.com/releases/v6.5.1/css/all.css"],
     assets_folder=ASSETS_DIR,
