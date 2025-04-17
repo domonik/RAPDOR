@@ -13,6 +13,11 @@ class DisplayModeBackend(FileSystemBackend):
         with open(json_file, "r") as handle:
             json_string = handle.read()
         self.rapdor_data = RAPDORData.from_json(json_string)
+        if self.rapdor_data.current_embedding is None:
+            try:
+                self.rapdor_data.calc_distribution_features()
+            except ValueError:
+                pass
         self.max_items = 3
 
     def get(self, key, ignore_expired=False) -> any:

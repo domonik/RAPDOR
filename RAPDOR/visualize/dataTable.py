@@ -5,6 +5,7 @@ from dash.dash_table.Format import Format
 from pandas.core.dtypes.common import is_numeric_dtype
 import dash_bootstrap_components as dbc
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
@@ -18,33 +19,38 @@ def _get_table(rapdordata):
         logger.info(f"Initial Columns: {sel_columns}")
     else:
         sel_columns = None
+
+    table = html.Div(
+        [
+            html.Div(
+                _create_table(rapdordata),
+                className="col-12 justify-content-center h-100 dbc-row-selectable",
+                id="data-table",
+                style={"min-width": "100px", "overflow-x": "auto",
+                       # "display": "block"
+                       }
+
+            ),
+
+            html.Button("Reset Selected Rows", id="reset-rows-btn",
+                        className="reset-col-btn first-page",
+                        style=dict(position="absolute", left="0")),
+
+        ],
+
+        id="table-loading",
+        style={"height": "90%" if os.name != "nt" else "100%"}
+
+    )
+    if os.name == "nt":
+        table = dls.RingChase(table, id="spinner", color="var(--primary-color)", width=200,
+                            thickness=20)
     table = html.Div(
         [
             html.Div(
                 html.Div(
                         [
-                            html.Div(
-                                [
-                                    html.Div(
-                                        _create_table(rapdordata),
-                                        className="col-12 justify-content-center h-100 dbc-row-selectable",
-                                        id="data-table",
-                                        style={"min-width": "100px", "overflow-x": "auto",
-                                               # "display": "block"
-                                               }
-
-                                    ),
-
-                                    html.Button("Reset Selected Rows", id="reset-rows-btn",
-                                                className="reset-col-btn first-page",
-                                                style=dict(position="absolute", left="0")),
-
-                                ],
-
-                                id="table-loading",
-                                style={"height": "90%"}
-
-                            ),
+                            table,
 
 
                             html.Div(
