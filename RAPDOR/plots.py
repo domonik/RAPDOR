@@ -119,8 +119,8 @@ def plot_protein_pca(rapdordata, highlight = None, hovername: str = None, cutoff
             False: colors[0]  # All other genes
         },
     )
-    fig.update_xaxes(title=f"PC1 ({rapdordata.pca_var[0]:.2f})%")
-    fig.update_yaxes(title=f"PC2 ({rapdordata.pca_var[1]:.2f})%")
+    fig.update_xaxes(title=f"PC1 ({rapdordata.pca_var[0] * 100:.2f}%)")
+    fig.update_yaxes(title=f"PC2 ({rapdordata.pca_var[1] * 100:.2f}%)")
     return fig
 
 

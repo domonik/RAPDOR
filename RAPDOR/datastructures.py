@@ -1162,7 +1162,7 @@ class RAPDORData:
         X_pca[valid_mask] = X_valid_pca
         self.df["PC1"] = X_pca[:, 0]
         self.df["PC2"] = X_pca[:, 1]
-        self.pca_var = pca.explained_variance_
+        self.pca_var = pca.explained_variance_ratio_
 
 
     def export_csv(self, file: str, sep: str = ","):
