@@ -621,6 +621,7 @@ def update_download_state(keys, primary_color, secondary_color, plot_type, displ
             if rapdordata.current_embedding is None:
                 try:
                     rapdordata.calc_distribution_features()
+                    plotting = True
                 except ValueError as e:
                     logger.info(traceback.format_exc())
                     plotting = False
@@ -776,8 +777,8 @@ def update_ff_download_preview(
                 data.colorbar.update(pio.templates[template]["layout"]["coloraxis"]["colorbar"])
     fig.update_xaxes(dtick=d_x_tick)
     fig.update_yaxes(dtick=d_y_tick)
-    fig.update_xaxes(titlefont=dict(size=axis_font_size))
-    fig.update_yaxes(titlefont=dict(size=axis_font_size))
+    fig.update_xaxes(title=dict(font=dict(size=axis_font_size)))
+    fig.update_yaxes(title=dict(font=dict(size=axis_font_size)))
     fig.update_xaxes(showline=True if xaxis_width > 0 else False, linewidth=xaxis_width)
     fig.update_yaxes(showline=True if yaxis_width > 0 else False, linewidth=yaxis_width)
     fig.update_annotations(
