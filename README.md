@@ -30,7 +30,6 @@ systems:
 `RAPDOR` requires `Python 3` and `pip` to be installed. It is tested for Python versions `3.10` to `3.13`.
 
 
-
 ```text
 statsmodels,
 numpy
