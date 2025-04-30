@@ -1,4 +1,3 @@
-import dash_loading_spinners as dls
 import pandas as pd
 from dash import html, dcc, dash_table
 from dash.dash_table.Format import Format
@@ -43,8 +42,7 @@ def _get_table(rapdordata):
 
     )
     if os.name == "nt":
-        table = dls.RingChase(table, id="spinner", color="var(--primary-color)", width=200,
-                            thickness=20)
+        table = dcc.Loading(table, id="spinner", color="var(--primary-color)")
     table = html.Div(
         [
             html.Div(

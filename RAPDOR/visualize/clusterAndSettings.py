@@ -1,7 +1,6 @@
 
 from dash import dcc, dash_table, html
 from dash import html, ctx
-import dash_loading_spinners as dls
 import dash_daq as daq
 import dash_bootstrap_components as dbc
 from RAPDOR.datastructures import RAPDORData
@@ -20,7 +19,7 @@ def _get_cluster_panel(disabled: bool = False):
                         dcc.Store(id="run-clustering"),
                         html.Div(
                             html.Div(
-                                dls.RingChase(
+                                dcc.Loading(
                                     [
                                         dcc.Store(id="plot-dim-red", data=False),
                                         dcc.Graph(id="cluster-graph", figure=empty_figure(),
@@ -28,8 +27,6 @@ def _get_cluster_panel(disabled: bool = False):
 
                                     ],
                                     color="var(--primary-color)",
-                                    width=200,
-                                    thickness=20,
                                 ),
                                 style={"overflow-x": "auto"}, className="m-2"
                             ),

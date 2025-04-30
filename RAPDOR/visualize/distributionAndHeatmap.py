@@ -1,5 +1,4 @@
 import dash_daq as daq
-import dash_loading_spinners as dls
 from dash import html, dcc
 from RAPDOR.plots import empty_figure
 
@@ -172,7 +171,7 @@ def distance_heatmap_box():
             html.Div(
                 [
                     html.Div(
-                        dls.RingChase(
+                        dcc.Loading(
                             [
                                 html.Div(
                                     html.H4(
@@ -188,8 +187,6 @@ def distance_heatmap_box():
 
                             ],
                             color="var(--primary-color)",
-                            width=200,
-                            thickness=20,
                         ),
 
                        className="row p-2 justify-content-center",
