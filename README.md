@@ -27,9 +27,8 @@ systems:
 
 ####  Dependencies
 
-`RAPDOR` requires `Python 3` and `pip` to be installed. It is tested for Python versions `3.10` to `3.12`.
+`RAPDOR` requires `Python 3` and `pip` to be installed. It is tested for Python versions `3.10` to `3.13`.
 
-Note that there is an issue with a dependency that disallows the use of Python `3.13` at the current state
 
 
 ```text
