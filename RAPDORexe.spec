@@ -7,7 +7,7 @@ block_cipher = None
 
 package_imports = [
     ['dash_daq', ['package-info.json', 'metadata.json', 'dash_daq.min.js', 'async-colorpicker.js']],
-    ['dash_extensions', ['package-info.json', 'metadata.json', 'dash_extensions.min.js']],
+    ['dash_extensions', ['package-info.json', 'metadata.json', 'dash_extensions.js']],
     ['RAPDOR', ['visualize/assets/', 'visualize/pages/', "dashConfig.yaml", "tests/testData",  "visualize/callbacks"]],
     ]
 rdpsroot = os.path.join(os.getcwd(), "RAPDOR")
@@ -43,7 +43,6 @@ a = Analysis(
         "RAPDOR.visualize.callbacks.plotCallbacks",
         "RAPDOR.visualize.callbacks.tableCallbacks",
         "RAPDOR.visualize.callbacks.colorCallbacks",
-        "dash_loading_spinners",
         "dash_daq"
         ],
     hookspath=[],
