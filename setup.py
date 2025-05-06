@@ -38,7 +38,6 @@ setup(
         "dash>=2.5",
         "dash_bootstrap_components",
         "scikit-learn",
-        "dash_loading_spinners",
         "kaleido",
         "dash_daq",
         "dash_extensions",
