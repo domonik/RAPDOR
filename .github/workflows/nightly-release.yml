@@ -1,7 +1,7 @@
 name: nightlyRelease
 on:
   push:
-    branches: [ dev ]
+    branches: [ main ]
 
 
 
@@ -50,7 +50,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: 3.9
+        python-version: 3.12
 
     - name: Install dependencies and build
       run: |
@@ -83,7 +83,7 @@ jobs:
         prerelease: true
         name: nightly
         tag_name: nightly
-        target_commitish: dev
+        target_commitish: main
         files: dist/RAPDOR_nightly_${{ matrix.os }}.zip
         fail_on_unmatched_files: true
 
