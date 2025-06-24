@@ -22,6 +22,10 @@ PERMANOVA.
 
 --------------------------------------
 
+**Useful links**:
+`Source Repository <https://github.com/domonik/RAPDOR>`__ |
+`Binary Executables <https://github.com/domonik/RAPDOR/releases>`__ |
+
 
 .. grid:: 1 1 2 2
     :gutter: 3
