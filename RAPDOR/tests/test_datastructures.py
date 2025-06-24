@@ -146,13 +146,14 @@ def test_different_columns(intensities, design):
 
 
 @pytest.mark.parametrize(
-    "normalize,kernel_size,distance,permanova,nr_samples",
+    "normalize,kernel_size,distance,permanova,nr_samples,threads",
     [
-        (True, 3, "Jensen-Shannon-Distance", True, 10),
-        (False, None, None, False, None)
+        (True, 3, "Jensen-Shannon-Distance", True, 10, 1),
+        (True, 3, "Jensen-Shannon-Distance", True, 10, 2),
+        (False, None, None, False, None, None)
     ]
 )
-def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, rapdordata):
+def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, threads,  rapdordata):
     if normalize:
         rapdordata.normalize_array_with_kernel(kernel_size)
     if distance:
@@ -162,7 +163,7 @@ def test_serialization(normalize, kernel_size, distance, permanova, nr_samples, 
         rapdordata.rank_table(['Mean Distance', "ANOSIM R"], [False, False])
 
 
-        rapdordata.calc_permanova_p_value(10, threads=1)
+        rapdordata.calc_anosim_p_value(10, threads=threads, callback=print)
     s = rapdordata.to_jsons()
     loaded_data = RAPDORData.from_json(s)
     assert loaded_data == rapdordata
