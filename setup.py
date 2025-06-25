@@ -32,7 +32,7 @@ setup(
     install_requires=[
         "statsmodels",
         "numpy",
-        "scipy",
+        'scipy<1.16',
         "plotly>=5.16",
         "pandas",
         "dash>=2.5",
