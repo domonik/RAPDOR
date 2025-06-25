@@ -27,6 +27,7 @@ import warnings
 from io import StringIO
 from sklearn.preprocessing import RobustScaler
 from sklearn.neighbors import NearestNeighbors
+import threading
 
 DECIMALS = 15
 
@@ -63,7 +64,7 @@ msnset_impute <- function(sub_df, pdata, min_rep, n_neighbors, indExpData, colna
 
 
 
-def check_equality(value, other_item):
+def _check_equality(value, other_item):
     if not isinstance(value, type(other_item)):
         return False
     elif isinstance(value, pd.DataFrame):
@@ -79,7 +80,7 @@ def check_equality(value, other_item):
             if not np.allclose(value, other_item, equal_nan=True):
                 return False
     elif isinstance(value, list) or isinstance(value, tuple):
-        if not (all([check_equality(v, other_item[idx]) for idx, v in enumerate(value)])):
+        if not (all([_check_equality(v, other_item[idx]) for idx, v in enumerate(value)])):
             return False
     else:
         if value != other_item:
@@ -89,6 +90,11 @@ def check_equality(value, other_item):
 
 @dataclass()
 class RAPDORState:
+    """ An internal class storing the current status of your analysis.
+
+    This is mainly used for the Dash tool and not important for regular users.
+
+    """
     distance_method: str = None
     kernel_size: int = None
     beta: float = None
@@ -134,6 +140,7 @@ class RAPDORData:
         score_columns (List[str]): list of strings that are used as column names for scores that can be calculated via
             this object.
         control (str): Name of the level of treatment that should be used as control.
+        methods (List[str]): List of supported distance functions
 
 
      Examples:
@@ -170,7 +177,7 @@ class RAPDORData:
         "RNase Peak adj p-Value",
         "position strongest shift"
     ]
-    replicate_info = [
+    _replicate_info = [
         "min replicates per group",
         "contains empty replicate",
     ]
@@ -230,7 +237,7 @@ class RAPDORData:
             other_dict = other.__dict__
             for key, value in self.__dict__.items():
                 other_item = other_dict[key]
-                v = check_equality(value, other_item)
+                v = _check_equality(value, other_item)
                 if not v:
                     return False
             return True
@@ -321,6 +328,12 @@ class RAPDORData:
 
     @cached_property
     def raw_lfc(self):
+        """ Calculates the log2 fold change of the raw intensity means.
+
+        Returns:
+            np.ndarray: array containing the log2 fold change of the raw intensities
+
+        """
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             rnase_false = np.nansum(np.nanmean(self.array[:, self.indices[0]], axis=-2),axis=-1)
@@ -352,7 +365,8 @@ class RAPDORData:
     def extra_df(self):
         """ Return a Dataframe Slice all columns from self.df that are not part of the intensity columns
 
-        Returns: pd.Dataframe
+        Returns:
+            pd.DataFrame: slice of :attr:`df`
 
         """
         if self._data_cols is None:
@@ -496,15 +510,14 @@ class RAPDORData:
         self.array[all_missing] = 0  # prevents imputing where all fractions are zero
         self._impute_fix_df()  # makessure values in the initial dataframe are similar to the ones in array
 
-    def _impute(self, n_perc, n_neighbors: int = 10, impute_quantile: float = 0.95):
-        pass
-
 
     def _check_distances(self):
         if self.distances is None:
             raise ValueError("Distances not calculated yet. Need to calculate distances first for this operation")
 
     def calc_distance_stats(self):
+        """ Calculates the mean distance and variance of this distance inside the same treatment group.
+        """
         self._check_distances()
         for treatment, idx in zip(self.treatment_levels, self.indices):
             indices = np.triu_indices(len(idx), 1)
@@ -633,6 +646,8 @@ class RAPDORData:
         self._unset_scores_and_pvalues()
 
     def determine_strongest_shift(self):
+        """Determines the position of the strongest shift
+        """
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             rnase_false, rnase_true = self._treatment_means
@@ -662,6 +677,8 @@ class RAPDORData:
         self.df.loc[self.df["Mean Distance"].isna(), "position strongest shift"] = pd.NA
 
     def calc_mean_distance(self):
+        """ Calculates the distance between the means of the two treatment groups.
+        """
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             rnase_false, rnase_true = self._treatment_means
@@ -719,33 +736,13 @@ class RAPDORData:
         shift_strings = np.where(side == 1, "right", shift_strings)
         self.df["shift direction"] = shift_strings
 
-    # def calc_cluster_features(self, kernel_range: int = 2):
-    #     if "shift direction" not in self.df:
-    #         raise ValueError("Peaks not determined. Determine Peaks first")
-    #     rnase_false = self.norm_array[:, self._indices_false].mean(axis=-2)
-    #     rnase_true = self.norm_array[:, self._indices_true].mean(axis=-2)
-    #     mixture = 0.5 * (rnase_true + rnase_false)
-    #     ctrl_peak = rel_entr(rnase_false, mixture)
-    #     rnase_peak = rel_entr(rnase_true, mixture)
-    #     ctrl_peak_pos = (self.df["RNase False peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
-    #     rnase_peak_pos = (self.df["RNase True peak pos"] - int(np.floor(self.state.kernel_size / 2)) - 1).to_numpy()
-    #
-    #     ctrl_peak = np.pad(ctrl_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
-    #     ctrl_peak_range = np.stack((ctrl_peak_pos, ctrl_peak_pos + 2 * kernel_range + 1), axis=1)
-    #     ctrl_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=ctrl_peak_range, axis=-1)
-    #     v1 = np.take_along_axis(ctrl_peak, ctrl_peak_range, axis=-1)
-    #
-    #     rnase_peak = np.pad(rnase_peak, ((0, 0), (kernel_range, kernel_range)), constant_values=0)
-    #     rnase_peak_range = np.stack((rnase_peak_pos, rnase_peak_pos + 2 * kernel_range + 1), axis=1)
-    #     rnase_peak_range = np.apply_along_axis(lambda m: np.arange(start=m[0], stop=m[1]), arr=rnase_peak_range,
-    #                                            axis=-1)
-    #     v2 = np.take_along_axis(rnase_peak, rnase_peak_range, axis=-1)
-    #     shift = ctrl_peak_pos - rnase_peak_pos
-    #     cluster_values = np.concatenate((shift[:, np.newaxis], v1, v2), axis=1)
-    #     self.cluster_features = cluster_values
-    #     self.state.cluster_kernel_distance = kernel_range
 
     def calc_distribution_features(self):
+        """ Calculates features used in a bubble plot
+
+        Sets the features in :attr:`current_embedding` that can be used to plot a bubble plot of the data
+
+        """
         if "position strongest shift" not in self.df:
             raise ValueError("Peaks not determined. Determine Peaks first")
         with warnings.catch_warnings():
@@ -772,29 +769,6 @@ class RAPDORData:
         self.cluster_features = np.concatenate((shift[:, np.newaxis], diff[:, np.newaxis]), axis=1)
         self.current_embedding = self.cluster_features
 
-    def reduce_dim(self, data, embedding_dim: int = 2, method: str = "T-SNE"):
-        data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
-        if method == "T-SNE":
-            reducer = TSNE(
-                n_components=embedding_dim,
-                perplexity=10,
-                init="random",
-                n_iter=250,
-                random_state=0,
-                method="exact" if embedding_dim >= 4 else "barnes_hut"
-            )
-        elif method == "PCA":
-            reducer = PCA(n_components=embedding_dim)
-        else:
-            raise NotImplementedError("Method not implemented")
-        embedding = np.zeros((self.array.shape[0], embedding_dim))
-        mask = ~np.isnan(self.cluster_features).any(axis=1)
-        embedding[mask, :] = reducer.fit_transform(data[mask])
-        embedding[~mask] = np.nan
-        return embedding
-
-    def set_embedding(self, dim, method):
-        self.current_embedding = self.reduce_dim(data=self.cluster_features, method=method, embedding_dim=dim)
 
     def remove_clusters(self):
         if "Cluster" in self.df:
@@ -803,28 +777,6 @@ class RAPDORData:
         self.state.cluster_method = None
         self.state.cluster_args = None
 
-    def cluster_data(self, method: str = "HDBSCAN", **kwargs):
-        if self.cluster_features is None:
-            raise ValueError("Cluster Features not calculated. Calculate first")
-        data = self.cluster_features
-        data = (data - np.nanmean(data, axis=0)) / np.nanstd(data, axis=0)
-        if method == "HDBSCAN":
-            clusterer = HDBSCAN(**kwargs)
-        elif method == "K-Means":
-            clusterer = KMeans(n_init="auto", **kwargs)
-        elif method == "DBSCAN":
-            clusterer = DBSCAN(**kwargs)
-        else:
-            raise ValueError("Unsupported Method selected")
-
-        clusters = np.empty(self.array.shape[0])
-        mask = ~np.isnan(data).any(axis=1)
-        clusters[mask] = clusterer.fit(data[mask]).labels_
-        clusters[~mask] = np.nan
-        self.df["Cluster"] = clusters
-        self.state.cluster_method = method
-        self.state.cluster_args = kwargs
-        return clusters
 
     @staticmethod
     def _jensenshannondistance(array1, array2, axis: int = -2) -> np.ndarray:
@@ -840,76 +792,6 @@ class RAPDORData:
     def _euclidean_distance(array1, array2, axis: int = -2):
         return np.linalg.norm(array1 - array2, axis=axis)
 
-    def _get_outer_group_distances(self, indices_false, indices_true):
-        n_genes = self.distances.shape[0]
-        mg1, mg2 = np.meshgrid(indices_true, indices_false)
-        e = np.ones((n_genes, len(indices_false), len(indices_true)))
-        e = e * np.arange(0, n_genes)[:, None, None]
-        e = e[np.newaxis, :]
-        e = e.astype(int)
-        mg = np.stack((mg1, mg2))
-
-        mg = np.repeat(mg[:, np.newaxis, :, :], n_genes, axis=1)
-
-        idx = np.concatenate((e, mg))
-        distances = self.distances
-        distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
-        distances = distances.reshape((n_genes, len(indices_true) * len(indices_false)))
-        return distances
-
-    def _get_innergroup_distances(self, indices_false, indices_true):
-        distances = self.distances
-        indices = [indices_false, indices_true]
-        inner_distances = []
-        for eidx, (idx) in enumerate(indices):
-            n_genes = distances.shape[0]
-            mg1, mg2 = np.meshgrid(idx, idx)
-            e = np.ones((n_genes, len(idx), len(idx)))
-            e = e * np.arange(0, n_genes)[:, None, None]
-            e = e[np.newaxis, :]
-            e = e.astype(int)
-            mg = np.stack((mg1, mg2))
-            mg = np.repeat(mg[:, np.newaxis, :, :], n_genes, axis=1)
-            idx = np.concatenate((e, mg))
-            ig_distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
-            iidx = np.triu_indices(n=ig_distances.shape[1], m=ig_distances.shape[2], k=1)
-            ig_distances = ig_distances[:, iidx[0], iidx[1]]
-            inner_distances.append(ig_distances)
-        return np.concatenate(inner_distances, axis=-1)
-
-    # def calc_welchs_t_test(self, distance_cutoff: float = None):
-    #     """Runs Welchs T-Test at RNase and control peak position.
-    #     The p-Values are adjusted for multiple testing.
-    #
-    #     .. warning::
-    #         Since you are dealing with multivariate data, this is not the recommended way to calculate p-Values.
-    #         Instead, use a PERMANOVA if you have a sufficient amount of replicates or consider ranking the Table using
-    #         values calculated via the :func:`~calc_all_scores` function.
-    #
-    #     Args:
-    #         distance_cutoff (float): P-Values are not Calculated for proteins with a mean distance below this threshold.
-    #             This reduces number of tests.
-    #     """
-    #     if "RNase True peak pos" not in self.df:
-    #         raise ValueError("Need to compute peak positions first")
-    #     for peak, name in (
-    #             ("RNase True peak pos", "RNase Peak adj p-Value"), ("RNase False peak pos", "CTRL Peak adj p-Value")):
-    #         idx = np.asarray(self.df[peak] - int(np.ceil(self.state.kernel_size / 2)))
-    #         t = np.take_along_axis(self.norm_array, idx[:, np.newaxis, np.newaxis], axis=2).squeeze()
-    #         t_idx = np.tile(np.asarray(self._indices_true), t.shape[0]).reshape(t.shape[0], -1)
-    #         f_idx = np.tile(np.asarray(self._indices_false), t.shape[0]).reshape(t.shape[0], -1)
-    #         true = np.take_along_axis(t, t_idx, axis=-1)
-    #         false = np.take_along_axis(t, f_idx, axis=-1)
-    #         t_test = ttest_ind(true, false, axis=1, equal_var=False)
-    #         adj_pval = np.zeros(t_test.pvalue.shape)
-    #         mask = np.isnan(t_test.pvalue)
-    #         if distance_cutoff is not None:
-    #             if "Mean Distance" not in self.df.columns:
-    #                 raise ValueError("Need to run peak position estimation before please call self.determine_peaks()")
-    #             mask[self.df["Mean Distance"] < distance_cutoff] = True
-    #         adj_pval[mask] = np.nan
-    #         _, adj_pval[~mask], _, _ = multipletests(t_test.pvalue[~mask], method="fdr_bh")
-    #         self.df[name] = adj_pval
 
     def rank_table(self, values, ascending):
         """Ranks the :attr:`df`
@@ -943,36 +825,12 @@ class RAPDORData:
             self.determine_peaks()
         self.determine_strongest_shift()
 
-    def _calc_anosim(self, indices_false, indices_true, ignore_nan: bool = True, ignore_zero_distances: bool = True):
-        outer_group_distances = self._get_outer_group_distances(indices_false, indices_true)
-        inner_group_distances = self._get_innergroup_distances(indices_false, indices_true)
-        stat_distances = np.concatenate((outer_group_distances, inner_group_distances), axis=-1)
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=RuntimeWarning)
-            if ignore_nan:
-                mask = np.isnan(stat_distances)
-                ranks = stat_distances.argsort(axis=-1).argsort(axis=-1).astype(float)
-                ranks[mask] = np.nan
-                rb = np.nanmean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
-                rw = np.nanmean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
-                nonnan = np.count_nonzero(~mask, axis=-1)
-                r = (rb - rw) / (nonnan / 2)
-            else:
-                mask = np.isnan(stat_distances).any(axis=-1)
-                ranks = stat_distances.argsort(axis=-1).argsort(axis=-1)
-                rb = np.mean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
-                rw = np.mean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
-                r = (rb - rw) / (ranks.shape[-1] / 2)
-                r[mask] = np.nan
-        r[self.df["min replicates per group"] < self.min_replicates] = np.nan
-        if ignore_zero_distances:
-            r[np.all(self.distances == 0, axis=(1, 2))] = np.nan
-        return r
+
 
     def _calc_permanova_f(self, indices_false, indices_true):
         assert len(indices_true) == len(indices_false), "PERMANOVA performs poorly for unbalanced study design"
-        outer_group_distances = self._get_outer_group_distances(indices_false, indices_true)
-        inner_group_distances = self._get_innergroup_distances(indices_false, indices_true)
+        outer_group_distances = _get_outer_group_distances(indices_false, indices_true, self.distances)
+        inner_group_distances = _get_innergroup_distances(indices_false, indices_true, self.distances)
         bn = len(indices_true) + len(indices_false)
         n = len(indices_true)
         sst = np.sum(
@@ -999,13 +857,13 @@ class RAPDORData:
 
     def calc_all_anosim_value(self):
         """Calculates ANOSIM R for each protein and stores it in :py:attr:`df`"""
-        r = self._calc_anosim(self.indices[0], self.indices[1])
+        r = _calc_anosim(self.distances, self.indices[0], self.indices[1])
         r[self.df["Mean Distance"] == 0] = np.nan
 
         self.df["ANOSIM R"] = r.round(decimals=DECIMALS)
         self.state.anosim_r = True
 
-    def _calc_global_anosim_distribution(self, nr_permutations: int, threads: int, seed: int = 0, callback=None):
+    def _calc_global_anosim_distribution(self, nr_permutations: int, threads: int, seed: int = 0, ignore_zero_distances = True, callback=None):
         np.random.seed(seed)
         _split_point = len(self.indices[0])
         indices = np.concatenate((self.indices[0], self.indices[1]))
@@ -1013,14 +871,29 @@ class RAPDORData:
         if nr_permutations == -1:
             perms = it.permutations(indices)
             for shuffled in perms:
-                calls.append((shuffled[:_split_point], shuffled[_split_point:]))
+                calls.append((_calc_anosim, self.distances, shuffled[:_split_point], shuffled[_split_point:]))
         else:
             for _ in range(nr_permutations):
                 shuffled = np.random.permutation(indices)
-                calls.append((shuffled[:_split_point], shuffled[_split_point:]))
+                calls.append((_calc_anosim, self.distances, shuffled[:_split_point], shuffled[_split_point:]))
         if threads > 1:
-            with multiprocessing.Pool(threads) as pool:
-                result = pool.starmap(self._calc_anosim, calls)
+            with multiprocessing.Manager() as manager:
+                counter = manager.Value('i', 0)
+                lock = manager.Lock()
+                total_calls = len(calls)
+                if callback:
+                    watcher_thread = threading.Thread(target=_progress_watcher,
+                                                      args=(counter, total_calls, callback, lock))
+                    watcher_thread.start()
+                with multiprocessing.Pool(
+                        threads,
+                        initializer=_init_progress,
+                        initargs=(counter, total_calls, lock)
+                ) as pool:
+                    result = pool.starmap(_calc_wrapper, calls)
+
+                if callback:
+                    watcher_thread.join()
         else:
             if callback:
                 result = []
@@ -1028,10 +901,13 @@ class RAPDORData:
                 for idx, call in enumerate(calls):
                     perc = str(int((idx * 97) / m_len))
                     callback(perc)
-                    result.append(self._calc_anosim(*call))
+                    result.append(_calc_anosim(*(call[1:])))
             else:
-                result = [self._calc_anosim(*call) for call in calls]
+                result = [_calc_anosim(*(call[1:])) for call in calls]
         result = np.stack(result)
+        result[:, self.df["min replicates per group"] < self.min_replicates] = np.nan
+        if ignore_zero_distances:
+            result[:, np.all(self.distances == 0, axis=(1, 2))] = np.nan
         return result
 
     def _calc_global_permanova_distribution(self, nr_permutations: int, threads: int, seed: int = 0):
@@ -1080,7 +956,7 @@ class RAPDORData:
             self.calc_all_anosim_value()
 
 
-        o_distribution = self._calc_global_anosim_distribution(permutations, threads, seed, callback)
+        o_distribution = self._calc_global_anosim_distribution(permutations, threads, seed, callback=callback)
         r_scores = self.df["ANOSIM R"].to_numpy()
         if mode == "global":
             distribution = o_distribution.flatten()
@@ -1150,6 +1026,11 @@ class RAPDORData:
         return p_values, o_distribution
 
     def pca(self):
+        """ Performs PCA on the normalized array.
+
+        Results are stored in :attr:`df` as PC1 and PC2. explained variance is stored in :attr:`pca_var`.
+
+        """
         p, r, f = self.norm_array.shape
         X = self.norm_array.reshape(p, r * f)
         valid_mask = ~np.isnan(X).any(axis=1)
@@ -1177,6 +1058,12 @@ class RAPDORData:
         df.to_csv(file, sep=sep, index=False)
 
     def to_jsons(self):
+        """ encodes this object as a JSON string
+
+        Returns:
+            str: JSON string representation of this object
+
+        """
         s = json.dumps(self, cls=RAPDOREncoder)
         return s
 
@@ -1192,12 +1079,26 @@ class RAPDORData:
 
     @classmethod
     def from_json(cls, json_string):
+        """ Creates class instance from JSON string.
+
+        Args:
+            json_string: string representation of the RAPDORData
+
+        Returns:
+            RAPDORData: the RAPDORData stored in the string
+
+        """
         json_obj = json.loads(json_string)
         data = cls._from_dict(json_obj)
         return data
 
     @classmethod
     def from_file(cls, json_file):
+        """ Creates a class instance from a JSON file.
+
+        Returns:
+            RAPDORData: the RAPDORData stored in the file.
+        """
         with open(json_file) as handle:
             json_string = handle.read()
         return cls.from_json(json_string)
@@ -1237,6 +1138,9 @@ class RAPDORData:
 
 
 class RAPDOREncoder(JSONEncoder):
+    """ The JSON encoder used to create the JSON representation of a RAPDORData instance.
+
+    """
     def default(self, obj_to_encode):
         if isinstance(obj_to_encode, pd.DataFrame):
             return obj_to_encode.to_json(double_precision=15)
@@ -1271,6 +1175,93 @@ def _analysis_executable_wrapper(args):
     rapdor.export_csv(args.output, str(args.sep))
     if args.json is not None:
         rapdor.to_json(args.json)
+
+def _calc_anosim(distances, indices_false, indices_true, ignore_nan: bool = True):
+    outer_group_distances = _get_outer_group_distances(indices_false, indices_true, distances,)
+    inner_group_distances = _get_innergroup_distances(indices_false, indices_true, distances,)
+    stat_distances = np.concatenate((outer_group_distances, inner_group_distances), axis=-1)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=RuntimeWarning)
+        if ignore_nan:
+            mask = np.isnan(stat_distances)
+            ranks = stat_distances.argsort(axis=-1).argsort(axis=-1).astype(float)
+            ranks[mask] = np.nan
+            rb = np.nanmean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
+            rw = np.nanmean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
+            nonnan = np.count_nonzero(~mask, axis=-1)
+            r = (rb - rw) / (nonnan / 2)
+        else:
+            mask = np.isnan(stat_distances).any(axis=-1)
+            ranks = stat_distances.argsort(axis=-1).argsort(axis=-1)
+            rb = np.mean(ranks[:, 0:outer_group_distances.shape[-1]], axis=-1)
+            rw = np.mean(ranks[:, outer_group_distances.shape[-1]:], axis=-1)
+            r = (rb - rw) / (ranks.shape[-1] / 2)
+            r[mask] = np.nan
+    return r
+
+
+def _get_innergroup_distances(indices_false, indices_true, distances):
+    indices = [indices_false, indices_true]
+    inner_distances = []
+    for eidx, (idx) in enumerate(indices):
+        n_genes = distances.shape[0]
+        mg1, mg2 = np.meshgrid(idx, idx)
+        e = np.ones((n_genes, len(idx), len(idx)))
+        e = e * np.arange(0, n_genes)[:, None, None]
+        e = e[np.newaxis, :]
+        e = e.astype(int)
+        mg = np.stack((mg1, mg2))
+        mg = np.repeat(mg[:, np.newaxis, :, :], n_genes, axis=1)
+        idx = np.concatenate((e, mg))
+        ig_distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
+        iidx = np.triu_indices(n=ig_distances.shape[1], m=ig_distances.shape[2], k=1)
+        ig_distances = ig_distances[:, iidx[0], iidx[1]]
+        inner_distances.append(ig_distances)
+    return np.concatenate(inner_distances, axis=-1)
+
+
+def _get_outer_group_distances(indices_false, indices_true, distances):
+    n_genes = distances.shape[0]
+    mg1, mg2 = np.meshgrid(indices_true, indices_false)
+    e = np.ones((n_genes, len(indices_false), len(indices_true)))
+    e = e * np.arange(0, n_genes)[:, None, None]
+    e = e[np.newaxis, :]
+    e = e.astype(int)
+    mg = np.stack((mg1, mg2))
+
+    mg = np.repeat(mg[:, np.newaxis, :, :], n_genes, axis=1)
+
+    idx = np.concatenate((e, mg))
+    distances = distances.flat[np.ravel_multi_index(idx, distances.shape)]
+    distances = distances.reshape((n_genes, len(indices_true) * len(indices_false)))
+    return distances
+
+
+
+def _init_progress(counter_, total_, lock_):
+    global counter, total, lock
+    counter = counter_
+    total = total_
+    lock = lock_
+
+def _calc_wrapper(fct, *args):
+    res = fct(*args)  # make sure this is a staticmethod
+    with lock:
+        counter.value += 1
+    return res
+
+def _progress_watcher(counter, total, callback, lock):
+    last_reported = -1
+    while True:
+        with lock:
+            current = counter.value
+        perc = int((current * 97) / total)
+        if perc != last_reported:
+            callback(str(perc))
+            last_reported = perc
+        if current >= total:
+            break
+        time.sleep(0.2)
 
 
 if __name__ == '__main__':

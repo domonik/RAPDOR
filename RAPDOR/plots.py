@@ -93,6 +93,42 @@ DEFAULT_TEMPLATE_DARK.update(
 
 
 def plot_protein_pca(rapdordata, highlight = None, hovername: str = None, cutoff_range = None, cutoff_type = None, colors: Iterable = COLOR_SCHEMES["Flamingo"]):
+    """
+        Plots a 2D PCA (Principal Component Analysis) scatter plot for protein data.
+
+        Args:
+            rapdordata:
+                An object containing protein PCA data. Must have the attributes:
+                - `df`: A pandas DataFrame with PCA coordinates and metadata.
+                - `pca_var`: A sequence with explained variances for PC1 and PC2.
+            highlight (iterable, optional):
+                A list or set of RAPDOR IDs to highlight in the plot.
+                Highlighted points will be styled differently.
+            hovername (str, optional):
+                Name of the column in `rapdordata.df` to append to hover text.
+            cutoff_range (tuple, optional):
+                A tuple (min, max) specifying a numeric filter range.
+                Used to subset the data based on values in the `cutoff_type` column.
+            cutoff_type (str, optional):
+                Name of the column in `rapdordata.df` used for filtering via `cutoff_range`.
+                Must be provided if `cutoff_range` is set.
+            colors (Iterable, optional):
+                An iterable of two color values (e.g., hex strings).
+                First color is used for non-highlighted points, second for highlighted points.
+                Defaults to `COLOR_SCHEMES["Flamingo"]`.
+
+        Returns:
+            plotly.graph_objects.Figure:
+                A Plotly scatter plot figure showing the PCA projection.
+
+        Raises:
+            AssertionError: If `cutoff_range` is provided without `cutoff_type`.
+
+        Example:
+            fig = plot_protein_pca(rapdordata, highlight=["P12345"], hovername="gene_name", cutoff_range=(0, 1), cutoff_type="q_value")
+            fig.show()
+
+    """
     df = rapdordata.df
     if highlight is not None:
         df["highlight"] = rapdordata.df["RAPDORid"].isin(highlight)
@@ -149,6 +185,29 @@ def _plot_pca(components, labels, to_plot: tuple = (0, 1, 2)):
 
 
 def empty_figure(annotation: str = None, font_color: str = None):
+    """
+        Creates an empty Plotly figure with optional centered annotation text.
+
+        This is useful as a placeholder figure in dashboards or when no data is available
+        to display.
+
+        Args:
+            annotation (str, optional):
+                A string to display as a centered annotation in the figure.
+                If `None`, no annotation is shown.
+            font_color (str, optional):
+                Font color to use for the annotation and layout text (e.g., "#333333").
+                If `None`, default color is used.
+
+        Returns:
+            plotly.graph_objects.Figure:
+                An empty Plotly figure with customized layout and optional annotation.
+
+        Example:
+            fig = empty_figure(annotation="No data available", font_color="#555")
+            fig.show()
+
+    """
     fig = go.Figure()
     fig.update_yaxes(showticklabels=False, showgrid=False)
     fig.update_xaxes(showgrid=False, showticklabels=False)
@@ -429,6 +488,34 @@ def plot_protein_distributions(rapdorids, rapdordata: RAPDORData, colors, title_
 
 def plot_var_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_COLORS["primary"],
                    var_measure: str = "ANOSIM R", bins: int = 10):
+    """
+    Plots a histogram of a specified variability measure for a subset of proteins.
+
+    Args:
+        rapdorids (iterable):
+            A list or set of RAPDOR IDs specifying the proteins to include in the histogram.
+        rapdordata (RAPDORData):
+            A RAPDORData object containing the full dataset, including a `.df` DataFrame
+            with variability measures.
+        color (str, optional):
+            Hex or named color used to fill the histogram bars.
+            Defaults to `DEFAULT_COLORS["primary"]`.
+        var_measure (str, optional):
+            Column name in `rapdordata.df` to use for the histogram values.
+            Defaults to `"ANOSIM R"`.
+        bins (int, optional):
+            Number of bins to use in the histogram.
+            Defaults to `10`.
+
+    Returns:
+        plotly.graph_objects.Figure:
+            A Plotly histogram figure showing the distribution of the selected variability measure.
+
+    Example:
+        fig = plot_var_histo(["P12345", "P67890"], rapdordata, var_measure="ANOSIM R", bins=20)
+        fig.show()
+
+    """
     fig = go.Figure()
     proteins = rapdordata[rapdorids]
     x = rapdordata.df.loc[proteins][var_measure]
@@ -453,6 +540,32 @@ def plot_var_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_COLOR
 
 
 def plot_distance_histo(rapdorids, rapdordata: RAPDORData, color: str = DEFAULT_COLORS["secondary"], bins: int = 10):
+    """
+    Plots a histogram of the mean pairwise distances for a subset of proteins.
+
+    Args:
+        rapdorids (iterable):
+            A list or set of RAPDOR IDs specifying the proteins to include in the histogram.
+        rapdordata (RAPDORData):
+            A RAPDORData object containing the full dataset. Must include:
+            - `df`: A DataFrame with a `"Mean Distance"` column.
+            - `state.distance_method`: A string describing the distance metric used.
+        color (str, optional):
+            Hex or named color to use for the histogram bars.
+            Defaults to `DEFAULT_COLORS["secondary"]`.
+        bins (int, optional):
+            Number of bins to divide the data into. Defaults to `10`.
+
+    Returns:
+        plotly.graph_objects.Figure:
+            A Plotly histogram figure showing the distribution of mean distances
+            for the selected proteins.
+
+    Example:
+        fig = plot_distance_histo(["P12345", "P67890"], rapdordata, bins=20)
+        fig.show()
+
+    """
     fig = go.Figure()
     proteins = rapdordata[rapdorids]
     x = rapdordata.df.loc[proteins]["Mean Distance"]
@@ -571,6 +684,41 @@ def plot_mean_distributions(rapdorids, rapdordata: RAPDORData, colors, title_col
 
 
 def plot_means_and_histos(rapdorids, rapdordata: RAPDORData, colors, title_col: str = None, **kwargs):
+    """
+    Combines mean distribution plots and histograms into a single figure with subplots.
+
+    This function generates a vertically stacked composite figure containing:
+    1. Mean expression distributions,
+    2. A histogram of mean distances,
+    3. A histogram of a variability measure (e.g., ANOSIM R).
+
+    Args:
+        rapdorids (iterable):
+            A list or set of RAPDOR IDs for which data will be plotted.
+        rapdordata (RAPDORData):
+            A RAPDORData object that contains:
+            - `df`: A pandas DataFrame with PCA and metric data.
+            - `state.distance_method`: A string for labeling the distance histogram.
+        colors (list or tuple):
+            A sequence of color values. The first is used for the distance histogram,
+            the second for the variability histogram, and passed into mean plotting.
+        title_col (str, optional):
+            Name of the column in `rapdordata.df` used for labeling mean distribution plots.
+        **kwargs:
+            Additional keyword arguments passed to `make_subplots`, such as:
+            - `row_heights` (list of float): Heights for the three subplot rows.
+              Defaults to `[0.5, 0.25, 0.25]`.
+            - `vertical_spacing` (float): Spacing between subplot rows. Defaults to `0.1`.
+
+    Returns:
+        plotly.graph_objects.Figure:
+            A Plotly figure object with three vertically stacked subplots.
+
+    Example:
+        fig = plot_means_and_histos(["P12345", "P67890"], rapdordata, colors=["#1f77b4", "#ff7f0e"])
+        fig.show()
+
+    """
     if "row_heights" not in kwargs:
         kwargs["row_heights"] = [0.5, 0.25, 0.25]
     if "vertical_spacing" not in kwargs:
@@ -624,8 +772,64 @@ def _coordinates_to_svg_path(x_coords, y_coords):
     return path
 
 
-def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, orientation: str = "h",
-              triangles: str = "inside", tri_x: float = 25, tri_y: float = 0.1):
+def rank_plot(
+    rapdorsets: Dict[str, Iterable],
+    rapdordata: RAPDORData,
+    colors,
+    orientation: str = "h",
+    triangles: str = "inside",
+    tri_x: float = 25,
+    tri_y: float = 0.1,
+    label_col: str = "RAPDORid"
+):
+    """
+    Creates a bar-based rank plot to visualize the positions of RAPDOR sets within a ranked list.
+
+    Each RAPDOR set is displayed as a bar indicating presence at a given rank, with an optional
+    triangle annotation marking the median rank of the set. The plot can be rendered in either
+    horizontal or vertical orientation.
+
+    Args:
+        rapdorsets (Dict[str, Iterable]):
+            A dictionary mapping set names to iterables of RAPDOR IDs to be plotted.
+        rapdordata (RAPDORData):
+            A RAPDORData object containing a `.df` DataFrame with at least:
+            - `"Rank"`: Numerical rank values for each entry.
+            - `"RAPDORid"`: Identifiers matching those in `rapdorsets`.
+            - `label_col`: A column used for hover tooltips (e.g., gene names).
+        colors (list or tuple):
+            A list of color values (hex strings or named colors), one per RAPDOR set.
+        orientation (str, optional):
+            Orientation of the plot. `"h"` for horizontal (default), `"v"` for vertical.
+        triangles (str, optional):
+            Whether to draw triangle indicators for median rank positions.
+            `"inside"` places the triangles inside the plot area;
+            `"outside"` places them in the plot margin.
+            Defaults to `"inside"`.
+        tri_x (float, optional):
+            Half-width of the triangle in the X direction (or Y if orientation is vertical).
+            Defaults to `25`.
+        tri_y (float, optional):
+            Height of the triangle. For `"outside"`, this is a vertical offset.
+            Defaults to `0.1`.
+        label_col (str, optional):
+            Name of the column in `rapdordata.df` to use for hover text (e.g., "Gene", "ProteinName").
+            Defaults to `"Gene"`.
+
+    Returns:
+        plotly.graph_objects.Figure:
+            A Plotly figure displaying the rank positions of the specified RAPDOR sets.
+
+    Example:
+        fig = rank_plot(
+            rapdorsets={"Set A": ["P123", "P456"]},
+            rapdordata=rapdordata,
+            colors=["#1f77b4"],
+            label_col="ProteinName"
+        )
+        fig.show()
+
+    """
     fig = go.Figure(layout=dict(template=DEFAULT_TEMPLATE))
     df = rapdordata.df.sort_values(by="Rank")
     df = df[~pd.isna(df["Rank"])]
@@ -663,7 +867,7 @@ def rank_plot(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORData, colors, o
                 marker_color=colors[idx],
                 marker_line=dict(width=2, color=colors[idx]),
                 name=key,
-                hovertext=df["Gene"],
+                hovertext=df[label_col],
                 orientation="v" if orientation == "h" else "h"
 
             )
@@ -793,6 +997,52 @@ def multi_means_and_histo(rapdorsets: Dict[str, Iterable], rapdordata: RAPDORDat
 
 
 def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "rel. protein amount", barmode: str = "overlay"):
+    """
+    Plots bar charts with overlaid scatter markers and quantile-based error bars
+    for grouped protein abundance data across experimental conditions.
+
+    This function groups samples by treatment (as specified in the `design` DataFrame),
+    computes mean and interquartile range (25–75%) for each group, and visualizes the results
+    using Plotly bars and error bars.
+
+    Args:
+        subdata (np.ndarray):
+            A 2D NumPy array with shape (n_samples, n_features), containing protein abundance
+            values. Sample indices must align with the `design` DataFrame.
+        design (pd.DataFrame):
+            A DataFrame that includes a `"Treatment"` column mapping sample indices to group labels.
+        x (list):
+            A list of original x-axis labels corresponding to features (e.g., protein IDs or timepoints).
+        offset (int, optional):
+            Index offset applied to the `x` list to align with `subdata` columns. Default is `0`.
+        colors (list, optional):
+            A list of color values to be used for each treatment group. If `None`, default colors are used.
+        yname (str, optional):
+            Y-axis label for the plot. Defaults to `"rel. protein amount"`.
+        barmode (str, optional):
+            Bar layout mode for Plotly. Options include `"overlay"` and `"group"`. Default is `"overlay"`.
+
+    Returns:
+        plotly.graph_objects.Figure:
+            A Plotly figure containing the bar chart with overlaid quantile scatter markers and error bars.
+
+    Notes:
+        - For each group in `design["Treatment"]`, the function computes:
+            - Mean protein abundance across group samples.
+            - 25th and 75th quantiles to derive error bars.
+        - Each group is visualized using a combination of bars and markers.
+        - Hover mode is set to `"x"` for better interactivity.
+
+    Example:
+        fig = plot_bars(
+            subdata=protein_array,
+            design=sample_design_df,
+            x=["P1", "P2", "P3"],
+            colors=["#1f77b4", "#ff7f0e"]
+        )
+        fig.show()
+
+    """
     if colors is None:
         colors = DEFAULT_COLORS
     fig = go.Figure(layout=go.Layout(yaxis2=go.layout.YAxis(
@@ -850,27 +1100,6 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
 
             )
         )
-        # fig.add_trace(go.Bar(
-        #     y=mean_values,
-        #     x=x,
-        #     name="Q.25-Q.75",
-        #     offsetgroup=str(eidx),
-        #     # offset=(eidx - 1) * 1 / 3,
-        #     error_y=dict(
-        #         type='data',  # value of error bar given in data coordinates
-        #         array=upper_quantile,
-        #         arrayminus=lower_quantile,
-        #         symmetric=False,
-        #         visible=True,
-        #         color="black",
-        #         thickness=2,
-        #         width=10
-        #     ),
-        #     yaxis=f"y2",
-        #     marker_color="rgba(0, 0, 0, 0)",
-        #     legend=legend,
-        #     marker=dict(line=dict(width=1, color="black"))
-        # ))
     fig.update_layout(hovermode="x")
     fig.update_layout(
         yaxis_title=yname,
@@ -2207,6 +2436,7 @@ def plot_sample_pca(
 
 ):
     """Creates PCA plot of the samples of an RAPDORdata object.
+
     It can either produce a 3D or 2D PCA plot depending on the number of dimensions specified in plot_dims
     If summarize_fractions is True it will flatten the fraction dimension.
     If it is set to false it will treat each replicate, treatment, fraction combination as a separate sample.
@@ -2447,6 +2677,34 @@ def plot_sample_correlation(
 
 
 def plot_sum_of_intensities(rapdordata, colors: Iterable = COLOR_SCHEMES["Flamingo"], normalize: bool = False, show_last: bool = True):
+    """
+        Plots a heatmap of summed intensities across fractions and replicates from RAPDOR data.
+
+        The function sums intensity values across all proteins (or features) for each fraction and replicate,
+        optionally normalizes the sums per replicate, and visualizes the results as a heatmap.
+
+        Args:
+            rapdordata:
+                An object containing RAPDOR data with the following attributes:
+                - `.array`: 2D numpy array of intensities with shape (samples, fractions).
+                - `.fractions`: List or array of fraction identifiers.
+                - `.internal_design_matrix`: DataFrame with columns `"Treatment"` and `"Replicate"`.
+            colors (Iterable, optional):
+                A color scale iterable for the heatmap (e.g., a Plotly colorscale). Default is COLOR_SCHEMES["Flamingo"].
+            normalize (bool, optional):
+                Whether to normalize intensities within each replicate so that sums per replicate equal 1. Defaults to False.
+            show_last (bool, optional):
+                Whether to include the last fraction in the heatmap. Defaults to True.
+
+        Returns:
+            plotly.graph_objects.Figure:
+                A Plotly heatmap figure showing summed (or normalized) intensities by fraction and replicate.
+
+        Example:
+            fig = plot_sum_of_intensities(rapdordata, normalize=True)
+            fig.show()
+
+    """
     fig = go.Figure()
     z = np.nansum(rapdordata.array, axis=0)
     title = "Intensity"
