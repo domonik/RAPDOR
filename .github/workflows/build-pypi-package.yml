@@ -1,14 +1,16 @@
 name: Publish Python distribution to PyPI and TestPyPI
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
+  workflow_run:
+    workflows: ["taggedRelease"]
+    types:
+      - completed
 
 jobs:
   build:
     name: Build distribution 📦
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
 
     steps:
     - uses: actions/checkout@v4
