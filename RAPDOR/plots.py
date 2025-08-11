@@ -11,11 +11,13 @@ import copy
 from scipy.stats import spearmanr, pearsonr
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from plotly.validators.scatter.marker import SymbolValidator
-from plotly.validators.scatter3d.marker import SymbolValidator as SymbolValidator3D
+from plotly.validator_cache import ValidatorCache
 
-SYMBOLS = SymbolValidator().values[2::12]
-SYMBOLS3D = SymbolValidator3D().values
+SymbolValidator = ValidatorCache.get_validator("scatter.marker", "symbol")
+SYMBOLS = SymbolValidator.values[2::12]
+
+SymbolValidator3D = ValidatorCache.get_validator("scatter3d.marker", "symbol")
+SYMBOLS3D = SymbolValidator3D.values
 
 DEFAULT_COLORS = {"primary": "rgb(138, 255, 172)", "secondary": "rgb(255, 138, 221)"}
 
@@ -1096,7 +1098,7 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
                     width=10
                 ),
                 legend=legend,
-                name="Dot & Q.25-Q.75"
+                name="Dot & IQR"
 
             )
         )
@@ -1210,7 +1212,7 @@ def plot_distribution(
                 x=x + x[::-1],
                 y=y,
                 marker=dict(color=colors[eidx]),
-                name="Q.25-Q.75",
+                name="IQR",
                 legend=legend,
                 fill="toself",
                 fillcolor=a_color,
