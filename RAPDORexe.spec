@@ -4,6 +4,18 @@ import importlib
 
 block_cipher = None
 
+scikit_hiddenimports = [
+    'sklearn.utils._cython_blas',
+    'sklearn.utils._cython_blas_inner',
+    'sklearn._cyutility',
+    'sklearn.utils._random',
+    'sklearn.utils._logistic_sigmoid',
+    'sklearn.utils._heap',
+    'sklearn.cluster._k_means_common',
+    'sklearn.cluster._k_means_elkan',
+    'sklearn.cluster._k_means_lloyd'
+]
+
 
 package_imports = [
     ['dash_daq', ['package-info.json', 'metadata.json', 'dash_daq.min.js', 'async-colorpicker.js']],
@@ -44,7 +56,7 @@ a = Analysis(
         "RAPDOR.visualize.callbacks.tableCallbacks",
         "RAPDOR.visualize.callbacks.colorCallbacks",
         "dash_daq"
-        ],
+        ] + scikit_hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
