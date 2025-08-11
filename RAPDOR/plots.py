@@ -1098,7 +1098,7 @@ def plot_bars(subdata, design, x, offset: int = 0, colors=None, yname: str = "re
                     width=10
                 ),
                 legend=legend,
-                name="Dot & Q.25-Q.75"
+                name="Dot & IQR"
 
             )
         )
@@ -1212,7 +1212,7 @@ def plot_distribution(
                 x=x + x[::-1],
                 y=y,
                 marker=dict(color=colors[eidx]),
-                name="Q.25-Q.75",
+                name="IQR",
                 legend=legend,
                 fill="toself",
                 fillcolor=a_color,
