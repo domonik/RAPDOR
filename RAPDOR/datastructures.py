@@ -450,17 +450,16 @@ class RAPDORData:
 
     def _impute_via_rpy(self, n_perc=0.5, n_neighbors: int = 10, impute_quantile: float=0.95):
         try:
-            from rpy2.robjects import r, pandas2ri
+            from rpy2.robjects import r, pandas2ri, default_converter, numpy2ri
+            from rpy2.robjects.conversion import localconverter
         except ModuleNotFoundError as e:
             raise ModuleNotFoundError("Missing optional dependency rpy2. Please install for dataimputation")
-        pandas2ri.activate()
         for package in ("DAPAR", "MSnbase"):
             t = r.require(package)[0]
 
             if not t:
                 raise ImportError(f"Unable to import optional dependency: R package {package}. "
                                   f"Please install the corresponding R package in your environment")
-
         r(IMPUTE_R_CODE)
         msnset_impute = r["msnset_impute"]
 
@@ -472,7 +471,7 @@ class RAPDORData:
             perc = np.nanquantile(x, impute_quantile)
             noise_mask = x > perc
             for fidx, fraction in enumerate(self.fractions):
-                min_rep = np.ceil(n_perc * len(idx))
+                min_rep = float(np.ceil(n_perc * len(idx)))
 
                 sub_array = np.log2(self.array[:, :, fidx])
                 sub_array[np.isinf(sub_array)] = np.nan
@@ -497,11 +496,12 @@ class RAPDORData:
                 sub_df = sub_df[~mask]
                 if len(sub_df) == 0:
                     continue
-                sub_df_r = pandas2ri.py2rpy(sub_df)
-                pdata_r = pandas2ri.py2rpy(design)
+                with localconverter(default_converter + numpy2ri.converter + pandas2ri.converter):
+                    sub_df_r = pandas2ri.py2rpy(sub_df)
+                    pdata_r = pandas2ri.py2rpy(design)
 
-                result = msnset_impute(sub_df_r, pdata_r, logData=False, min_rep=min_rep, n_neighbors=n_neighbors, indExpData=r.seq(1,sub_df.shape[1]-1))
-                result = pandas2ri.rpy2py_dataframe(result)
+                    result = msnset_impute(sub_df_r, pdata_r, logData=False, min_rep=float(min_rep), n_neighbors=int(n_neighbors), indExpData=r.seq(1,sub_df.shape[1]-1))
+                    #result = pandas2ri.rpy2py_dataframe(result)
                 result = 2 ** result
                 proteins = result.index.astype(int)
                 result = result.to_numpy()
@@ -859,6 +859,7 @@ class RAPDORData:
         """Calculates ANOSIM R for each protein and stores it in :py:attr:`df`"""
         r = _calc_anosim(self.distances, self.indices[0], self.indices[1])
         r[self.df["Mean Distance"] == 0] = np.nan
+        r[self.df["min replicates per group"] < self.min_replicates] = np.nan
 
         self.df["ANOSIM R"] = r.round(decimals=DECIMALS)
         self.state.anosim_r = True
@@ -1267,7 +1268,7 @@ def _progress_watcher(counter, total, callback, lock):
 if __name__ == '__main__':
     from RAPDOR.plots import COLOR_SCHEMES
     from RAPDOR.plots import plot_distance_stats
-    f = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/VSNNorm/intensities_normalized_replaced.tsv"
+    f = "/home/rabsch/PythonProjects/synRDPMSpec/Pipeline/RAPDORAnalysis/sanitized_df.tsv"
     f = "/home/rabsch/PythonProjects/synRDPMSpec/Data/synIntensitiesIBAQ.tsv"
     d = "/home/rabsch/PythonProjects/synRDPMSpec/Data/synDesignIBAQ.tsv"
     #f  = "../testData/testFile.tsv"
